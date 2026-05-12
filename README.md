@@ -1,2 +1,2 @@
 # pequi
-Software de gestão e acompanhamento de pacientes com hanseníase
+Software de gestão e acompanhamento de pacientes com hanseníase.
