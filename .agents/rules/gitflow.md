@@ -188,7 +188,6 @@ Examples:
 ```bash
 # Clone and setup
 git clone <repository-url>
-cd ion-nutri
 git checkout develop
 
 # Start feature
