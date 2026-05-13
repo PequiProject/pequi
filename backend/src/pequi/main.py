@@ -15,10 +15,13 @@ settings = get_settings()
 
 
 def _init_sentry() -> None:
-    if not settings.SENTRY_DSN:
+    # Em dev/test o Sentry fica off por política do projeto (AGENTS.md / LGPD).
+    # `.strip()` evita que comentários inline ou espaços em `.env` virem DSN.
+    dsn = settings.SENTRY_DSN.strip()
+    if not dsn or settings.is_development:
         return
     sentry_sdk.init(
-        dsn=settings.SENTRY_DSN,
+        dsn=dsn,
         integrations=[FastApiIntegration(), SqlalchemyIntegration()],
         traces_sample_rate=0.2,
         profiles_sample_rate=0.1,
