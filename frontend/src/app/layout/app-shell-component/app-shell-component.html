@@ -4,6 +4,7 @@
     <app-menu (collapsedChange)="onMenuCollapsedChange($event)"></app-menu>
 
     <div
+      data-testid="shell-content"
       class="flex min-h-screen flex-1 flex-col transition-all duration-300"
       [class.lg:ml-72]="!isMenuCollapsed"
       [class.lg:ml-20]="isMenuCollapsed"
