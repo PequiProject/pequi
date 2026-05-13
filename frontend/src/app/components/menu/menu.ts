@@ -7,6 +7,7 @@ type NavItem = {
   label: string;
   route: string;
   icon: string;
+  activeIcon: string;
 };
 
 @Component({
@@ -26,7 +27,11 @@ export class Menu {
   isCollapsed = signal(false);
 
   navItems: NavItem[] = [
-    { label: 'Início', route: '/home', icon: 'assets/home.svg' },
+    { label: 'Início', route: '/home', icon: 'assets/home.svg', activeIcon: 'assets/activeHome.svg' },
+    { label: 'Jornada', route: '/journey', icon: 'assets/journey.svg', activeIcon: 'assets/activeJourney.svg' },
+    { label: 'Check In', route: '/checkin', icon: 'assets/checkin.svg', activeIcon: 'assets/activeCheckin.svg'},
+    { label: 'Educação', route: '/education', icon: 'assets/education.svg', activeIcon: 'assets/activeEducation.svg' },
+    { label: 'Comunidade', route: '/comunity', icon: 'assets/comunity.svg', activeIcon: 'assets/activeComunity.svg' },
   ];
 
   toggleSidebar(): void {
