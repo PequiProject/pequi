@@ -4,7 +4,7 @@ import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { vi } from 'vitest';
 import { Menu } from './menu';
-import { Home } from '../../features/home/home';
+import { HomeComponent } from '../../features/home/home';
 import { Journey } from '../../features/journey/journey';
 import { Checkin } from '../../features/checkin/checkin';
 import { Education } from '../../features/education/education';
@@ -20,7 +20,7 @@ describe(Menu.name, () => {
       imports: [Menu],
       providers: [
         provideRouter([
-          { path: 'home', component: Home },
+          { path: 'home', component: HomeComponent },
           { path: 'journey', component: Journey },
           { path: 'checkin', component: Checkin },
           { path: 'education', component: Education },
