@@ -2,12 +2,20 @@
 import { Component, EventEmitter, Output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import {
+  LucideDynamicIcon,
+  LucideHouse,
+  LucideMap,
+  LucideMapPinned,
+  LucideGraduationCap,
+  LucideUsers,
+  LucideIcon,
+} from '@lucide/angular';
 
 type NavItem = {
   label: string;
   route: string;
-  icon: string;
-  activeIcon: string;
+  icon: LucideIcon;
 };
 
 @Component({
@@ -16,7 +24,8 @@ type NavItem = {
   imports: [
     CommonModule,
     RouterLink,
-    RouterLinkActive
+    RouterLinkActive,
+    LucideDynamicIcon,
   ],
   templateUrl: './menu.html',
   styleUrl: './menu.css',
@@ -27,11 +36,11 @@ export class Menu {
   isCollapsed = signal(false);
 
   navItems: NavItem[] = [
-    { label: 'Início', route: '/home', icon: 'assets/home.svg', activeIcon: 'assets/activeHome.svg' },
-    { label: 'Jornada', route: '/journey', icon: 'assets/journey.svg', activeIcon: 'assets/activeJourney.svg' },
-    { label: 'Check In', route: '/checkin', icon: 'assets/checkin.svg', activeIcon: 'assets/activeCheckin.svg'},
-    { label: 'Educação', route: '/education', icon: 'assets/education.svg', activeIcon: 'assets/activeEducation.svg' },
-    { label: 'Comunidade', route: '/comunity', icon: 'assets/comunity.svg', activeIcon: 'assets/activeComunity.svg' },
+    { label: 'Início', route: '/home', icon: LucideHouse },
+    { label: 'Jornada', route: '/journey', icon: LucideMap },
+    { label: 'Check In', route: '/checkin', icon: LucideMapPinned },
+    { label: 'Educação', route: '/education', icon: LucideGraduationCap },
+    { label: 'Comunidade', route: '/comunity', icon: LucideUsers },
   ];
 
   toggleSidebar(): void {

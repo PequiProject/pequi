@@ -2,7 +2,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
-import { Component } from '@angular/core';
 import { vi } from 'vitest';
 import { Menu } from './menu';
 import { Home } from '../../features/home/home';

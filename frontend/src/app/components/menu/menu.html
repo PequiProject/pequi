@@ -70,12 +70,11 @@
                         [class.py-3]="isCollapsed()" 
                         [ngClass]="rla.isActive ? 'bg-[#E0E7FF] text-[#4338CA]' : 'bg-transparent text-[#78716C]'"
                         >
-                        <img 
-                            [src]="rla.isActive ? item.activeIcon : item.icon" 
-                            alt="" 
-                            aria-hidden="true" 
-                            class="h-5 w-5 shrink-0"
-                        />
+                        <svg
+                        [lucideIcon]="item.icon"
+                        class="h-5 w-5 shrink-0"
+                        aria-hidden="true"
+                        ></svg>
                         <span 
                             class="overflow-hidden whitespace-nowrap transition-all duration-200"
                             [class.w-auto]="!isCollapsed()" 
@@ -106,13 +105,11 @@
                     class="flex h-full min-h-11 flex-col items-center justify-center gap-1 rounded-xl px-2 text-xs font-medium transition"
                     [ngClass]="rla.isActive ? 'bg-[#E0E7FF] text-[#4338CA]' : 'bg-transparent text-[#78716C]'"
                     >
-                    <img 
-                        [src]="item.icon" 
-                        alt="" aria-hidden="true" 
-                        class="h-5 w-5" 
-                        [class.opacity-100]="rla.isActive"
-                        [class.opacity-80]="!rla.isActive"
-                        >
+                    <svg
+                    [lucideIcon]="item.icon"
+                    class="h-5 w-5"
+                    aria-hidden="true"
+                    ></svg>
                     <span>{{ item.label }}</span>
                 </a>
             </li>
