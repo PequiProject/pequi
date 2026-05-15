@@ -6,7 +6,7 @@ import { vi } from 'vitest';
 import { Menu } from './menu';
 import { HomeComponent } from '../../features/home/home';
 import { Journey } from '../../features/journey/journey';
-import { Checkin } from '../../features/checkin/checkin';
+import { CheckinComponent } from '../../features/checkin/checkin';
 import { Education } from '../../features/education/education';
 import { Comunity } from '../../features/comunity/comunity';
 
@@ -22,7 +22,7 @@ describe(Menu.name, () => {
         provideRouter([
           { path: 'home', component: HomeComponent },
           { path: 'journey', component: Journey },
-          { path: 'checkin', component: Checkin },
+          { path: 'checkin', component: CheckinComponent },
           { path: 'education', component: Education },
           { path: 'comunity', component: Comunity },
         ]),

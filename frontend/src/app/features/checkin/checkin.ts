@@ -1,4 +1,3 @@
-// checkin.component.ts
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal, WritableSignal } from '@angular/core';
 import {
@@ -33,12 +32,12 @@ type StepItem = {
   styleUrl: './checkin.css',
 })
 export class CheckinComponent {
-  private fb = inject(FormBuilder);
+  private readonly fb = inject(FormBuilder);
   steps: StepItem[] = [
     { id: 1, label: 'Ranking de Sentimentos'},
     { id: 2, label: 'Seleção de Sintomas'},
     { id: 3, label: 'Detalhes Adicionais'},
-    { id: 4, label: 'Intensidade dos Sintomas' },
+    { id: 4, label: 'Intensidade dos Sintomas'},
   ];
   currentStep = signal(1);
   form = this.fb.group({
