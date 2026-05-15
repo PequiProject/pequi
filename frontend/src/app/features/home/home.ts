@@ -9,12 +9,21 @@ interface QuickAction {
   colorClass: string;
 }
 
+interface Article {
+  tag: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  actionText: string;
+  actionUrl: string;
+}
+
 @Component({
   selector: 'app-home',
   standalone: true,
   imports: [CommonModule, LucideAngularModule],
   templateUrl: './home.html',
-  styleUrls: ['./home.css']
+  styleUrls: ['./home.css'],
 })
 export class HomeComponent {
   readonly ImagePlus = ImagePlus;
@@ -25,15 +34,25 @@ export class HomeComponent {
       title: 'Check-in',
       description: 'Registre seu humor e sintomas',
       icon: this.CirclePlus,
-      colorClass: 'blue-icon'
+      colorClass: 'blue-icon',
     },
     {
       title: 'Registro de Fotos',
       description: 'Acompanhe mudanças na pele',
       icon: this.ImagePlus,
-      colorClass: 'green-icon'
-    }
+      colorClass: 'green-icon',
+    },
   ];
+
+  weeklyArticle: Article = {
+    tag: 'ANÁLISE SEMANAL',
+    title: 'O Poder da Hidratação na Resiliência da Pele',
+    description:
+      'Estudos recentes sugerem que rotinas de hidratação consistentes podem melhorar a função de barreira da pele em até 30% ao longo de 4 semanas.',
+    imageUrl: 'assets/abstract-blue.png',
+    actionText: 'Ler Artigo',
+    actionUrl: '#',
+  };
 
   executeAction(title: string) {
     console.log(`Ação clicada: ${title}`);
