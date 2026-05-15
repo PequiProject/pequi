@@ -2,7 +2,7 @@ import { Routes } from '@angular/router';
 import { HomeComponent } from './features/home/home';
 import { AppShellComponent } from './layout/app-shell-component/app-shell-component';
 import { Journey } from './features/journey/journey';
-import { Checkin } from './features/checkin/checkin';
+import { CheckinComponent } from './features/checkin/checkin';
 import { Education } from './features/education/education';
 import { Comunity } from './features/comunity/comunity';
 
@@ -14,7 +14,7 @@ export const routes: Routes = [
       { path: '', pathMatch: 'full', redirectTo: 'home' },
       { path: 'home', component: HomeComponent, title: 'Início' },
       { path: 'journey', component: Journey, title: 'Jornada' },
-      { path: 'checkin', component: Checkin, title: 'Check In' },
+      { path: 'checkin', component: CheckinComponent, title: 'Check In' },
       { path: 'education', component: Education, title: 'Educação' },
       { path: 'comunity', component: Comunity, title: 'Comunidade' },
     ],
