@@ -4,7 +4,6 @@ import {
   LucideArrowLeft,
   LucideBell,
   LucideDynamicIcon,
-  LucideSearch,
 } from '@lucide/angular';
 import { NotificationHubService } from '../../core/notifications/notification-hub.service';
 
@@ -29,13 +28,10 @@ export class AppHeader {
   readonly avatarUrl = input<string | null>(null);
   readonly profileLink = input('/profile');
   readonly backLink = input('/home');
-  readonly searchPlaceholder = input('Pesquisar por pacientes, ID ou condições...');
-  readonly detailSearchPlaceholder = input('Buscar registros...');
   /** When true, notification bell keeps a flat background on hover/focus/active (e.g. on /notifications). */
   readonly quietNotificationButton = input(false);
 
   readonly LucideBell = LucideBell;
-  readonly LucideSearch = LucideSearch;
   readonly LucideArrowLeft = LucideArrowLeft;
 
   readonly unread = this.notifications.unreadCount;
