@@ -9,10 +9,18 @@
       [class.lg:ml-72]="!isMenuCollapsed"
       [class.lg:ml-20]="isMenuCollapsed"
     >
-      <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur">
-        <div class="flex justify-end h-16 items-center px-4 sm:px-6">
-          <h1 class="text-base font-semibold">Nome do usúario + Foto de perfil</h1>
-        </div>
+      <header
+        class="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur sm:px-6 lg:flex lg:h-16 lg:items-stretch lg:bg-white lg:px-8 lg:py-0"
+      >
+        <app-header
+          class="block min-h-0 min-w-0 w-full flex-1"
+          [layout]="headerLayout()"
+          [pageTitle]="headerPageTitle()"
+          [userName]="headerUserName()"
+          [quietNotificationButton]="quietNotificationBell()"
+          backLink="/home"
+          profileLink="/profile"
+        />
       </header>
 
       <main
