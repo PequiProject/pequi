@@ -1,0 +1,15 @@
+meta {
+  name: Get Patient Profile
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/v1/patients/me
+  auth: bearer
+}
+
+assert {
+  res.status: eq 200
+  res.body.id: isDefined
+}
