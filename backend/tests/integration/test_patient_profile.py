@@ -10,13 +10,16 @@ from pequi.use_cases.get_patient_profile import GetPatientProfileUseCase
 
 
 @pytest.mark.asyncio
-async def test_get_patient_profile(db_session):
+async def test_get_patient_profile(create_tables, db_session):
     # create health unit
     hu = HealthUnit(id=uuid4(), name="HU", city="Cidade", state="ST", cnes="123")
     db_session.add(hu)
     await db_session.flush()
 
     user_id = uuid4()
+    from sqlalchemy import text
+    await db_session.execute(text("INSERT INTO users (id) VALUES (:id)"), {"id": user_id})
+
     patient = PatientProfile(
         id=uuid4(),
         user_id=user_id,
