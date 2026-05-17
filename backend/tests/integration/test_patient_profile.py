@@ -16,9 +16,17 @@ async def test_get_patient_profile(create_tables, db_session):
     db_session.add(hu)
     await db_session.flush()
 
+    from pequi.models.user import User
     user_id = uuid4()
-    from sqlalchemy import text
-    await db_session.execute(text("INSERT INTO users (id) VALUES (:id)"), {"id": user_id})
+    user = User(
+        id=user_id,
+        email="patient_test@example.com",
+        hashed_password="hash",
+        full_name="Patient Test",
+        role="patient",
+    )
+    db_session.add(user)
+    await db_session.flush()
 
     patient = PatientProfile(
         id=uuid4(),

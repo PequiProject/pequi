@@ -1,20 +1,19 @@
 import asyncio
+import uuid
 from collections.abc import AsyncGenerator
 
 import pytest
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-
-from pequi.config import get_settings
-from pequi.database import Base, get_db
-from pequi.main import app
 from sqlalchemy import Column
 from sqlalchemy.dialects.postgresql import UUID
-import uuid
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import NullPool
 
-class UserStub(Base):
-    __tablename__ = "users"
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+from pequi.config import get_settings
+from pequi.core.dependencies import get_db
+from pequi.database import Base
+from pequi.main import app
+
 
 settings = get_settings()
 
@@ -26,6 +25,7 @@ test_engine = create_async_engine(
     TEST_DATABASE_URL,
     echo=False,
     pool_pre_ping=True,
+    poolclass=NullPool,
 )
 
 TestAsyncSessionLocal = async_sessionmaker(
@@ -39,6 +39,9 @@ TestAsyncSessionLocal = async_sessionmaker(
 
 @pytest.fixture(scope="session")
 def event_loop_policy():
+    import sys
+    if sys.platform == "win32":
+        return asyncio.WindowsSelectorEventLoopPolicy()
     return asyncio.DefaultEventLoopPolicy()
 
 
@@ -48,6 +51,7 @@ async def create_tables():
     Não é autouse — somente testes de integração/e2e devem requisitar este fixture.
     """
     async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
     yield
     async with test_engine.begin() as conn:
