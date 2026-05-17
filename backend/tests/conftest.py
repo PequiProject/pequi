@@ -8,6 +8,13 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from pequi.config import get_settings
 from pequi.database import Base, get_db
 from pequi.main import app
+from sqlalchemy import Column
+from sqlalchemy.dialects.postgresql import UUID
+import uuid
+
+class UserStub(Base):
+    __tablename__ = "users"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
 settings = get_settings()
 
@@ -35,7 +42,7 @@ def event_loop_policy():
     return asyncio.DefaultEventLoopPolicy()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture()
 async def create_tables():
     """Cria todas as tabelas antes da sessão de testes de integração e remove ao final.
     Não é autouse — somente testes de integração/e2e devem requisitar este fixture.

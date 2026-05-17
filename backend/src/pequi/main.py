@@ -66,9 +66,12 @@ def _register_routers(app: FastAPI) -> None:
 
     app.include_router(health_router)
 
+    from pequi.routers import patient as patient_router
+
+    app.include_router(patient_router.router, prefix="/v1/patients", tags=["patients"])
+
     # Routers de domínio — adicionados progressivamente a cada milestone:
     # M1: auth.router  → prefix="/v1/auth"
-    # M2: patient.router → prefix="/v1/patients"
     # M4: checkin.router → prefix="/v1/checkins"
     # ...
 

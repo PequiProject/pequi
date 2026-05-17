@@ -8,6 +8,7 @@ WORKDIR /app
 RUN pip install uv
 
 COPY pyproject.toml .
+COPY README.md .
 COPY src/ ./src/
 
 RUN uv sync --no-dev --compile-bytecode
