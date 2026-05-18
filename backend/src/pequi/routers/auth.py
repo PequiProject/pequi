@@ -25,7 +25,7 @@ def get_refresh_use_case(session: AsyncSession = Depends(get_db)) -> RefreshToke
 
 
 @router.post("/register", response_model=UserResponse, status_code=201)
-@limiter.limit("10/minute")  # Ajustado para facilitar testes, mas pode ser 10/hour conforme doc
+@limiter.limit("10/hour")
 async def register(
     request: Request,
     data: UserCreate,
@@ -45,7 +45,7 @@ async def login(
 
 
 @router.post("/refresh", response_model=AuthResponse, status_code=200)
-@limiter.limit("10/minute")
+@limiter.limit("20/hour")
 async def refresh(
     request: Request,
     data: RefreshRequest,

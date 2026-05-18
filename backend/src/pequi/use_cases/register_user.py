@@ -19,7 +19,7 @@ class RegisterUserUseCase:
             email=data.email,
             hashed_password=hashed,
             full_name=data.full_name,
-            role=data.role,
+            role="patient",
         )
         user = await self.user_repo.add(user)
         return UserResponse.model_validate(user)

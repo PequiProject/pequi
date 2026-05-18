@@ -17,6 +17,7 @@ async def test_get_patient_profile(create_tables, db_session):
     await db_session.flush()
 
     from pequi.models.user import User
+
     user_id = uuid4()
     user = User(
         id=user_id,

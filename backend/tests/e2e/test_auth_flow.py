@@ -60,7 +60,7 @@ async def test_login_user_success(create_tables, async_client: AsyncClient):
         "/v1/auth/login",
         json={"email": "login@example.com", "password": "loginpassword123"},
     )
-    
+
     assert response.status_code == 200
     data = response.json()
     assert "access_token" in data
@@ -120,7 +120,7 @@ async def test_refresh_token_success(create_tables, async_client: AsyncClient):
         "/v1/auth/refresh",
         json={"refresh_token": refresh_token},
     )
-    
+
     assert response.status_code == 200
     data = response.json()
     assert "access_token" in data

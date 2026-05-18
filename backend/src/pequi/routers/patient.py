@@ -3,8 +3,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 
 from pequi.core.dependencies import (
-    get_patient_profile_use_case,
     get_current_patient,
+    get_patient_profile_use_case,
     get_update_patient_profile_use_case,
 )
 from pequi.schemas.patient import PatientProfileRead, PatientProfileUpdate

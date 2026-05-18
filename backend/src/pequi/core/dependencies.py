@@ -1,9 +1,8 @@
 """
 FastAPI Depends centralizados.
 
-Implementações concretas de get_current_patient / get_current_professional
-serão adicionadas em M1 após a criação dos models User e das roles.
-Este arquivo já exporta get_db para uso imediato.
+Contém as dependências para injeção de banco de dados e controle de acesso
+baseado em roles (paciente, profissional de saúde e admin).
 """
 
 from collections.abc import AsyncGenerator
@@ -14,7 +13,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pequi.core.auth import TOKEN_TYPE_ACCESS, JWTError, decode_token
-from pequi.core.exceptions import UnauthorizedError
+from pequi.core.exceptions import ForbiddenError, UnauthorizedError
 from pequi.database import get_db as _get_db
 from pequi.repositories.patient_repo import PatientRepository
 from pequi.use_cases.get_patient_profile import GetPatientProfileUseCase
@@ -43,8 +42,6 @@ async def get_token_payload(
 
     return payload
 
-
-from pequi.core.exceptions import UnauthorizedError, ForbiddenError
 
 async def get_current_user(payload: dict = Depends(get_token_payload)) -> UUID:
     return UUID(payload["sub"])

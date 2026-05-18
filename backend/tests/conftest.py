@@ -1,19 +1,19 @@
 import asyncio
-import uuid
 from collections.abc import AsyncGenerator
 
 import pytest
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import Column
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
 from pequi.config import get_settings
 from pequi.core.dependencies import get_db
+from pequi.core.rate_limit import limiter
 from pequi.database import Base
 from pequi.main import app
 
+# Disable rate limiting for tests
+limiter.enabled = False
 
 settings = get_settings()
 
@@ -40,16 +40,15 @@ TestAsyncSessionLocal = async_sessionmaker(
 @pytest.fixture(scope="session")
 def event_loop_policy():
     import sys
+
     if sys.platform == "win32":
         return asyncio.WindowsSelectorEventLoopPolicy()
     return asyncio.DefaultEventLoopPolicy()
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 async def create_tables():
-    """Cria todas as tabelas antes da sessão de testes de integração e remove ao final.
-    Não é autouse — somente testes de integração/e2e devem requisitar este fixture.
-    """
+    """Cria todas as tabelas antes da sessão de testes e remove ao final."""
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)

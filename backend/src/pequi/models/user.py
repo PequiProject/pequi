@@ -20,7 +20,7 @@ class User(Base):
     )
     is_active = Column(Boolean, server_default="true", nullable=False)
     is_verified = Column(Boolean, server_default="false", nullable=False)
-    
+
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(
         DateTime(timezone=True),
