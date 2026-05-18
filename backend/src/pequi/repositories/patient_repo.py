@@ -11,12 +11,18 @@ class PatientRepository:
         self.session = session
 
     async def get_by_user_id(self, user_id: UUID) -> PatientProfile | None:
-        q = select(PatientProfile).where(PatientProfile.user_id == user_id)
+        q = select(PatientProfile).where(
+            PatientProfile.user_id == user_id,
+            PatientProfile.deleted_at.is_(None),
+        )
         r = await self.session.execute(q)
         return r.scalars().first()
 
     async def get_by_id(self, id: UUID) -> PatientProfile | None:
-        q = select(PatientProfile).where(PatientProfile.id == id)
+        q = select(PatientProfile).where(
+            PatientProfile.id == id,
+            PatientProfile.deleted_at.is_(None),
+        )
         r = await self.session.execute(q)
         return r.scalars().first()
 
@@ -28,10 +34,13 @@ class PatientRepository:
     async def update(self, id: UUID, **fields) -> PatientProfile | None:
         q = (
             update(PatientProfile)
-            .where(PatientProfile.id == id)
+            .where(
+                PatientProfile.id == id,
+                PatientProfile.deleted_at.is_(None),
+            )
             .values(**fields)
             .returning(PatientProfile)
         )
         r = await self.session.execute(q)
-        await self.session.commit()
-        return r.fetchone()
+        await self.session.flush()
+        return r.scalar_one_or_none()

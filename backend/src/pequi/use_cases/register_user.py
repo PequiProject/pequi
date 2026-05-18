@@ -12,7 +12,7 @@ class RegisterUserUseCase:
     async def execute(self, data: UserCreate) -> UserResponse:
         existing_user = await self.user_repo.get_by_email(data.email)
         if existing_user:
-            raise ConflictError(f"Email {data.email} already registered.")
+            raise ConflictError("Unable to register with these credentials.")
 
         hashed = hash_password(data.password)
         user = User(

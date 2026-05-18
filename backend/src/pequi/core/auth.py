@@ -36,8 +36,8 @@ def create_access_token(subject: str | UUID, role: str) -> str:
         "role": role,
         "type": TOKEN_TYPE_ACCESS,
         "jti": str(uuid4()),
-        "iat": now,
-        "exp": expire,
+        "iat": int(now.timestamp()),
+        "exp": int(expire.timestamp()),
     }
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=ALGORITHM)
 
@@ -50,8 +50,8 @@ def create_refresh_token(subject: str | UUID, role: str) -> str:
         "role": role,
         "type": TOKEN_TYPE_REFRESH,
         "jti": str(uuid4()),
-        "iat": now,
-        "exp": expire,
+        "iat": int(now.timestamp()),
+        "exp": int(expire.timestamp()),
     }
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=ALGORITHM)
 

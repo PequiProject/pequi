@@ -5,10 +5,13 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class UserCreate(BaseModel):
+    """Cadastro público — sempre cria usuário com role ``patient`` no use case."""
+
+    model_config = ConfigDict(extra="forbid")
+
     email: EmailStr
     password: str = Field(..., min_length=8, max_length=64)
     full_name: str = Field(..., min_length=2, max_length=100)
-    role: str = Field(default="patient", description="Role: patient, health_professional, admin")
 
 
 class UserResponse(BaseModel):

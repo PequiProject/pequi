@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -55,7 +57,7 @@ async def refresh(
 
 
 @router.post("/logout", status_code=204)
-async def logout(user_id: str = Depends(get_current_user)):
+async def logout(_user_id: UUID = Depends(get_current_user)):
     # Stateful logout would require token denylist (Redis), for now we just return 204
     # The client must discard the token on their end.
     return
