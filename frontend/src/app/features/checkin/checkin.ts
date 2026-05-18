@@ -34,10 +34,10 @@ type StepItem = {
 export class CheckinComponent {
   private readonly fb = inject(FormBuilder);
   steps: StepItem[] = [
-    { id: 1, label: 'Ranking de Sentimentos'},
-    { id: 2, label: 'Seleção de Sintomas'},
-    { id: 3, label: 'Detalhes Adicionais'},
-    { id: 4, label: 'Intensidade dos Sintomas'},
+    { id: 1, label: 'Ranking de Sentimentos' },
+    { id: 2, label: 'Seleção de Sintomas' },
+    { id: 3, label: 'Detalhes Adicionais' },
+    { id: 4, label: 'Intensidade dos Sintomas' },
   ];
   currentStep = signal(1);
   form = this.fb.group({
@@ -45,11 +45,8 @@ export class CheckinComponent {
       mood: ['', Validators.required],
     }),
     symptoms: this.fb.group({
-      zipCode: ['', Validators.required],
-      street: ['', Validators.required],
-      number: ['', Validators.required],
-      city: ['', Validators.required],
-      state: ['', Validators.required],
+      selectedSymptoms: this.fb.control<string[]>([], Validators.required),
+      customSymptom: this.fb.control(''),
     }),
     details: this.fb.group({
       bloodType: [''],
@@ -124,8 +121,13 @@ export class CheckinComponent {
       this.form.markAllAsTouched();
       return;
     }
-
-    const payload = this.form.getRawValue();
+    const rawValue = this.form.getRawValue();
+    const payload = {
+      ...rawValue,
+      symptoms: {
+        selectedSymptoms: rawValue.symptoms.selectedSymptoms,
+      },
+    };
     console.log('Payload final do check-in:', payload);
   }
 
