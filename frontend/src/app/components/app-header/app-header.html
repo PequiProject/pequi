@@ -1,0 +1,252 @@
+<header
+  class="box-border flex min-h-full w-full min-w-0 flex-col lg:flex-1 lg:min-h-16"
+  data-testid="app-header"
+>
+  <!-- Mobile -->
+  <div class="px-3 pb-3 pt-2 lg:hidden">
+    @if (layout() === 'withBack') {
+      <div
+        class="box-border flex min-h-14 items-center justify-between gap-3 rounded-b-[1.75rem] bg-white px-2 py-3"
+      >
+        <div class="flex min-w-0 flex-1 items-center gap-2">
+          <a
+            [routerLink]="backLink()"
+            [class]="navIconBtnClass"
+            aria-label="Voltar"
+          >
+            <svg
+              lucideIcon
+              [lucideIcon]="LucideArrowLeft"
+              class="h-5 w-5"
+              aria-hidden="true"
+            ></svg>
+          </a>
+          <span class="truncate text-base font-semibold text-indigo-700">{{
+            pageTitle()
+          }}</span>
+        </div>
+        <div class="flex shrink-0 items-center gap-1">
+          <button
+            type="button"
+            [class]="bellBtnClass()"
+            [attr.aria-label]="
+              showUnreadBadge() ? 'Notificações, há itens novos' : 'Notificações'
+            "
+            (click)="onNotificationsClick()"
+          >
+            <span class="relative inline-flex items-center justify-center">
+              <svg
+                lucideIcon
+                [lucideIcon]="LucideBell"
+                class="h-5 w-5"
+                aria-hidden="true"
+              ></svg>
+              @if (showUnreadBadge()) {
+                <span
+                  class="absolute -right-px -top-px h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"
+                  aria-hidden="true"
+                ></span>
+              }
+            </span>
+          </button>
+          <a
+            [routerLink]="profileLink()"
+            class="inline-flex rounded-full no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-700 focus-visible:outline-offset-2"
+            aria-label="Abrir perfil"
+          >
+            <span
+              class="inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-indigo-100 to-indigo-200 shadow-[inset_0_0_0_1px_rgba(67,56,202,0.12)]"
+            >
+              @if (avatarUrl()) {
+                <img
+                  [src]="avatarUrl()!"
+                  alt=""
+                  class="h-full w-full object-cover"
+                />
+              } @else {
+                <span
+                  class="h-4 w-4 rounded-full bg-indigo-700 opacity-90"
+                  aria-hidden="true"
+                ></span>
+              }
+            </span>
+          </a>
+        </div>
+      </div>
+    } @else {
+      <div
+        class="box-border flex min-h-14 items-center justify-between gap-3 rounded-b-[1.75rem] bg-white px-2 py-3"
+      >
+        <a
+          [routerLink]="profileLink()"
+          class="flex min-w-0 flex-1 items-center gap-2.5 no-underline text-inherit"
+        >
+          <span
+            class="inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-indigo-100 to-indigo-200 shadow-[inset_0_0_0_1px_rgba(67,56,202,0.12)]"
+          >
+            @if (avatarUrl()) {
+              <img
+                [src]="avatarUrl()!"
+                alt=""
+                class="h-full w-full object-cover"
+              />
+            } @else {
+              <span
+                class="h-4 w-4 rounded-full bg-indigo-700 opacity-90"
+                aria-hidden="true"
+              ></span>
+            }
+          </span>
+          <span class="truncate text-base font-semibold text-indigo-700">{{
+            userName()
+          }}</span>
+        </a>
+        <div class="flex shrink-0 items-center gap-1">
+          <button
+            type="button"
+            [class]="bellBtnClass()"
+            [attr.aria-label]="
+              showUnreadBadge() ? 'Notificações, há itens novos' : 'Notificações'
+            "
+            (click)="onNotificationsClick()"
+          >
+            <span class="relative inline-flex items-center justify-center">
+              <svg
+                lucideIcon
+                [lucideIcon]="LucideBell"
+                class="h-5 w-5"
+                aria-hidden="true"
+              ></svg>
+              @if (showUnreadBadge()) {
+                <span
+                  class="absolute -right-px -top-px h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"
+                  aria-hidden="true"
+                ></span>
+              }
+            </span>
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Desktop -->
+  <div
+    class="hidden w-full py-3 lg:flex lg:flex-1 lg:min-h-0 lg:min-w-0 lg:items-center lg:self-stretch lg:py-0"
+  >
+    @if (layout() === 'withBack') {
+      <div class="flex w-full items-center gap-3">
+        <a
+          [routerLink]="backLink()"
+          class="flex max-w-[42%] shrink-0 items-center gap-1.5 text-indigo-700 no-underline hover:underline"
+          aria-label="Voltar"
+        >
+          <svg
+            lucideIcon
+            [lucideIcon]="LucideArrowLeft"
+            class="h-5 w-5"
+            aria-hidden="true"
+          ></svg>
+          <span class="truncate text-[0.9375rem] font-semibold">{{
+            pageTitle()
+          }}</span>
+        </a>
+        <div class="ml-auto flex shrink-0 items-center gap-1.5">
+          <button
+            type="button"
+            [class]="bellBtnClass()"
+            [attr.aria-label]="
+              showUnreadBadge() ? 'Notificações, há itens novos' : 'Notificações'
+            "
+            (click)="onNotificationsClick()"
+          >
+            <span class="relative inline-flex items-center justify-center">
+              <svg
+                lucideIcon
+                [lucideIcon]="LucideBell"
+                class="h-5 w-5"
+                aria-hidden="true"
+              ></svg>
+              @if (showUnreadBadge()) {
+                <span
+                  class="absolute -right-px -top-px h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"
+                  aria-hidden="true"
+                ></span>
+              }
+            </span>
+          </button>
+          <a
+            [routerLink]="profileLink()"
+            class="inline-flex rounded-full no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-700 focus-visible:outline-offset-2"
+            aria-label="Abrir perfil"
+          >
+            <span
+              class="inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-indigo-100 to-indigo-200 shadow-[inset_0_0_0_1px_rgba(67,56,202,0.12)]"
+            >
+              @if (avatarUrl()) {
+                <img
+                  [src]="avatarUrl()!"
+                  alt=""
+                  class="h-full w-full object-cover"
+                />
+              } @else {
+                <span
+                  class="h-4 w-4 rounded-full bg-indigo-700 opacity-90"
+                  aria-hidden="true"
+                ></span>
+              }
+            </span>
+          </a>
+        </div>
+      </div>
+    } @else {
+      <div class="flex w-full min-h-0 items-center justify-end gap-1.5">
+        <button
+            type="button"
+            [class]="bellBtnClass()"
+            [attr.aria-label]="
+              showUnreadBadge() ? 'Notificações, há itens novos' : 'Notificações'
+            "
+            (click)="onNotificationsClick()"
+          >
+            <span class="relative inline-flex items-center justify-center">
+              <svg
+                lucideIcon
+                [lucideIcon]="LucideBell"
+                class="h-5 w-5"
+                aria-hidden="true"
+              ></svg>
+              @if (showUnreadBadge()) {
+                <span
+                  class="absolute -right-px -top-px h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"
+                  aria-hidden="true"
+                ></span>
+              }
+            </span>
+          </button>
+          <a
+            [routerLink]="profileLink()"
+            class="inline-flex rounded-full no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-700 focus-visible:outline-offset-2"
+            aria-label="Abrir perfil"
+          >
+            <span
+              class="inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-indigo-100 to-indigo-200 shadow-[inset_0_0_0_1px_rgba(67,56,202,0.12)]"
+            >
+              @if (avatarUrl()) {
+                <img
+                  [src]="avatarUrl()!"
+                  alt=""
+                  class="h-full w-full object-cover"
+                />
+              } @else {
+                <span
+                  class="h-4 w-4 rounded-full bg-indigo-700 opacity-90"
+                  aria-hidden="true"
+                ></span>
+              }
+            </span>
+          </a>
+      </div>
+    }
+  </div>
+</header>

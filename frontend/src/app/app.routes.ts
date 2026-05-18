@@ -5,6 +5,8 @@ import { Journey } from './features/journey/journey';
 import { CheckinComponent } from './features/checkin/checkin';
 import { Education } from './features/education/education';
 import { Comunity } from './features/comunity/comunity';
+import { Profile } from './features/profile/profile';
+import { Notification } from './components/notification/notification';
 
 export const routes: Routes = [
     {
@@ -17,6 +19,8 @@ export const routes: Routes = [
       { path: 'checkin', component: CheckinComponent, title: 'Check In' },
       { path: 'education', component: Education, title: 'Educação' },
       { path: 'comunity', component: Comunity, title: 'Comunidade' },
+      { path: 'profile', component: Profile, title: 'Perfil' },
+      { path: 'notifications', component: Notification, title: 'Notificações' },
     ],
   },
 ];

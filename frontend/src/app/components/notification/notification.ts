@@ -1,9 +1,10 @@
 import { Component } from '@angular/core';
+import { NotificationCard } from '../notification-card/notification-card';
 
 @Component({
   selector: 'app-notification',
-  imports: [],
+  standalone: true,
+  imports: [NotificationCard],
   templateUrl: './notification.html',
-  styleUrl: './notification.css',
 })
 export class Notification {}
