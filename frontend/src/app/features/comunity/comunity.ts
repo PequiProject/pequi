@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import {
   LucideAngularModule,
   LucideHeart,
@@ -8,10 +9,10 @@ import {
   LucideUsers,
   LucideVenetianMask,
 } from 'lucide-angular';
-
-export type CommunityProfileMode = 'public' | 'anonymous';
-
-const PROFILE_STORAGE_KEY = 'pequi-community-profile-mode';
+import {
+  CommunityProfileService,
+  type CommunityProfileMode,
+} from './services/community-profile.service';
 
 type Principle = {
   title: string;
@@ -35,6 +36,9 @@ type ProfileOption = {
   templateUrl: './comunity.html',
 })
 export class Comunity {
+  private readonly router = inject(Router);
+  private readonly profileService = inject(CommunityProfileService);
+
   readonly LucideUsers = LucideUsers;
 
   readonly principles: Principle[] = [
@@ -75,14 +79,12 @@ export class Comunity {
 
   readonly selectedProfile = signal<CommunityProfileMode | null>(null);
   readonly showProfileError = signal(false);
-  readonly hasEntered = signal(false);
 
-  readonly selectedProfileLabel = computed(() => {
-    const mode = this.selectedProfile();
-    if (mode === 'public') return 'perfil público';
-    if (mode === 'anonymous') return 'perfil anônimo';
-    return '';
-  });
+  constructor() {
+    if (this.profileService.hasProfile()) {
+      void this.router.navigate(['/comunity/feed']);
+    }
+  }
 
   selectProfile(mode: CommunityProfileMode): void {
     this.selectedProfile.set(mode);
@@ -100,17 +102,7 @@ export class Comunity {
       return;
     }
 
-    try {
-      localStorage.setItem(PROFILE_STORAGE_KEY, profile);
-    } catch {
-      /* storage indisponível — segue fluxo na sessão */
-    }
-
-    this.hasEntered.set(true);
-  }
-
-  changeProfile(): void {
-    this.hasEntered.set(false);
-    this.showProfileError.set(false);
+    this.profileService.save(profile);
+    void this.router.navigate(['/comunity/feed']);
   }
 }

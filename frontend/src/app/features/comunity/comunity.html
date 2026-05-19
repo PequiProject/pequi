@@ -2,162 +2,133 @@
   class="mx-auto w-full max-w-lg pb-2 lg:max-w-2xl"
   aria-labelledby="community-welcome-title"
 >
-  @if (!hasEntered()) {
+  <div
+    class="mb-5 flex flex-col items-center justify-center rounded-2xl bg-gradient-to-b from-[#E0E7FF] to-[#C0B9FF] px-5 py-6 text-center text-[#4338CA] shadow-md shadow-[#4338CA]/10 sm:py-7"
+  >
     <div
-      class="mb-8 flex flex-col items-center justify-center rounded-3xl bg-gradient-to-b from-[#E0E7FF] to-[#C0B9FF] px-6 py-10 text-center text-[#4338CA] shadow-md shadow-[#4338CA]/10 sm:py-12"
+      class="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-white/70 ring-1 ring-[#4338CA]/10 sm:h-16 sm:w-16"
+      aria-hidden="true"
     >
-      <div
-        class="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-white/70 ring-1 ring-[#4338CA]/10 sm:h-24 sm:w-24"
-        aria-hidden="true"
-      >
-        <lucide-icon [name]="LucideUsers" [size]="44" class="text-[#4338CA]" [strokeWidth]="1.75" />
-      </div>
-
-      <p class="text-sm font-bold tracking-[0.2em] sm:text-base">COMUNIDADE</p>
+      <lucide-icon [name]="LucideUsers" [size]="32" class="text-[#4338CA]" [strokeWidth]="1.75" />
     </div>
+    <p class="text-xs font-bold tracking-[0.2em] sm:text-sm">COMUNIDADE</p>
+  </div>
 
-    <header class="mb-8 text-center">
-      <h1
-        id="community-welcome-title"
-        class="text-2xl font-bold text-[#4338CA] sm:text-3xl"
-      >
-        Bem-vindo à nossa Comunidade
-      </h1>
-      <p class="mt-3 text-sm leading-relaxed text-[#64655C] sm:text-base">
-        Um espaço seguro, respeitoso e moderado para apoio mútuo. Aqui, compartilhamos
-        experiências, força e serenidade.
-      </p>
-    </header>
-
-    <article
-      class="mb-8 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-[#E7E5E4] sm:p-6"
-      aria-labelledby="community-principles-title"
+  <header class="mb-6 text-center">
+    <h1
+      id="community-welcome-title"
+      class="text-xl font-bold text-[#4338CA] sm:text-2xl"
     >
-      <h2
-        id="community-principles-title"
-        class="mb-5 text-lg font-bold text-[#373831] sm:text-xl"
-      >
-        Nossos Princípios
-      </h2>
+      Bem-vindo à nossa Comunidade
+    </h1>
+    <p class="mt-2 text-sm leading-relaxed text-[#64655C]">
+      Um espaço seguro, respeitoso e moderado para apoio mútuo.
+    </p>
+  </header>
 
-      <ul class="space-y-5">
-        @for (principle of principles; track principle.title) {
-          <li class="flex gap-4">
+  <article
+    class="mb-6 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-[#E7E5E4] sm:p-5"
+    aria-labelledby="community-principles-title"
+  >
+    <h2
+      id="community-principles-title"
+      class="mb-4 text-base font-bold text-[#373831] sm:text-lg"
+    >
+      Nossos Princípios
+    </h2>
+
+    <ul class="space-y-4">
+      @for (principle of principles; track principle.title) {
+        <li class="flex gap-3">
+          <div
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full sm:h-11 sm:w-11"
+            [ngClass]="principle.iconBg"
+          >
+            <lucide-icon
+              [name]="principle.icon"
+              [size]="20"
+              [ngClass]="principle.iconColor"
+              [strokeWidth]="2"
+            />
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-semibold text-[#373831]">{{ principle.title }}</p>
+            <p class="mt-0.5 text-sm leading-relaxed text-[#64655C]">
+              {{ principle.description }}
+            </p>
+          </div>
+        </li>
+      }
+    </ul>
+  </article>
+
+  <section class="mb-5" aria-labelledby="community-profile-title">
+    <h2
+      id="community-profile-title"
+      class="mb-3 text-center text-base font-bold text-[#373831] sm:text-lg"
+    >
+      Como você quer participar?
+    </h2>
+
+    <div class="space-y-3" role="radiogroup" aria-labelledby="community-profile-title">
+      @for (option of profileOptions; track option.mode) {
+        <button
+          type="button"
+          data-testid="profile-option"
+          [attr.data-profile]="option.mode"
+          (click)="selectProfile(option.mode)"
+          class="w-full rounded-2xl border p-4 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4338CA]"
+          [ngClass]="
+            isProfileSelected(option.mode)
+              ? 'border-[#4338CA] bg-[#F8F7FF] shadow-sm'
+              : 'border-[#E7E5E4] bg-white hover:border-[#D6D3D1]'
+          "
+          [attr.aria-pressed]="isProfileSelected(option.mode)"
+          role="radio"
+          [attr.aria-checked]="isProfileSelected(option.mode)"
+        >
+          <div class="flex items-start gap-3">
             <div
-              class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full sm:h-14 sm:w-14"
-              [ngClass]="principle.iconBg"
+              class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
+              [ngClass]="
+                isProfileSelected(option.mode)
+                  ? 'bg-[#E0E7FF] text-[#4338CA]'
+                  : 'bg-[#F5F5F4] text-[#64655C]'
+              "
+              aria-hidden="true"
             >
-              <lucide-icon
-                [name]="principle.icon"
-                [size]="24"
-                [ngClass]="principle.iconColor"
-                [strokeWidth]="2"
-              />
+              <lucide-icon [name]="option.icon" [size]="22" [strokeWidth]="2" />
             </div>
             <div class="min-w-0 flex-1">
-              <p class="font-semibold text-[#373831]">{{ principle.title }}</p>
+              <p class="text-sm font-semibold text-[#373831] sm:text-base">
+                {{ option.title }}
+              </p>
               <p class="mt-1 text-sm leading-relaxed text-[#64655C]">
-                {{ principle.description }}
+                {{ option.description }}
               </p>
             </div>
-          </li>
-        }
-      </ul>
-    </article>
-
-    <section class="mb-6" aria-labelledby="community-profile-title">
-      <h2
-        id="community-profile-title"
-        class="mb-4 text-center text-lg font-bold text-[#373831] sm:text-xl"
-      >
-        Como você quer participar?
-      </h2>
-
-      <div class="space-y-3" role="radiogroup" aria-labelledby="community-profile-title">
-        @for (option of profileOptions; track option.mode) {
-          <button
-            type="button"
-            data-testid="profile-option"
-            [attr.data-profile]="option.mode"
-            (click)="selectProfile(option.mode)"
-            class="w-full rounded-2xl border p-4 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4338CA] sm:p-5"
-            [ngClass]="
-              isProfileSelected(option.mode)
-                ? 'border-[#4338CA] bg-[#F8F7FF] shadow-sm'
-                : 'border-[#E7E5E4] bg-white hover:border-[#D6D3D1]'
-            "
-            [attr.aria-pressed]="isProfileSelected(option.mode)"
-            role="radio"
-            [attr.aria-checked]="isProfileSelected(option.mode)"
-          >
-            <div class="flex items-start gap-4">
-              <div
-                class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full"
-                [ngClass]="
-                  isProfileSelected(option.mode)
-                    ? 'bg-[#E0E7FF] text-[#4338CA]'
-                    : 'bg-[#F5F5F4] text-[#64655C]'
-                "
-                aria-hidden="true"
-              >
-                <lucide-icon [name]="option.icon" [size]="24" [strokeWidth]="2" />
-              </div>
-              <div class="min-w-0 flex-1">
-                <p class="text-base font-semibold text-[#373831] sm:text-lg">
-                  {{ option.title }}
-                </p>
-                <p class="mt-1 text-sm leading-relaxed text-[#64655C]">
-                  {{ option.description }}
-                </p>
-              </div>
-            </div>
-          </button>
-        }
-      </div>
-
-      @if (showProfileError()) {
-        <p
-          data-testid="profile-error"
-          class="mt-3 text-center text-sm font-medium text-red-600"
-          role="alert"
-        >
-          Escolha um perfil para entrar na comunidade.
-        </p>
+          </div>
+        </button>
       }
-    </section>
-
-    <button
-      type="button"
-      data-testid="enter-community"
-      (click)="enter()"
-      class="w-full rounded-2xl bg-[#4338CA] px-6 py-4 text-base font-semibold text-white transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4338CA] active:scale-[0.99] sm:py-4 sm:text-lg"
-    >
-      Entrar
-    </button>
-  } @else {
-    <div
-      class="rounded-3xl bg-white p-8 text-center shadow-sm ring-1 ring-[#E7E5E4] sm:p-10"
-      data-testid="community-entered"
-    >
-      <div
-        class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#CAF9DC] text-[#436D57]"
-      >
-        <lucide-icon [name]="LucideUsers" [size]="32" [strokeWidth]="2" />
-      </div>
-      <h2 class="text-xl font-bold text-[#4338CA] sm:text-2xl">Você está na comunidade</h2>
-      <p class="mt-3 text-sm leading-relaxed text-[#64655C] sm:text-base">
-        Você entrou com {{ selectedProfileLabel() }}. Em breve você poderá ver posts,
-        comentar e interagir com outras pessoas.
-      </p>
-
-      <button
-        type="button"
-        data-testid="change-profile"
-        (click)="changeProfile()"
-        class="mt-6 w-full rounded-2xl border border-[#D6D3D1] bg-white px-6 py-3 text-base font-semibold text-[#4338CA] transition hover:border-[#4338CA] hover:bg-[#F8F7FF] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4338CA] sm:py-3.5"
-      >
-        Alterar perfil
-      </button>
     </div>
-  }
+
+    @if (showProfileError()) {
+      <p
+        data-testid="profile-error"
+        class="mt-3 text-center text-sm font-medium text-red-600"
+        role="alert"
+      >
+        Escolha um perfil para entrar na comunidade.
+      </p>
+    }
+  </section>
+
+  <button
+    type="button"
+    data-testid="enter-community"
+    (click)="enter()"
+    class="w-full rounded-2xl bg-[#4338CA] px-6 py-3.5 text-base font-semibold text-white transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4338CA] active:scale-[0.99]"
+  >
+    Entrar
+  </button>
 </section>

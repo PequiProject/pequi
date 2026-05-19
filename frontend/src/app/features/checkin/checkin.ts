@@ -7,9 +7,6 @@ import {
   Validators,
 } from '@angular/forms';
 import { CheckinStepFeelingComponent } from '../../components/checkin-step-feeling-component/checkin-step-feeling-component';
-import { CheckinStepSymptomsComponent } from '../../components/checkin-step-symptoms-component/checkin-step-symptoms-component';
-import { CheckinStepDetailsComponent } from '../../components/checkin-step-details-component/checkin-step-details-component';
-import { CheckinStepIntensityComponent } from '../../components/checkin-step-intensity-component/checkin-step-intensity-component';
 
 
 type StepItem = {
@@ -20,14 +17,7 @@ type StepItem = {
 @Component({
   selector: 'app-checkin',
   standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    CheckinStepFeelingComponent,
-    CheckinStepSymptomsComponent,
-    CheckinStepDetailsComponent,
-    CheckinStepIntensityComponent,
-  ],
+  imports: [CommonModule, ReactiveFormsModule, CheckinStepFeelingComponent],
   templateUrl: './checkin.html',
   styleUrl: './checkin.css',
 })
