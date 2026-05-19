@@ -1,3 +1,106 @@
 /* You can add global styles to this file, and also import other style files */
 
 @import 'tailwindcss';
+
+:root {
+  /* =========================
+   * Cores base do Figma
+   * ========================= */
+  --white: #FFFFFF;
+
+  --default-purple: #4338CA;
+  --hover-purple: #E0E7FF;
+  --light-purple: #C0B9FF;
+
+  --light-green: #CAF9DC;
+  --medium-green: #426B55;
+  --dark-green: #436D57;
+
+  --title-gray: #373831;
+  --subtitle-gray: #64655C;
+
+  --light-blue: #ADDEF6;
+  --medium-blue: #1C5164;
+  --dark-blue: #396A7F;
+
+  /* =========================
+   * Tokens semânticos globais
+   * ========================= */
+  --color-bg: var(--white);
+  --color-surface: var(--white);
+  --color-surface-hover: var(--hover-purple);
+
+  --color-primary: var(--default-purple);
+  --color-primary-hover: var(--hover-purple);
+  --color-primary-soft: var(--light-purple);
+
+  --color-success-bg: var(--light-green);
+  --color-success: var(--medium-green);
+  --color-success-strong: var(--dark-green);
+
+  --color-info-bg: var(--light-blue);
+  --color-info: var(--medium-blue);
+  --color-info-strong: var(--dark-blue);
+
+  --color-text: var(--title-gray);
+  --color-text-strong: var(--title-gray);
+  --color-text-muted: var(--subtitle-gray);
+  --color-text-inverse: var(--white);
+
+  --color-border: var(--light-purple);
+  --color-border-soft: var(--hover-purple);
+
+  /* =========================
+   * Tokens de uso em layout
+   * ========================= */
+  --app-bg: var(--color-bg);
+  --card-bg: var(--color-surface);
+  --sidebar-bg: var(--white);
+  --header-bg: rgba(255, 255, 255, 0.9);
+  --bottom-nav-bg: var(--white);
+
+  --title-color: var(--color-text-strong);
+  --subtitle-color: var(--color-text-muted);
+
+  /* =========================
+   * Botões
+   * ========================= */
+  --button-primary-bg: var(--color-primary);
+  --button-primary-text: var(--color-text-inverse);
+  --button-primary-hover-bg: var(--dark-blue);
+
+  --button-secondary-bg: var(--color-primary-hover);
+  --button-secondary-text: var(--color-primary);
+
+  /* =========================
+   * Estados de navegação
+   * ========================= */
+  --nav-item-text: var(--color-text-muted);
+  --nav-item-hover-bg: var(--color-primary-hover);
+  --nav-item-hover-text: var(--color-primary);
+  --nav-item-active-bg: var(--color-primary);
+  --nav-item-active-text: var(--color-text-inverse);
+
+  /* =========================
+   * Feedback visual
+   * ========================= */
+  --badge-success-bg: var(--color-success-bg);
+  --badge-success-text: var(--color-success);
+
+  --badge-info-bg: var(--color-info-bg);
+  --badge-info-text: var(--color-info);
+
+  /* =========================
+   * Bordas e sombras
+   * ========================= */
+  --shadow-sm: 0 1px 2px rgba(55, 56, 49, 0.08);
+  --shadow-md: 0 4px 12px rgba(55, 56, 49, 0.12);
+  --shadow-lg: 0 10px 30px rgba(55, 56, 49, 0.16);
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+
+  --transition-default: 180ms ease;
+}

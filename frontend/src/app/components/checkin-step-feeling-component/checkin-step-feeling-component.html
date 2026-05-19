@@ -1,0 +1,52 @@
+<div *ngIf="form" [formGroup]="form" class="space-y-6">
+  <div>
+    <h3 class="text-xl font-semibold text-[#373831]" data-testid="mood-title">
+      Como você está se sentindo hoje?
+    </h3>
+    <p class="mt-1 text-sm text-[#64655C]">
+      Selecione o sentimento que melhor descreve o seu dia.
+    </p>
+  </div>
+
+  <div class="space-y-4">
+    <button
+      *ngFor="let option of moodOptions"
+      type="button"
+      data-testid="mood-option"
+      (click)="selectMood(option.value)"
+      class="w-full rounded-2xl border p-4 text-left transition"
+      [ngClass]="isSelected(option.value)
+        ? 'border-[#4338CA] bg-[#F8F7FF] shadow-sm'
+        : 'border-[#E7E5E4] bg-white hover:border-[#D6D3D1]'"
+      [attr.aria-pressed]="isSelected(option.value)"
+    >
+      <div class="flex items-center gap-4">
+        <div class="flex h-12 w-12 items-center justify-center rounded-full bg-[#F5F5F4] text-3xl">
+          {{ option.emoji }}
+        </div>
+
+        <div class="min-w-0 flex-1">
+          <p class="text-lg font-semibold text-[#373831]">
+            {{ option.label }}
+          </p>
+
+          <div class="mt-2 flex gap-1">
+            <span
+              *ngFor="let bar of barSlots; let index = index"
+              class="h-2 w-7 rounded-full"
+              [ngClass]="index < option.bars ? option.color : 'bg-[#D6D3D1]'"
+            ></span>
+          </div>
+        </div>
+      </div>
+    </button>
+  </div>
+
+  <p
+    *ngIf="showError"
+    data-testid="mood-error"
+    class="text-sm font-medium text-red-600"
+  >
+    Escolha uma opção para continuar.
+  </p>
+</div>

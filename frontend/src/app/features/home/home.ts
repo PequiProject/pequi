@@ -1,12 +1,21 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LucideAngularModule, ImagePlus, CirclePlus, Calendar } from 'lucide-angular';
+import { Router } from '@angular/router';
 
 interface QuickAction {
   title: string;
   description: string;
   icon: string;
   colorClass: string;
+  path: string;
+}
+
+interface CalendarWeek {
+  dateObj: Date;
+  dayName: string;
+  dayNumber: number;
+  dots: number[];
 }
 
 interface CalendarWeek {
@@ -24,6 +33,7 @@ interface CalendarWeek {
   styleUrls: ['./home.css'],
 })
 export class HomeComponent implements OnInit {
+  private router = inject(Router);
   readonly ImagePlus = ImagePlus;
   readonly CirclePlus = CirclePlus;
   readonly CalendarIcon = Calendar;
@@ -38,17 +48,19 @@ export class HomeComponent implements OnInit {
       description: 'Registre seu humor e sintomas',
       icon: this.CirclePlus,
       colorClass: 'blue-icon',
+      path: '/checkin',
     },
     {
       title: 'Registro de Fotos',
       description: 'Acompanhe mudanças na pele',
       icon: this.ImagePlus,
       colorClass: 'green-icon',
+      path: '',
     },
   ];
 
-  executeAction(title: string) {
-    console.log(`Ação clicada: ${title}`);
+  executeAction(path: string) {
+    this.router.navigate([path]);
   }
 
   ngOnInit(): void {
