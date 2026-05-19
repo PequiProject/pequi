@@ -33,6 +33,7 @@ type StepItem = {
 })
 export class CheckinComponent {
   private readonly fb = inject(FormBuilder);
+  readonly noSymptomsValue = 'nenhum sintoma';
   steps: StepItem[] = [
     { id: 1, label: 'Ranking de Sentimentos' },
     { id: 2, label: 'Seleção de Sintomas' },
@@ -49,18 +50,23 @@ export class CheckinComponent {
       customSymptom: this.fb.control(''),
     }),
     details: this.fb.group({
-      bloodType: [''],
-      allergies: [''],
-      medications: [''],
-      emergencyContact: ['', Validators.required],
+      notes: [''],
     }),
     intensity: this.fb.group({
-      acceptTerms: [false, Validators.requiredTrue],
+      scale: [null as number | null, Validators.required],
     }),
   });
 
   progressPercentage = computed(() => {
-    return (this.currentStep() / this.steps.length) * 100;
+    const step = this.currentStep();
+
+    if (this.shouldSkipDetailsStep()) {
+      const visibleSteps = [1, 2, 4];
+      const currentIndex = visibleSteps.indexOf(step);
+      return ((currentIndex + 1) / visibleSteps.length) * 100;
+    }
+
+    return (step / this.steps.length) * 100;
   });
 
   get currentStepNumber(): WritableSignal<number> {
@@ -97,6 +103,14 @@ export class CheckinComponent {
     }
   }
 
+  private getSelectedSymptoms(): string[] {
+    return this.symptomsForm.get('selectedSymptoms')?.value ?? [];
+  }
+
+  private shouldSkipDetailsStep(): boolean {
+    return this.getSelectedSymptoms().includes(this.noSymptomsValue);
+  }
+
   nextStep(): void {
     const currentGroup = this.getCurrentStepForm();
 
@@ -105,14 +119,50 @@ export class CheckinComponent {
       return;
     }
 
-    if (this.currentStep() < this.steps.length) {
-      this.currentStep.update(value => value + 1);
+    switch (this.currentStep()) {
+      case 1:
+        this.currentStep.set(2);
+        return;
+
+      case 2:
+        if (this.shouldSkipDetailsStep()) {
+          this.currentStep.set(4);
+          return;
+        }
+
+        this.currentStep.set(3);
+        return;
+
+      case 3:
+        this.currentStep.set(4);
+        return;
+
+      default:
+        return;
     }
   }
 
   prevStep(): void {
-    if (this.currentStep() > 1) {
-      this.currentStep.update(value => value - 1);
+    switch (this.currentStep()) {
+      case 4:
+        if (this.shouldSkipDetailsStep()) {
+          this.currentStep.set(2);
+          return;
+        }
+
+        this.currentStep.set(3);
+        return;
+
+      case 3:
+        this.currentStep.set(2);
+        return;
+
+      case 2:
+        this.currentStep.set(1);
+        return;
+
+      default:
+        return;
     }
   }
 
