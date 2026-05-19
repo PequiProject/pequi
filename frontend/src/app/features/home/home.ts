@@ -25,6 +25,24 @@ interface CalendarWeek {
   dots: number[];
 }
 
+interface Article {
+  tag: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  actionText: string;
+  actionUrl: string;
+}
+
+interface Article {
+  tag: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  actionText: string;
+  actionUrl: string;
+}
+
 @Component({
   selector: 'app-home',
   standalone: true,
@@ -58,6 +76,16 @@ export class HomeComponent implements OnInit {
       path: '',
     },
   ];
+
+  weeklyArticle: Article = {
+    tag: 'ANÁLISE SEMANAL',
+    title: 'O Poder da Hidratação na Resiliência da Pele',
+    description:
+      'Estudos recentes sugerem que rotinas de hidratação consistentes podem melhorar a função de barreira da pele em até 30% ao longo de 4 semanas.',
+    imageUrl: 'assets/abstract-blue.png',
+    actionText: 'Ler Artigo',
+    actionUrl: '#',
+  };
 
   executeAction(path: string) {
     this.router.navigate([path]);
