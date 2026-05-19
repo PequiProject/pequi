@@ -60,4 +60,9 @@ export class CommunityPostPage {
   }): void {
     this.postsService.deleteComment(payload);
   }
+
+  onDeletePost(postId: string): void {
+    this.postsService.deletePost(postId);
+    void this.router.navigate(['/comunity/feed']);
+  }
 }

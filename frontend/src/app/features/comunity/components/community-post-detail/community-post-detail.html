@@ -32,11 +32,26 @@
           <p class="text-xs text-[#64655C]">{{ post().timeLabel }}</p>
         </div>
       </div>
-      <span
-        class="shrink-0 rounded-full bg-[#CAF9DC] px-2.5 py-1 text-xs font-medium text-[#436D57]"
-      >
-        {{ post().categoryLabel }}
-      </span>
+      <div class="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+        @for (label of post().categoryLabels; track label) {
+          <span
+            class="rounded-full bg-[#CAF9DC] px-2.5 py-1 text-xs font-medium text-[#436D57]"
+          >
+            {{ label }}
+          </span>
+        }
+        @if (post().isOwn) {
+          <button
+            type="button"
+            data-testid="delete-post-detail-btn"
+            (click)="requestPostDelete()"
+            class="rounded-full p-2 text-[#B91C1C] transition hover:bg-[#FEE2E2] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#B91C1C]"
+            aria-label="Excluir post"
+          >
+            <lucide-icon [name]="LucideTrash2" [size]="16" [strokeWidth]="2" aria-hidden="true" />
+          </button>
+        }
+      </div>
     </header>
 
     <h3 class="mb-2 text-lg font-bold text-[#373831]">{{ post().title }}</h3>
@@ -219,40 +234,20 @@
   </footer>
 
   @if (pendingDelete()) {
-    <div
-      class="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="delete-comment-title"
-      data-testid="delete-comment-dialog"
-    >
-      <div
-        class="w-full max-w-sm rounded-2xl bg-white p-5 shadow-lg ring-1 ring-[#E7E5E4]"
-        data-testid="delete-comment-confirm"
-      >
-        <h4 id="delete-comment-title" class="text-base font-bold text-[#373831]">
-          Excluir comentário?
-        </h4>
-        <p class="mt-2 text-sm text-[#64655C]">Esta ação não pode ser desfeita.</p>
-        <div class="mt-5 flex gap-3">
-          <button
-            type="button"
-            data-testid="cancel-delete-comment"
-            (click)="cancelDelete()"
-            class="flex-1 rounded-xl border border-[#D6D3D1] px-4 py-2.5 text-sm font-semibold text-[#373831] transition hover:bg-[#FAFAF9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4338CA]"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            data-testid="confirm-delete-comment"
-            (click)="confirmDelete()"
-            class="flex-1 rounded-xl bg-[#B91C1C] px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#B91C1C]"
-          >
-            Excluir
-          </button>
-        </div>
-      </div>
-    </div>
+    <app-community-delete-confirm
+      title="Excluir comentário?"
+      testId="delete-comment-dialog"
+      (cancel)="cancelDelete()"
+      (confirm)="confirmDelete()"
+    />
+  }
+
+  @if (pendingPostDelete()) {
+    <app-community-delete-confirm
+      title="Excluir post?"
+      testId="delete-post-detail-dialog"
+      (cancel)="cancelPostDelete()"
+      (confirm)="confirmPostDelete()"
+    />
   }
 </section>

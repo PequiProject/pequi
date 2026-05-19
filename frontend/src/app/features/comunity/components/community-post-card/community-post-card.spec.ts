@@ -28,7 +28,7 @@ describe('CommunityPostCard', () => {
     expect(el.textContent).toContain('Primeira semana de tratamento');
     expect(el.textContent).toContain('Estou no início do tratamento');
     expect(el.textContent).toContain('Relato');
-    expect(el.querySelector('[class*="bg-[#CAF9DC]"]')).toBeFalsy();
+    expect(el.querySelector('[class*="bg-[#CAF9DC]"]')).toBeTruthy();
   });
 
   it('should show support count next to heart', () => {
@@ -57,6 +57,20 @@ describe('CommunityPostCard', () => {
   it('should emit comment on Comentar click', () => {
     const spy = vi.spyOn(component.comment, 'emit');
     fixture.debugElement.query(By.css('[data-testid="comment-btn"]')).nativeElement.click();
+    expect(spy).toHaveBeenCalledWith('1');
+  });
+
+  it('should show delete button for own posts', () => {
+    fixture.componentRef.setInput('post', { ...MOCK_COMMUNITY_POSTS[0], isOwn: true });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-testid="delete-post-btn"]')).toBeTruthy();
+  });
+
+  it('should emit deletePost when delete is clicked', () => {
+    fixture.componentRef.setInput('post', { ...MOCK_COMMUNITY_POSTS[0], isOwn: true });
+    fixture.detectChanges();
+    const spy = vi.spyOn(component.deletePost, 'emit');
+    fixture.debugElement.query(By.css('[data-testid="delete-post-btn"]')).nativeElement.click();
     expect(spy).toHaveBeenCalledWith('1');
   });
 });

@@ -1,6 +1,12 @@
 import { Injectable, inject, signal } from '@angular/core';
+import { labelsForCategories } from '../data/community-categories';
 import { MOCK_COMMUNITY_POSTS } from '../data/mock-posts';
-import type { CommunityComment, CommunityPost } from '../models/community.models';
+import type {
+  CommunityAuthorMode,
+  CommunityComment,
+  CommunityPost,
+  CreatePostFormValue,
+} from '../models/community.models';
 import { CommunityProfileService } from './community-profile.service';
 
 export type AddCommentPayload = {
@@ -14,6 +20,10 @@ export type DeleteCommentPayload = {
   commentId: string;
   parentCommentId?: string;
 };
+
+function authorLabelForMode(mode: CommunityAuthorMode): string {
+  return mode === 'anonymous' ? 'Você (anônimo)' : 'Você';
+}
 
 @Injectable({ providedIn: 'root' })
 export class CommunityPostsService {
@@ -39,9 +49,38 @@ export class CommunityPostsService {
     );
   }
 
+  createPost(payload: CreatePostFormValue): CommunityPost {
+    const newPost: CommunityPost = {
+      id: `local-post-${Date.now()}`,
+      authorName: authorLabelForMode(payload.authorMode),
+      authorInitials: 'VC',
+      title: payload.title.trim(),
+      description: payload.description.trim(),
+      categories: payload.categories,
+      categoryLabels: labelsForCategories(payload.categories),
+      timeLabel: 'Agora',
+      supportCount: 0,
+      isSupported: false,
+      commentCount: 0,
+      comments: [],
+      isOwn: true,
+    };
+
+    this.posts.update((list) => [newPost, ...list]);
+    return newPost;
+  }
+
+  deletePost(postId: string): void {
+    this.posts.update((list) => {
+      const target = list.find((p) => p.id === postId);
+      if (!target?.isOwn) return list;
+      return list.filter((p) => p.id !== postId);
+    });
+  }
+
   addComment(payload: AddCommentPayload): void {
-    const authorLabel =
-      this.profileService.selectedProfile() === 'anonymous' ? 'Você (anônimo)' : 'Você';
+    const profile = this.profileService.selectedProfile();
+    const authorLabel = authorLabelForMode(profile === 'anonymous' ? 'anonymous' : 'public');
 
     const newComment: CommunityComment = {
       id: `local-${Date.now()}`,

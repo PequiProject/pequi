@@ -142,7 +142,7 @@ describe('CommunityPostDetail', () => {
     expect(spy).not.toHaveBeenCalled();
 
     fixture.debugElement
-      .query(By.css('[data-testid="confirm-delete-comment"]'))
+      .query(By.css('[data-testid="confirm-delete"]'))
       .nativeElement.click();
     fixture.detectChanges();
 
@@ -178,7 +178,7 @@ describe('CommunityPostDetail', () => {
     fixture.detectChanges();
 
     fixture.debugElement
-      .query(By.css('[data-testid="cancel-delete-comment"]'))
+      .query(By.css('[data-testid="cancel-delete"]'))
       .nativeElement.click();
     fixture.detectChanges();
 
@@ -219,7 +219,7 @@ describe('CommunityPostDetail', () => {
     fixture.detectChanges();
 
     fixture.debugElement
-      .query(By.css('[data-testid="confirm-delete-comment"]'))
+      .query(By.css('[data-testid="confirm-delete"]'))
       .nativeElement.click();
 
     expect(spy).toHaveBeenCalledWith({

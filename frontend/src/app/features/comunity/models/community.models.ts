@@ -25,11 +25,22 @@ export interface CommunityPost {
   authorInitials: string;
   title: string;
   description: string;
-  category: CommunityPostCategory;
-  categoryLabel: string;
+  categories: CommunityPostCategory[];
+  categoryLabels: string[];
   timeLabel: string;
   supportCount: number;
   isSupported: boolean;
   commentCount: number;
   comments: CommunityComment[];
+  /** True when the post was authored by the current user in this session. */
+  isOwn?: boolean;
 }
+
+export type CommunityAuthorMode = 'public' | 'anonymous';
+
+export type CreatePostFormValue = {
+  title: string;
+  description: string;
+  categories: CommunityPostCategory[];
+  authorMode: CommunityAuthorMode;
+};

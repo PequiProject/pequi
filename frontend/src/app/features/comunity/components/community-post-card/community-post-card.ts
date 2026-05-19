@@ -4,7 +4,7 @@ import {
   LucideAngularModule,
   LucideHeart,
   LucideMessageSquare,
-  LucideMoreHorizontal,
+  LucideTrash2,
 } from 'lucide-angular';
 import type { CommunityPost } from '../../models/community.models';
 
@@ -20,10 +20,11 @@ export class CommunityPostCard {
 
   readonly support = output<string>();
   readonly comment = output<string>();
+  readonly deletePost = output<string>();
 
   readonly LucideHeart = LucideHeart;
   readonly LucideMessageSquare = LucideMessageSquare;
-  readonly LucideMoreHorizontal = LucideMoreHorizontal;
+  readonly LucideTrash2 = LucideTrash2;
 
   onSupport(): void {
     this.support.emit(this.post().id);
@@ -33,4 +34,7 @@ export class CommunityPostCard {
     this.comment.emit(this.post().id);
   }
 
+  onDelete(): void {
+    this.deletePost.emit(this.post().id);
+  }
 }

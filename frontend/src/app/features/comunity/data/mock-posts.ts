@@ -8,8 +8,8 @@ export const MOCK_COMMUNITY_POSTS: CommunityPost[] = [
     title: 'Primeira semana de tratamento',
     description:
       'Estou no início do tratamento e queria compartilhar como me sinto. Alguns dias são mais difíceis, mas estou tentando manter a rotina.',
-    category: 'relato',
-    categoryLabel: 'Relato',
+    categories: ['relato'],
+    categoryLabels: ['Relato'],
     timeLabel: 'Há 2 horas',
     supportCount: 12,
     isSupported: false,
@@ -48,8 +48,8 @@ export const MOCK_COMMUNITY_POSTS: CommunityPost[] = [
     title: 'Dúvida sobre efeitos colaterais',
     description:
       'Alguém já sentiu formigamento nas mãos durante o tratamento? É normal ou devo procurar o médico?',
-    category: 'duvida',
-    categoryLabel: 'Dúvida',
+    categories: ['duvida'],
+    categoryLabels: ['Dúvida'],
     timeLabel: 'Há 5 horas',
     supportCount: 8,
     isSupported: true,
@@ -73,8 +73,8 @@ export const MOCK_COMMUNITY_POSTS: CommunityPost[] = [
     title: 'Mensagem de apoio para quem precisa',
     description:
       'Se você está passando por um dia difícil, saiba que essa comunidade está aqui por você. Respire fundo, um passo de cada vez.',
-    category: 'apoio',
-    categoryLabel: 'Apoio',
+    categories: ['apoio'],
+    categoryLabels: ['Apoio'],
     timeLabel: 'Ontem',
     supportCount: 24,
     isSupported: false,

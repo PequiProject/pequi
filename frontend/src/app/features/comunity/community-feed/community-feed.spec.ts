@@ -61,4 +61,25 @@ describe('CommunityFeed', () => {
     TestBed.createComponent(CommunityFeed);
     expect(navigateSpy).toHaveBeenCalledWith(['/comunity']);
   });
+
+  it('should open create post dialog from fab', () => {
+    component.onCreatePost();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-testid="create-post-dialog"]')).toBeTruthy();
+  });
+
+  it('should add post to feed on submit', () => {
+    const before = component.postsService.posts().length;
+    component.onSubmitPost({
+      title: 'Post de teste',
+      description: 'Descrição',
+      categories: ['relato', 'duvida'],
+      authorMode: 'public',
+    });
+    fixture.detectChanges();
+
+    expect(component.postsService.posts().length).toBe(before + 1);
+    expect(component.showCreatePost()).toBe(false);
+    expect(component.filteredPosts()[0].title).toBe('Post de teste');
+  });
 });

@@ -2,11 +2,17 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { LucideAngularModule, LucideUsers } from 'lucide-angular';
+import { CommunityCreatePost } from '../components/community-create-post/community-create-post';
+import { CommunityDeleteConfirm } from '../components/community-delete-confirm/community-delete-confirm';
 import { CommunityFab } from '../components/community-fab/community-fab';
 import { CommunityFilterTags } from '../components/community-filter-tags/community-filter-tags';
 import { CommunityPostCard } from '../components/community-post-card/community-post-card';
 import { CommunitySearchBar } from '../components/community-search-bar/community-search-bar';
-import type { CommunityFilterId, CommunityFilterTag } from '../models/community.models';
+import type {
+  CommunityFilterId,
+  CommunityFilterTag,
+  CreatePostFormValue,
+} from '../models/community.models';
 import { CommunityPostsService } from '../services/community-posts.service';
 import { CommunityProfileService } from '../services/community-profile.service';
 
@@ -20,6 +26,8 @@ import { CommunityProfileService } from '../services/community-profile.service';
     CommunityFilterTags,
     CommunityPostCard,
     CommunityFab,
+    CommunityCreatePost,
+    CommunityDeleteConfirm,
   ],
   templateUrl: './community-feed.html',
 })
@@ -39,18 +47,19 @@ export class CommunityFeed {
 
   readonly searchQuery = signal('');
   readonly activeFilter = signal<CommunityFilterId>('all');
-  readonly showCreatePostHint = signal(false);
+  readonly showCreatePost = signal(false);
+  readonly pendingDeletePostId = signal<string | null>(null);
 
   readonly filteredPosts = computed(() => {
     const query = this.searchQuery().trim().toLowerCase();
     const filter = this.activeFilter();
 
     return this.postsService.posts().filter((post) => {
-      const matchesFilter = filter === 'all' || post.category === filter;
+      const matchesFilter = filter === 'all' || post.categories.includes(filter);
       if (!matchesFilter) return false;
       if (!query) return true;
 
-      const haystack = [post.title, post.description, post.authorName, post.categoryLabel]
+      const haystack = [post.title, post.description, post.authorName, ...post.categoryLabels]
         .join(' ')
         .toLowerCase();
       return haystack.includes(query);
@@ -85,7 +94,30 @@ export class CommunityFeed {
   }
 
   onCreatePost(): void {
-    this.showCreatePostHint.set(true);
-    setTimeout(() => this.showCreatePostHint.set(false), 3000);
+    this.showCreatePost.set(true);
+  }
+
+  closeCreatePost(): void {
+    this.showCreatePost.set(false);
+  }
+
+  onSubmitPost(payload: CreatePostFormValue): void {
+    this.postsService.createPost(payload);
+    this.showCreatePost.set(false);
+  }
+
+  requestDeletePost(postId: string): void {
+    this.pendingDeletePostId.set(postId);
+  }
+
+  cancelDeletePost(): void {
+    this.pendingDeletePostId.set(null);
+  }
+
+  confirmDeletePost(): void {
+    const postId = this.pendingDeletePostId();
+    if (!postId) return;
+    this.postsService.deletePost(postId);
+    this.pendingDeletePostId.set(null);
   }
 }

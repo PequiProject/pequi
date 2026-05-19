@@ -10,6 +10,7 @@ import {
   LucideX,
 } from 'lucide-angular';
 import type { CommunityComment, CommunityPost } from '../../models/community.models';
+import { CommunityDeleteConfirm } from '../community-delete-confirm/community-delete-confirm';
 
 export type AddCommentEvent = {
   postId: string;
@@ -26,7 +27,7 @@ export type DeleteCommentEvent = {
 @Component({
   selector: 'app-community-post-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule, CommunityDeleteConfirm],
   templateUrl: './community-post-detail.html',
   styleUrl: './community-post-detail.css',
 })
@@ -37,10 +38,12 @@ export class CommunityPostDetail {
   readonly support = output<string>();
   readonly addComment = output<AddCommentEvent>();
   readonly deleteComment = output<DeleteCommentEvent>();
+  readonly deletePost = output<string>();
 
   readonly commentDraft = signal('');
   readonly replyingTo = signal<CommunityComment | null>(null);
   readonly pendingDelete = signal<DeleteCommentEvent | null>(null);
+  readonly pendingPostDelete = signal(false);
 
   readonly commentPlaceholder = computed(() => {
     const target = this.replyingTo();
@@ -106,6 +109,19 @@ export class CommunityPostDetail {
 
     this.deleteComment.emit(pending);
     this.pendingDelete.set(null);
+  }
+
+  requestPostDelete(): void {
+    this.pendingPostDelete.set(true);
+  }
+
+  cancelPostDelete(): void {
+    this.pendingPostDelete.set(false);
+  }
+
+  confirmPostDelete(): void {
+    this.deletePost.emit(this.post().id);
+    this.pendingPostDelete.set(false);
   }
 
   onCommentInput(event: Event): void {

@@ -1,0 +1,36 @@
+<div
+  class="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
+  role="dialog"
+  aria-modal="true"
+  [attr.aria-labelledby]="testId() + '-title'"
+  [attr.data-testid]="testId()"
+>
+  <div
+    class="w-full max-w-sm rounded-2xl bg-white p-5 shadow-lg ring-1 ring-[#E7E5E4]"
+    data-testid="delete-confirm-panel"
+  >
+    <h4 [id]="testId() + '-title'" class="text-base font-bold text-[#373831]">
+      {{ title() }}
+    </h4>
+    <p class="mt-2 text-sm text-[#64655C]">{{ message() }}</p>
+    <div class="mt-5 flex gap-3">
+      <button
+        type="button"
+        data-testid="cancel-delete"
+        (click)="onCancel()"
+        class="flex-1 rounded-xl border border-[#D6D3D1] px-4 py-2.5 text-sm font-semibold text-[#373831] transition hover:bg-[#FAFAF9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4338CA]"
+      >
+        Cancelar
+      </button>
+      <button
+        type="button"
+        data-testid="confirm-delete"
+        (click)="onConfirm()"
+        class="flex-1 rounded-xl bg-[#B91C1C] px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#B91C1C]"
+      >
+        {{ confirmLabel() }}
+      </button>
+    </div>
+  </div>
+</div>
+

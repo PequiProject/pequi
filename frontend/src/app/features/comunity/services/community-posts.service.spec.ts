@@ -71,4 +71,55 @@ describe('CommunityPostsService', () => {
 
     expect(service.getPostById('1')!.comments.length).toBe(before);
   });
+
+  it('should create post and prepend to feed', () => {
+    const before = service.posts().length;
+
+    const created = service.createPost({
+      title: 'Novo relato',
+      description: 'Conteúdo do post',
+      categories: ['relato'],
+      authorMode: 'public',
+    });
+
+    expect(service.posts().length).toBe(before + 1);
+    expect(service.posts()[0].id).toBe(created.id);
+    expect(created.title).toBe('Novo relato');
+    expect(created.isOwn).toBe(true);
+    expect(created.authorName).toBe('Você');
+  });
+
+  it('should create anonymous post with anonymous label', () => {
+    const created = service.createPost({
+      title: 'Dúvida anônima',
+      description: 'Texto',
+      categories: ['duvida', 'apoio'],
+      authorMode: 'anonymous',
+    });
+
+    expect(created.categoryLabels).toEqual(['Dúvida', 'Apoio']);
+
+    expect(created.authorName).toBe('Você (anônimo)');
+  });
+
+  it('should delete own post', () => {
+    const created = service.createPost({
+      title: 'Temporário',
+      description: 'Apagar',
+      categories: ['apoio'],
+      authorMode: 'public',
+    });
+    const before = service.posts().length;
+
+    service.deletePost(created.id);
+
+    expect(service.posts().length).toBe(before - 1);
+    expect(service.getPostById(created.id)).toBeUndefined();
+  });
+
+  it('should not delete posts that are not own', () => {
+    const before = service.posts().length;
+    service.deletePost('1');
+    expect(service.posts().length).toBe(before);
+  });
 });
