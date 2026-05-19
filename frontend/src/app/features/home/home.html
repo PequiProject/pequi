@@ -4,7 +4,7 @@
 
     <div class="card-list">
       @for (action of QuickAction; track $index) {
-        <div class="action-card">
+        <div class="action-card" (click)="executeAction(action.path)">
           <div class="icon-wrapper" [ngClass]="action.colorClass">
             <lucide-icon [name]="action.icon" [size]="28"></lucide-icon>
           </div>

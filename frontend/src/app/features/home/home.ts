@@ -1,12 +1,23 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LucideAngularModule, ImagePlus, CirclePlus } from 'lucide-angular';
+import { Router } from '@angular/router';
 
 interface QuickAction {
   title: string;
   description: string;
   icon: string;
   colorClass: string;
+  path: string;
+}
+
+interface Article {
+  tag: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  actionText: string;
+  actionUrl: string;
 }
 
 interface Article {
@@ -26,6 +37,7 @@ interface Article {
   styleUrls: ['./home.css'],
 })
 export class HomeComponent {
+  private router = inject(Router);
   readonly ImagePlus = ImagePlus;
   readonly CirclePlus = CirclePlus;
 
@@ -35,12 +47,14 @@ export class HomeComponent {
       description: 'Registre seu humor e sintomas',
       icon: this.CirclePlus,
       colorClass: 'blue-icon',
+      path: '/checkin',
     },
     {
       title: 'Registro de Fotos',
       description: 'Acompanhe mudanças na pele',
       icon: this.ImagePlus,
       colorClass: 'green-icon',
+      path: '',
     },
   ];
 
@@ -54,7 +68,7 @@ export class HomeComponent {
     actionUrl: '#',
   };
 
-  executeAction(title: string) {
-    console.log(`Ação clicada: ${title}`);
+  executeAction(path: string) {
+    this.router.navigate([path]);
   }
 }
