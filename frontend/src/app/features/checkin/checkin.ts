@@ -1,16 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal, WritableSignal } from '@angular/core';
-import {
-  FormBuilder,
-  FormGroup,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CheckinStepFeelingComponent } from '../../components/checkin-step-feeling-component/checkin-step-feeling-component';
 import { CheckinStepSymptomsComponent } from '../../components/checkin-step-symptoms-component/checkin-step-symptoms-component';
 import { CheckinStepDetailsComponent } from '../../components/checkin-step-details-component/checkin-step-details-component';
 import { CheckinStepIntensityComponent } from '../../components/checkin-step-intensity-component/checkin-step-intensity-component';
-
 
 type StepItem = {
   id: number;
@@ -34,10 +28,10 @@ type StepItem = {
 export class CheckinComponent {
   private readonly fb = inject(FormBuilder);
   steps: StepItem[] = [
-    { id: 1, label: 'Ranking de Sentimentos'},
-    { id: 2, label: 'Seleção de Sintomas'},
-    { id: 3, label: 'Detalhes Adicionais'},
-    { id: 4, label: 'Intensidade dos Sintomas'},
+    { id: 1, label: 'Ranking de Sentimentos' },
+    { id: 2, label: 'Seleção de Sintomas' },
+    { id: 3, label: 'Detalhes Adicionais' },
+    { id: 4, label: 'Intensidade dos Sintomas' },
   ];
   currentStep = signal(1);
   form = this.fb.group({
@@ -45,11 +39,12 @@ export class CheckinComponent {
       mood: ['', Validators.required],
     }),
     symptoms: this.fb.group({
-      zipCode: ['', Validators.required],
-      street: ['', Validators.required],
-      number: ['', Validators.required],
-      city: ['', Validators.required],
-      state: ['', Validators.required],
+      // zipCode: ['', Validators.required],
+      // street: ['', Validators.required],
+      // number: ['', Validators.required],
+      // city: ['', Validators.required],
+      // state: ['', Validators.required],
+      markers: [[]],
     }),
     details: this.fb.group({
       bloodType: [''],
@@ -109,13 +104,13 @@ export class CheckinComponent {
     }
 
     if (this.currentStep() < this.steps.length) {
-      this.currentStep.update(value => value + 1);
+      this.currentStep.update((value) => value + 1);
     }
   }
 
   prevStep(): void {
     if (this.currentStep() > 1) {
-      this.currentStep.update(value => value - 1);
+      this.currentStep.update((value) => value - 1);
     }
   }
 
