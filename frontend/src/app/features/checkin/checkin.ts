@@ -89,6 +89,10 @@ export class CheckinComponent {
     return this.form.get('intensity') as FormGroup;
   }
 
+  get isCurrentStepInvalid(): boolean {
+  return this.getCurrentStepForm().invalid;
+}
+
   isStepActive(stepId: number): boolean {
     return this.currentStep() === stepId;
   }
