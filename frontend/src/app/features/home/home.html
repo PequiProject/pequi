@@ -1,21 +1,47 @@
 <div class="container">
-    <section class="section-container">
-        <h3 class="section-title">Ações rápidas</h3>
-        
-        <div class="card-list">
-            @for (action of QuickAction; track $index) {
-                <div class="action-card"
-                (click)="executeAction(action.path)"
-                >
-                    <div class="icon-wrapper" [ngClass]="action.colorClass">
-                        <lucide-icon [name]="action.icon" [size]="28"></lucide-icon>
-                    </div>
-                    <div class="card-text">
-                        <span class="card-title">{{ action.title }}</span>
-                        <span class="card-desc">{{ action.description }}</span>
-                    </div>
-                </div>
+  <section class="calendar-section">
+    <div class="calendar-header">
+      <h2 class="month-title">{{ currentMonthYear }}</h2>
+      <button class="calendar-btn">
+        Calendário <lucide-icon [name]="CalendarIcon" [size]="20"></lucide-icon>
+      </button>
+    </div>
+
+    <div class="days-row">
+      @for (day of calendarWeek; track day.dayNumber) {
+        <div
+          class="day-card"
+          [class.active]="isSameDate(day.dateObj, selectedDate)"
+          (click)="selectDate(day.dateObj)"
+        >
+          <span class="day-name">{{ day.dayName }}</span>
+          <span class="day-number">{{ day.dayNumber }}</span>
+
+          <div class="dots-container">
+            @for (dot of day.dots; track $index) {
+              <div class="dot"></div>
             }
+          </div>
         </div>
-    </section>
+      }
+    </div>
+  </section>
+
+  <section class="section-container">
+    <h3 class="section-title">Ações rápidas</h3>
+
+    <div class="card-list">
+      @for (action of QuickAction; track $index) {
+        <div class="action-card">
+          <div class="icon-wrapper" [ngClass]="action.colorClass">
+            <lucide-icon [name]="action.icon" [size]="28"></lucide-icon>
+          </div>
+          <div class="card-text">
+            <span class="card-title">{{ action.title }}</span>
+            <span class="card-desc">{{ action.description }}</span>
+          </div>
+        </div>
+      }
+    </div>
+  </section>
 </div>
