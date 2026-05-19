@@ -1,3 +1,99 @@
+.container {
+  padding: 20px;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.calendar-section {
+  margin-bottom: 24px;
+}
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.month-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+.calendar-btn {
+  background: none;
+  border: none;
+  color: #5b48d9;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.days-row {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scrollbar-width: none;
+}
+.days-row::-webkit-scrollbar {
+  display: none;
+}
+
+.day-card {
+  min-width: 60px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.day-card.active {
+  background-color: #5b48d9;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(91, 72, 217, 0.3);
+}
+
+.day-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: inherit;
+  opacity: 0.7;
+}
+.day-card.active .day-name {
+  opacity: 0.9;
+}
+
+.day-number {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: inherit;
+}
+
+.dots-container {
+  display: flex;
+  gap: 3px;
+  margin-top: 6px;
+  height: 4px;
+}
+.dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: #4caf50;
+}
+.day-card.active .dot {
+  background-color: #fff;
+}
+
 .section-title {
   font-size: 1.4rem;
   font-weight: 700;
@@ -146,3 +242,4 @@
   transform: scale(0.97);
   background-color: #fafafa;
 }
+
