@@ -10,6 +10,7 @@ import { CheckinStepFeelingComponent } from '../../components/checkin-step-feeli
 import { CheckinStepSymptomsComponent } from '../../components/checkin-step-symptoms-component/checkin-step-symptoms-component';
 import { CheckinStepIntensityComponent } from '../../components/checkin-step-intensity-component/checkin-step-intensity-component';
 import { CheckinStepDetailsComponent } from '../../components/checkin-step-details-component/checkin-step-details-component';
+import { Router } from '@angular/router';
 
 
 type StepItem = {
@@ -33,6 +34,7 @@ type StepItem = {
 })
 export class CheckinComponent {
   private readonly fb = inject(FormBuilder);
+  private router = inject(Router);
   steps: StepItem[] = [
     { id: 1, label: 'Ranking de Sentimentos' },
     { id: 2, label: 'Seleção de Sintomas' },
@@ -157,6 +159,7 @@ export class CheckinComponent {
       },
     };
     console.log('Payload final do check-in:', payload);
+    this.router.navigate(['home']);
   }
 
   private getCurrentStepForm(): FormGroup {
