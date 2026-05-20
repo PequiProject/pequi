@@ -8,8 +8,8 @@ import {
 } from '@angular/forms';
 import { CheckinStepFeelingComponent } from '../../components/checkin-step-feeling-component/checkin-step-feeling-component';
 import { CheckinStepSymptomsComponent } from '../../components/checkin-step-symptoms-component/checkin-step-symptoms-component';
-import { CheckinStepDetailsComponent } from '../../components/checkin-step-details-component/checkin-step-details-component';
 import { CheckinStepIntensityComponent } from '../../components/checkin-step-intensity-component/checkin-step-intensity-component';
+import { CheckinStepDetailsComponent } from '../../components/checkin-step-details-component/checkin-step-details-component';
 
 
 type StepItem = {
@@ -25,20 +25,19 @@ type StepItem = {
     ReactiveFormsModule,
     CheckinStepFeelingComponent,
     CheckinStepSymptomsComponent,
-    CheckinStepDetailsComponent,
     CheckinStepIntensityComponent,
+    CheckinStepDetailsComponent,
   ],
   templateUrl: './checkin.html',
   styleUrl: './checkin.css',
 })
 export class CheckinComponent {
   private readonly fb = inject(FormBuilder);
-  readonly noSymptomsValue = 'nenhum sintoma';
   steps: StepItem[] = [
     { id: 1, label: 'Ranking de Sentimentos' },
     { id: 2, label: 'Seleção de Sintomas' },
-    { id: 3, label: 'Detalhes Adicionais' },
-    { id: 4, label: 'Intensidade dos Sintomas' },
+    { id: 3, label: 'Intensidade dos Sintomas' },
+    { id: 4, label: 'Detalhes Adicionais' },
   ];
   currentStep = signal(1);
   form = this.fb.group({
@@ -49,23 +48,16 @@ export class CheckinComponent {
       selectedSymptoms: this.fb.control<string[]>([], Validators.required),
       customSymptom: this.fb.control(''),
     }),
-    details: this.fb.group({
-      notes: [''],
-    }),
     intensity: this.fb.group({
       scale: [null as number | null, Validators.required],
+    }),
+    details: this.fb.group({
+      notes: [''],
     }),
   });
 
   progressPercentage = computed(() => {
     const step = this.currentStep();
-
-    if (this.shouldSkipDetailsStep()) {
-      const visibleSteps = [1, 2, 4];
-      const currentIndex = visibleSteps.indexOf(step);
-      return ((currentIndex + 1) / visibleSteps.length) * 100;
-    }
-
     return (step / this.steps.length) * 100;
   });
 
@@ -81,12 +73,12 @@ export class CheckinComponent {
     return this.form.get('symptoms') as FormGroup;
   }
 
-  get detailsForm(): FormGroup {
-    return this.form.get('details') as FormGroup;
-  }
-
   get intensityForm(): FormGroup {
     return this.form.get('intensity') as FormGroup;
+  }
+
+  get detailsForm(): FormGroup {
+    return this.form.get('details') as FormGroup;
   }
 
   get isCurrentStepInvalid(): boolean {
@@ -107,14 +99,6 @@ export class CheckinComponent {
     }
   }
 
-  private getSelectedSymptoms(): string[] {
-    return this.symptomsForm.get('selectedSymptoms')?.value ?? [];
-  }
-
-  private shouldSkipDetailsStep(): boolean {
-    return this.getSelectedSymptoms().includes(this.noSymptomsValue);
-  }
-
   nextStep(): void {
     const currentGroup = this.getCurrentStepForm();
 
@@ -129,11 +113,6 @@ export class CheckinComponent {
         return;
 
       case 2:
-        if (this.shouldSkipDetailsStep()) {
-          this.currentStep.set(4);
-          return;
-        }
-
         this.currentStep.set(3);
         return;
 
@@ -149,11 +128,6 @@ export class CheckinComponent {
   prevStep(): void {
     switch (this.currentStep()) {
       case 4:
-        if (this.shouldSkipDetailsStep()) {
-          this.currentStep.set(2);
-          return;
-        }
-
         this.currentStep.set(3);
         return;
 
@@ -192,9 +166,9 @@ export class CheckinComponent {
       case 2:
         return this.symptomsForm;
       case 3:
-        return this.detailsForm;
-      case 4:
         return this.intensityForm;
+      case 4:
+        return this.detailsForm;
       default:
         return this.feelingForm;
     }

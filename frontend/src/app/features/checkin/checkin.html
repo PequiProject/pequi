@@ -32,16 +32,16 @@
         *ngIf="currentStep() === 2"
         [form]="symptomsForm"
       ></app-checkin-step-symptoms-component>
-  
-      <app-checkin-step-details-component
-        *ngIf="currentStep() === 3"
-        [form]="detailsForm"
-      ></app-checkin-step-details-component>
 
       <app-checkin-step-intensity-component
-        *ngIf="currentStep() === 4"
+        *ngIf="currentStep() === 3"
         [form]="intensityForm"
       ></app-checkin-step-intensity-component>
+  
+      <app-checkin-step-details-component
+        *ngIf="currentStep() === 4"
+        [form]="detailsForm"
+      ></app-checkin-step-details-component>
 
       <div class="flex items-center justify-between pt-4">
         <button
