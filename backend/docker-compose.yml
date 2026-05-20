@@ -1,4 +1,15 @@
 services:
+  migrate:
+    build: .
+    environment:
+      DATABASE_URL: postgresql+asyncpg://pequi:pequi@db:5432/pequi
+      SECRET_KEY: dev-secret-key-change-in-production
+      ENV: development
+    command: alembic upgrade head
+    depends_on:
+      db:
+        condition: service_healthy
+
   api:
     build: .
     ports:
@@ -18,6 +29,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
     volumes:
@@ -54,6 +67,7 @@ services:
       POSTGRES_DB: pequi
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./db-init:/docker-entrypoint-initdb.d:ro
     ports:
       - "5432:5432"
     healthcheck:
