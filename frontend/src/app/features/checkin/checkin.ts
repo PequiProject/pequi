@@ -7,6 +7,9 @@ import {
   Validators,
 } from '@angular/forms';
 import { CheckinStepFeelingComponent } from '../../components/checkin-step-feeling-component/checkin-step-feeling-component';
+import { CheckinStepSymptomsComponent } from '../../components/checkin-step-symptoms-component/checkin-step-symptoms-component';
+import { CheckinStepIntensityComponent } from '../../components/checkin-step-intensity-component/checkin-step-intensity-component';
+import { CheckinStepDetailsComponent } from '../../components/checkin-step-details-component/checkin-step-details-component';
 
 
 type StepItem = {
@@ -17,17 +20,24 @@ type StepItem = {
 @Component({
   selector: 'app-checkin',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, CheckinStepFeelingComponent],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    CheckinStepFeelingComponent,
+    CheckinStepSymptomsComponent,
+    CheckinStepIntensityComponent,
+    CheckinStepDetailsComponent,
+  ],
   templateUrl: './checkin.html',
   styleUrl: './checkin.css',
 })
 export class CheckinComponent {
   private readonly fb = inject(FormBuilder);
   steps: StepItem[] = [
-    { id: 1, label: 'Ranking de Sentimentos'},
-    { id: 2, label: 'Seleção de Sintomas'},
-    { id: 3, label: 'Detalhes Adicionais'},
-    { id: 4, label: 'Intensidade dos Sintomas'},
+    { id: 1, label: 'Ranking de Sentimentos' },
+    { id: 2, label: 'Seleção de Sintomas' },
+    { id: 3, label: 'Intensidade dos Sintomas' },
+    { id: 4, label: 'Detalhes Adicionais' },
   ];
   currentStep = signal(1);
   form = this.fb.group({
@@ -35,25 +45,20 @@ export class CheckinComponent {
       mood: ['', Validators.required],
     }),
     symptoms: this.fb.group({
-      zipCode: ['', Validators.required],
-      street: ['', Validators.required],
-      number: ['', Validators.required],
-      city: ['', Validators.required],
-      state: ['', Validators.required],
-    }),
-    details: this.fb.group({
-      bloodType: [''],
-      allergies: [''],
-      medications: [''],
-      emergencyContact: ['', Validators.required],
+      selectedSymptoms: this.fb.control<string[]>([], Validators.required),
+      customSymptom: this.fb.control(''),
     }),
     intensity: this.fb.group({
-      acceptTerms: [false, Validators.requiredTrue],
+      scale: [null as number | null, Validators.required],
+    }),
+    details: this.fb.group({
+      notes: [''],
     }),
   });
 
   progressPercentage = computed(() => {
-    return (this.currentStep() / this.steps.length) * 100;
+    const step = this.currentStep();
+    return (step / this.steps.length) * 100;
   });
 
   get currentStepNumber(): WritableSignal<number> {
@@ -68,12 +73,12 @@ export class CheckinComponent {
     return this.form.get('symptoms') as FormGroup;
   }
 
-  get detailsForm(): FormGroup {
-    return this.form.get('details') as FormGroup;
-  }
-
   get intensityForm(): FormGroup {
     return this.form.get('intensity') as FormGroup;
+  }
+
+  get detailsForm(): FormGroup {
+    return this.form.get('details') as FormGroup;
   }
 
   isStepActive(stepId: number): boolean {
@@ -98,14 +103,40 @@ export class CheckinComponent {
       return;
     }
 
-    if (this.currentStep() < this.steps.length) {
-      this.currentStep.update(value => value + 1);
+    switch (this.currentStep()) {
+      case 1:
+        this.currentStep.set(2);
+        return;
+
+      case 2:
+        this.currentStep.set(3);
+        return;
+
+      case 3:
+        this.currentStep.set(4);
+        return;
+
+      default:
+        return;
     }
   }
 
   prevStep(): void {
-    if (this.currentStep() > 1) {
-      this.currentStep.update(value => value - 1);
+    switch (this.currentStep()) {
+      case 4:
+        this.currentStep.set(3);
+        return;
+
+      case 3:
+        this.currentStep.set(2);
+        return;
+
+      case 2:
+        this.currentStep.set(1);
+        return;
+
+      default:
+        return;
     }
   }
 
@@ -114,8 +145,13 @@ export class CheckinComponent {
       this.form.markAllAsTouched();
       return;
     }
-
-    const payload = this.form.getRawValue();
+    const rawValue = this.form.getRawValue();
+    const payload = {
+      ...rawValue,
+      symptoms: {
+        selectedSymptoms: rawValue.symptoms.selectedSymptoms,
+      },
+    };
     console.log('Payload final do check-in:', payload);
   }
 
@@ -126,9 +162,9 @@ export class CheckinComponent {
       case 2:
         return this.symptomsForm;
       case 3:
-        return this.detailsForm;
-      case 4:
         return this.intensityForm;
+      case 4:
+        return this.detailsForm;
       default:
         return this.feelingForm;
     }
