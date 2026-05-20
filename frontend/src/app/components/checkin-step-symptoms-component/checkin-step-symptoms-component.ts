@@ -76,6 +76,42 @@ export class CheckinStepSymptomsComponent {
       selectedClass: 'bg-[#F9E6E6] border-[#EFCACA] text-[#8A4A4A]',
       unselectedClass: 'bg-[#FCF1F1] border-[#F1DADA] text-[#44403C]',
     },
+    {
+      value: 'mudança de cor da pele',
+      label: 'Mudança de cor da pele',
+      selectedClass: 'bg-[#F9E6E6] border-[#EFCACA] text-[#8A4A4A]',
+      unselectedClass: 'bg-[#FCF1F1] border-[#F1DADA] text-[#44403C]',
+    },
+    {
+      value: 'coceira',
+      label: 'Coceira',
+      selectedClass: 'bg-[#E3F1F5] border-[#C9E0E7] text-[#315C66]',
+      unselectedClass: 'bg-[#EFF8FA] border-[#D9E9ED] text-[#44403C]',
+    },
+    {
+      value: 'suor frio',
+      label: 'Suor frio',
+      selectedClass: 'bg-[#E4F4E4] border-[#CBE6CB] text-[#446044]',
+      unselectedClass: 'bg-[#F2FAF2] border-[#DCECDC] text-[#44403C]',
+    },
+    {
+      value: 'escamação',
+      label: 'Escamação',
+      selectedClass: 'bg-[#E9E3FF] border-[#CFC2FF] text-[#4B3B8F]',
+      unselectedClass: 'bg-[#F5F2FF] border-[#DDD3F8] text-[#44403C]',
+    },
+    {
+      value: 'sangramento',
+      label: 'Sangramento',
+      selectedClass: 'bg-[#DFF1F5] border-[#BEDDE4] text-[#315C66]',
+      unselectedClass: 'bg-[#EDF7F9] border-[#D2E8ED] text-[#44403C]',
+    },
+    {
+      value: 'perda de sensibilidade na pele',
+      label: 'Perda de sensibilidade na pele',
+      selectedClass: 'bg-[#F9E6E6] border-[#EFCACA] text-[#8A4A4A]',
+      unselectedClass: 'bg-[#FCF1F1] border-[#F1DADA] text-[#44403C]',
+    },
   ];
 
   get selectedSymptoms(): string[] {
