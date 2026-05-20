@@ -1,17 +1,23 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, signal, WritableSignal } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  WritableSignal,
+} from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
+import { Router } from '@angular/router';
 import { CheckinStepFeelingComponent } from '../../components/checkin-step-feeling-component/checkin-step-feeling-component';
 import { CheckinStepSymptomsComponent } from '../../components/checkin-step-symptoms-component/checkin-step-symptoms-component';
 import { CheckinStepIntensityComponent } from '../../components/checkin-step-intensity-component/checkin-step-intensity-component';
 import { CheckinStepDetailsComponent } from '../../components/checkin-step-details-component/checkin-step-details-component';
-import { Router } from '@angular/router';
-
 
 type StepItem = {
   id: number;
@@ -34,14 +40,18 @@ type StepItem = {
 })
 export class CheckinComponent {
   private readonly fb = inject(FormBuilder);
-  private router = inject(Router);
+  private readonly router = inject(Router);
+
   steps: StepItem[] = [
     { id: 1, label: 'Ranking de Sentimentos' },
     { id: 2, label: 'Seleção de Sintomas' },
     { id: 3, label: 'Intensidade dos Sintomas' },
     { id: 4, label: 'Detalhes Adicionais' },
   ];
+
   currentStep = signal(1);
+  isCurrentStepInvalid = signal(true);
+
   form = this.fb.group({
     feeling: this.fb.group({
       mood: ['', Validators.required],
@@ -63,6 +73,19 @@ export class CheckinComponent {
     return (step / this.steps.length) * 100;
   });
 
+  constructor() {
+    effect(() => {
+      const step = this.currentStep();
+      const currentGroup = this.getStepForm(step);
+
+      this.isCurrentStepInvalid.set(currentGroup.invalid);
+
+      currentGroup.statusChanges.subscribe(() => {
+        this.isCurrentStepInvalid.set(currentGroup.invalid);
+      });
+    });
+  }
+
   get currentStepNumber(): WritableSignal<number> {
     return this.currentStep;
   }
@@ -83,10 +106,6 @@ export class CheckinComponent {
     return this.form.get('details') as FormGroup;
   }
 
-  get isCurrentStepInvalid(): boolean {
-  return this.getCurrentStepForm().invalid;
-}
-
   isStepActive(stepId: number): boolean {
     return this.currentStep() === stepId;
   }
@@ -106,6 +125,7 @@ export class CheckinComponent {
 
     if (currentGroup.invalid) {
       currentGroup.markAllAsTouched();
+      this.isCurrentStepInvalid.set(true);
       return;
     }
 
@@ -113,15 +133,12 @@ export class CheckinComponent {
       case 1:
         this.currentStep.set(2);
         return;
-
       case 2:
         this.currentStep.set(3);
         return;
-
       case 3:
         this.currentStep.set(4);
         return;
-
       default:
         return;
     }
@@ -132,15 +149,12 @@ export class CheckinComponent {
       case 4:
         this.currentStep.set(3);
         return;
-
       case 3:
         this.currentStep.set(2);
         return;
-
       case 2:
         this.currentStep.set(1);
         return;
-
       default:
         return;
     }
@@ -151,6 +165,7 @@ export class CheckinComponent {
       this.form.markAllAsTouched();
       return;
     }
+
     const rawValue = this.form.getRawValue();
     const payload = {
       ...rawValue,
@@ -158,12 +173,17 @@ export class CheckinComponent {
         selectedSymptoms: rawValue.symptoms.selectedSymptoms,
       },
     };
+
     console.log('Payload final do check-in:', payload);
     this.router.navigate(['home']);
   }
 
   private getCurrentStepForm(): FormGroup {
-    switch (this.currentStep()) {
+    return this.getStepForm(this.currentStep());
+  }
+
+  private getStepForm(step: number): FormGroup {
+    switch (step) {
       case 1:
         return this.feelingForm;
       case 2:

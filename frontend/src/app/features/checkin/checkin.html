@@ -56,7 +56,7 @@
         <button
           type="button"
           (click)="currentStep() === 4 ? submit() : nextStep()"
-          [disabled]="isCurrentStepInvalid"
+          [disabled]="isCurrentStepInvalid()"
           class="min-h-12 rounded-xl bg-[#4338CA] px-5 py-3 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-50"
         >
           {{ currentStep() === 4 ? 'Enviar registro' : 'Próximo' }}
