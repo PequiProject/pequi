@@ -1,1 +1,90 @@
-<p>checkin-step-symptoms-component works!</p>
+<div *ngIf="form" [formGroup]="form" class="space-y-6" data-testid="symptoms-step">
+  <div>
+    <h3 class="text-[2rem] font-semibold leading-tight text-[#373831]" data-testid="symptoms-title">
+      Você sentiu algum desses sintomas hoje?
+    </h3>
+    <p class="mt-2 max-w-md text-base leading-8 text-[#6B6B67]" data-testid="symptoms-description">
+      Seus comentários nos ajudam a aprimorar sua rotina de cuidados personalizada.
+    </p>
+  </div>
+
+  <div class="flex flex-wrap gap-3" data-testid="symptoms-options">
+    <button
+      *ngFor="let symptom of symptoms"
+      type="button"
+      (click)="toggleSymptom(symptom.value)"
+      [attr.data-testid]="'symptom-option-' + symptom.value"
+      [attr.aria-pressed]="isSelected(symptom.value)"
+      class="rounded-full border px-5 py-3 text-lg font-medium transition"
+      [ngClass]="isSelected(symptom.value) ? symptom.selectedClass : symptom.unselectedClass"
+    >
+      <span class="flex items-center gap-2">
+        <span *ngIf="isSelected(symptom.value)">✓</span>
+        <span>{{ symptom.label }}</span>
+      </span>
+    </button>
+  </div>
+
+  <div
+    *ngIf="hasNoSymptomsSelected"
+    class="rounded-2xl border border-[#BFE3C9] bg-[#EEF9F1] px-4 py-4 text-sm font-medium text-[#2F6B45]"
+    data-testid="no-symptoms-message"
+  >
+    Que ótimo! Continue firme no tratamento para mais dias sem sintomas!
+  </div>
+
+  <div *ngIf="!hasNoSymptomsSelected" class="rounded-2xl border border-[#ECE7E2] bg-white p-4" data-testid="custom-symptom-block">
+    <label for="customSymptom" class="mb-2 block text-sm font-medium text-[#373831]" data-testid="custom-symptom-label">
+      Adicionar outro sintoma
+    </label>
+
+    <div class="flex flex-col gap-3 sm:flex-row">
+      <input
+        id="customSymptom"
+        type="text"
+        formControlName="customSymptom"
+        placeholder="Digite um sintoma"
+        data-testid="custom-symptom-input"
+        class="min-h-12 flex-1 rounded-xl border border-[#D9D4CE] px-4 py-3 text-sm text-[#373831] outline-none transition placeholder:text-[#9A968F] focus:border-[#436D57]"
+      />
+
+      <button
+        type="button"
+        (click)="addCustomSymptom()"
+        data-testid="custom-symptom-add-button"
+        class="min-h-12 rounded-xl bg-[#436D57] px-5 py-3 text-sm font-medium text-white transition hover:opacity-90"
+      >
+        Adicionar
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="selectedSymptoms.length > 0" class="space-y-3" data-testid="selected-symptoms-section">
+    <p class="text-sm font-medium text-[#373831]" data-testid="selected-symptoms-title">
+      Sintomas registrados hoje
+    </p>
+
+    <div class="flex flex-wrap gap-2" data-testid="selected-symptoms-list">
+      <span
+        *ngFor="let symptom of selectedSymptoms"
+        class="inline-flex items-center gap-2 rounded-full bg-[#F0F4F1] px-4 py-2 text-sm text-[#373831]"
+        [attr.data-testid]="'selected-symptom-' + symptom"
+      >
+        {{ symptom }}
+        <button
+          type="button"
+          (click)="removeSymptom(symptom)"
+          class="text-[#64655C] transition hover:text-[#373831]"
+          [attr.aria-label]="'Remover sintoma ' + symptom"
+          [attr.data-testid]="'remove-symptom-' + symptom"
+        >
+          ×
+        </button>
+      </span>
+    </div>
+  </div>
+
+  <p *ngIf="showError" class="text-sm font-medium text-red-600" data-testid="symptoms-error">
+    Selecione pelo menos um sintoma ou marque “Nenhum sintoma hoje” para continuar.
+  </p>
+</div>
