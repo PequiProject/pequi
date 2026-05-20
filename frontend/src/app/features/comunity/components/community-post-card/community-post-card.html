@@ -1,16 +1,18 @@
 <article
-  class="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-[#E7E5E4] sm:p-5"
+  class="cursor-pointer rounded-2xl bg-white p-4 shadow-sm ring-1 ring-[#E7E5E4] transition hover:ring-[#D6D3D1] sm:p-5"
+  tabindex="0"
   [attr.data-testid]="'post-card-' + post().id"
-  [attr.aria-label]="'Post de ' + post().authorName"
+  [attr.aria-label]="'Post de ' + post().authorName + '. Toque para ver comentários.'"
+  (click)="onOpenPost()"
+  (keydown.enter)="onOpenPost(); $event.preventDefault()"
+  (keydown.space)="onOpenPost(); $event.preventDefault()"
 >
   <header class="mb-3 flex items-start justify-between gap-3">
     <div class="flex min-w-0 items-center gap-3">
-      <div
-        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#E0E7FF] text-sm font-semibold text-[#4338CA] sm:h-11 sm:w-11"
-        aria-hidden="true"
-      >
-        {{ post().authorInitials }}
-      </div>
+      <app-community-author-avatar
+        [initials]="post().authorInitials"
+        [anonymous]="post().isAnonymous ?? false"
+      />
       <div class="min-w-0">
         <p class="truncate font-semibold text-[#373831]">{{ post().authorName }}</p>
         <p class="text-xs text-[#64655C]">{{ post().timeLabel }}</p>
@@ -28,7 +30,7 @@
         <button
           type="button"
           data-testid="delete-post-btn"
-          (click)="onDelete()"
+          (click)="onDelete($event)"
           class="rounded-full p-1 text-[#B91C1C] transition hover:bg-[#FEE2E2] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#B91C1C]"
           aria-label="Excluir post"
         >
@@ -48,8 +50,8 @@
     <button
       type="button"
       data-testid="support-btn"
-      (click)="onSupport()"
-      class="inline-flex items-center gap-1.5 rounded-full px-2 py-1.5 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4338CA]"
+      (click)="onSupport($event)"
+      class="inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2 py-1.5 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4338CA]"
       [ngClass]="post().isSupported ? 'text-[#4338CA]' : 'text-[#64655C]'"
       [attr.aria-pressed]="post().isSupported"
       [attr.aria-label]="'Apoiar, ' + post().supportCount + ' apoios'"
@@ -65,14 +67,14 @@
       <span data-testid="support-count">{{ post().supportCount }}</span>
       <span class="sr-only">apoios</span>
     </button>
-    <button
-      type="button"
-      data-testid="comment-btn"
-      (click)="onComment()"
-      class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-[#64655C] transition hover:bg-[#F5F5F4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4338CA]"
+    <span
+      class="inline-flex items-center gap-1.5 text-sm font-medium text-[#64655C]"
+      data-testid="comment-count"
+      [attr.aria-label]="commentCountLabel()"
     >
-      <lucide-icon [name]="LucideMessageSquare" [size]="16" [strokeWidth]="2" />
-      Comentar
-    </button>
+      <lucide-icon [name]="LucideMessageSquare" [size]="18" [strokeWidth]="2" aria-hidden="true" />
+      <span>{{ post().commentCount }}</span>
+      <span class="sr-only">comentários</span>
+    </span>
   </footer>
 </article>

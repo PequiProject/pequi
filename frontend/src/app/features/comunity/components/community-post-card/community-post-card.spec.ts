@@ -36,6 +36,11 @@ describe('CommunityPostCard', () => {
     expect(count?.textContent?.trim()).toBe('12');
   });
 
+  it('should show comment count next to message icon', () => {
+    const count = fixture.nativeElement.querySelector('[data-testid="comment-count"]');
+    expect(count?.textContent).toContain('3');
+  });
+
   it('should mark support button as pressed and fill heart when supported', () => {
     fixture.componentRef.setInput('post', { ...MOCK_COMMUNITY_POSTS[1] });
     fixture.detectChanges();
@@ -54,10 +59,18 @@ describe('CommunityPostCard', () => {
     expect(spy).toHaveBeenCalledWith('1');
   });
 
-  it('should emit comment on Comentar click', () => {
+  it('should emit comment when clicking the post card', () => {
     const spy = vi.spyOn(component.comment, 'emit');
-    fixture.debugElement.query(By.css('[data-testid="comment-btn"]')).nativeElement.click();
+    fixture.debugElement.query(By.css('[data-testid="post-card-1"]')).nativeElement.click();
     expect(spy).toHaveBeenCalledWith('1');
+  });
+
+  it('should not emit comment when clicking support', () => {
+    const commentSpy = vi.spyOn(component.comment, 'emit');
+    const supportSpy = vi.spyOn(component.support, 'emit');
+    fixture.debugElement.query(By.css('[data-testid="support-btn"]')).nativeElement.click();
+    expect(supportSpy).toHaveBeenCalledWith('1');
+    expect(commentSpy).not.toHaveBeenCalled();
   });
 
   it('should show delete button for own posts', () => {

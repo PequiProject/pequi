@@ -13,7 +13,8 @@ export interface CommunityComment {
   authorInitials: string;
   content: string;
   timeLabel: string;
-  isSupportMessage?: boolean;
+  /** True when published with anonymous profile. */
+  isAnonymous?: boolean;
   /** True when the comment was authored by the current user in this session. */
   isOwn?: boolean;
   replies?: CommunityComment[];
@@ -32,6 +33,8 @@ export interface CommunityPost {
   isSupported: boolean;
   commentCount: number;
   comments: CommunityComment[];
+  /** True when published with anonymous profile. */
+  isAnonymous?: boolean;
   /** True when the post was authored by the current user in this session. */
   isOwn?: boolean;
 }

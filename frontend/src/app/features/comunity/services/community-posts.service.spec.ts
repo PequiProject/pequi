@@ -23,6 +23,16 @@ describe('CommunityPostsService', () => {
     expect(updated.comments.some((c) => c.content === 'Força!')).toBe(true);
   });
 
+  it('should mark comment as anonymous when profile is anonymous', () => {
+    TestBed.inject(CommunityProfileService).save('anonymous');
+
+    service.addComment({ postId: '3', content: 'Comentário anônimo' });
+
+    const created = service.getPostById('3')!.comments.at(-1)!;
+    expect(created.isAnonymous).toBe(true);
+    expect(created.authorName).toBe('Você (anônimo)');
+  });
+
   it('should add reply to existing comment', () => {
     service.addComment({
       postId: '1',
@@ -98,8 +108,8 @@ describe('CommunityPostsService', () => {
     });
 
     expect(created.categoryLabels).toEqual(['Dúvida', 'Apoio']);
-
     expect(created.authorName).toBe('Você (anônimo)');
+    expect(created.isAnonymous).toBe(true);
   });
 
   it('should delete own post', () => {

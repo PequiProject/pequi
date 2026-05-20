@@ -10,6 +10,7 @@ import {
   LucideX,
 } from 'lucide-angular';
 import type { CommunityComment, CommunityPost } from '../../models/community.models';
+import { CommunityAuthorAvatar } from '../community-author-avatar/community-author-avatar';
 import { CommunityDeleteConfirm } from '../community-delete-confirm/community-delete-confirm';
 
 export type AddCommentEvent = {
@@ -27,7 +28,13 @@ export type DeleteCommentEvent = {
 @Component({
   selector: 'app-community-post-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, CommunityDeleteConfirm],
+  imports: [
+    CommonModule,
+    FormsModule,
+    LucideAngularModule,
+    CommunityAuthorAvatar,
+    CommunityDeleteConfirm,
+  ],
   templateUrl: './community-post-detail.html',
   styleUrl: './community-post-detail.css',
 })

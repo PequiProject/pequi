@@ -64,6 +64,7 @@ export class CommunityPostsService {
       commentCount: 0,
       comments: [],
       isOwn: true,
+      isAnonymous: payload.authorMode === 'anonymous',
     };
 
     this.posts.update((list) => [newPost, ...list]);
@@ -80,7 +81,8 @@ export class CommunityPostsService {
 
   addComment(payload: AddCommentPayload): void {
     const profile = this.profileService.selectedProfile();
-    const authorLabel = authorLabelForMode(profile === 'anonymous' ? 'anonymous' : 'public');
+    const isAnonymous = profile === 'anonymous';
+    const authorLabel = authorLabelForMode(isAnonymous ? 'anonymous' : 'public');
 
     const newComment: CommunityComment = {
       id: `local-${Date.now()}`,
@@ -89,6 +91,7 @@ export class CommunityPostsService {
       content: payload.content,
       timeLabel: 'Agora',
       isOwn: true,
+      isAnonymous,
     };
 
     this.posts.update((list) =>

@@ -13,7 +13,7 @@ export const MOCK_COMMUNITY_POSTS: CommunityPost[] = [
     timeLabel: 'Há 2 horas',
     supportCount: 12,
     isSupported: false,
-    commentCount: 3,
+    commentCount: 4,
     comments: [
       {
         id: 'c1',
@@ -21,7 +21,6 @@ export const MOCK_COMMUNITY_POSTS: CommunityPost[] = [
         authorInitials: 'AP',
         content: 'Força! Você não está sozinha nessa jornada.',
         timeLabel: 'Há 1 hora',
-        isSupportMessage: true,
       },
       {
         id: 'c2',
@@ -39,6 +38,14 @@ export const MOCK_COMMUNITY_POSTS: CommunityPost[] = [
           },
         ],
       },
+      {
+        id: 'c4',
+        authorName: 'Participante anônimo',
+        authorInitials: '??',
+        content: 'Prefiro não me identificar, mas quero dizer que admirei sua coragem.',
+        timeLabel: 'Há 20 min',
+        isAnonymous: true,
+      },
     ],
   },
   {
@@ -53,7 +60,7 @@ export const MOCK_COMMUNITY_POSTS: CommunityPost[] = [
     timeLabel: 'Há 5 horas',
     supportCount: 8,
     isSupported: true,
-    commentCount: 5,
+    commentCount: 1,
     comments: [
       {
         id: 'c3',
@@ -62,7 +69,6 @@ export const MOCK_COMMUNITY_POSTS: CommunityPost[] = [
         content:
           'Formigamento pode ocorrer, mas vale conversar com seu médico na próxima consulta.',
         timeLabel: 'Há 3 horas',
-        isSupportMessage: true,
       },
     ],
   },
@@ -78,7 +84,7 @@ export const MOCK_COMMUNITY_POSTS: CommunityPost[] = [
     timeLabel: 'Ontem',
     supportCount: 24,
     isSupported: false,
-    commentCount: 8,
+    commentCount: 0,
     comments: [],
   },
 ];
