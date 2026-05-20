@@ -1,0 +1,87 @@
+import { TestBed } from '@angular/core/testing';
+import {
+  EMPTY_APPOINTMENT_DRAFT,
+  EMPTY_FOLLOW_UP_DRAFT,
+  type HealthAppointmentDraft,
+} from '../models/health-appointment.models';
+import { HealthAppointmentService } from './health-appointment.service';
+
+describe('HealthAppointmentService', () => {
+  let service: HealthAppointmentService;
+
+  const baseDraft: HealthAppointmentDraft = {
+    ...EMPTY_APPOINTMENT_DRAFT,
+    appointmentDate: '2026-05-20',
+    appointmentTime: '14:30',
+    location: 'UBS Centro',
+    type: 'consulta',
+    professional: 'Dr. Silva',
+    notes: 'Trazer exames',
+    performed: false,
+    wantsFollowUpDetails: null,
+  };
+
+  beforeEach(() => {
+    localStorage.clear();
+    TestBed.configureTestingModule({});
+    service = TestBed.inject(HealthAppointmentService);
+  });
+
+  it('allows saving without professional', () => {
+    const record = service.saveFromDraft({ ...baseDraft, professional: '' });
+    expect(record.professional).toBeUndefined();
+  });
+
+  it('marks appointment as scheduled when not performed', () => {
+    const record = service.saveFromDraft(baseDraft);
+    expect(record.status).toBe('scheduled');
+    expect(record.performed).toBe(false);
+    expect(service.appointments()).toHaveLength(1);
+  });
+
+  it('marks appointment as completed when performed', () => {
+    const record = service.saveFromDraft({
+      ...baseDraft,
+      performed: true,
+      wantsFollowUpDetails: false,
+    });
+    expect(record.status).toBe('completed');
+    expect(record.performed).toBe(true);
+  });
+
+  it('stores supervised dose when medication unchanged', () => {
+    const record = service.saveFromDraft({
+      ...baseDraft,
+      type: 'dose_supervisionada',
+      performed: true,
+      wantsFollowUpDetails: true,
+      followUp: {
+        ...EMPTY_FOLLOW_UP_DRAFT,
+        hadMedicationChange: false,
+        registerSupervisedDose: true,
+        selectedMedicationId: 'med-1',
+        otherMedicationName: 'Rifampicina',
+        supervisedDoseNotes: 'Dose mensal',
+      },
+    });
+    expect(record.followUp?.supervisedDose?.medicationName).toBe('Rifampicina');
+    expect(record.followUp?.hadMedicationChange).toBe(false);
+  });
+
+  it('stores medication change with new dose', () => {
+    const record = service.saveFromDraft({
+      ...baseDraft,
+      performed: true,
+      wantsFollowUpDetails: true,
+      followUp: {
+        ...EMPTY_FOLLOW_UP_DRAFT,
+        hadMedicationChange: true,
+        newMedicationName: 'Clofazimina',
+        newDoseDescription: '1 cápsula ao dia',
+        medicationChangeDescription: 'Ajuste do esquema',
+      },
+    });
+    expect(record.followUp?.medicationChange?.newMedicationName).toBe('Clofazimina');
+    expect(record.followUp?.medicationChange?.newDoseDescription).toBe('1 cápsula ao dia');
+  });
+});
