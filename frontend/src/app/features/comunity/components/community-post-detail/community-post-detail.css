@@ -1,0 +1,7 @@
+:host ::ng-deep .heart-filled svg {
+  fill: currentColor;
+}
+
+:host ::ng-deep .heart-filled svg path {
+  fill: currentColor;
+}

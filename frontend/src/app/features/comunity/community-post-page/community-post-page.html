@@ -1,0 +1,10 @@
+@if (post(); as currentPost) {
+  <app-community-post-detail
+    [post]="currentPost"
+    (close)="back()"
+    (support)="onSupport($event)"
+    (addComment)="onAddComment($event)"
+    (deleteComment)="onDeleteComment($event)"
+    (deletePost)="onDeletePost($event)"
+  />
+}
