@@ -1,0 +1,31 @@
+meta {
+  name: List Symptoms
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/v1/symptoms
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+  res.body: isArray
+}
+
+docs {
+  Lista todos os sintomas do catálogo (seed-only).
+
+  Acessível por qualquer usuário autenticado (paciente, profissional ou admin).
+  Os sintomas são agrupados por categoria:
+    - dermatological
+    - neurological
+    - systemic
+
+  Rate limit: 200/minuto.
+}
