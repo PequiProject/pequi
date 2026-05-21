@@ -1,0 +1,21 @@
+<div data-testid="post-category-picker">
+  <p class="mb-2 text-sm font-semibold text-[#373831]">Tags do post</p>
+  <div class="flex flex-wrap gap-2" role="group" aria-label="Escolher tags do post">
+    @for (category of categories; track category.id) {
+      <button
+        type="button"
+        [attr.data-category]="category.id"
+        [attr.aria-pressed]="isSelected(category.id)"
+        (click)="toggle(category.id)"
+        class="rounded-full px-4 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4338CA]"
+        [ngClass]="
+          isSelected(category.id)
+            ? 'bg-[#CAF9DC] text-[#436D57]'
+            : 'bg-[#F5F5F4] text-[#64655C] hover:bg-[#E7E5E4]'
+        "
+      >
+        {{ category.label }}
+      </button>
+    }
+  </div>
+</div>

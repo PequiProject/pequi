@@ -1,0 +1,76 @@
+<section class="mx-auto w-full max-w-5xl">
+
+    <div class="mb-6 flex items-start justify-between gap-4">
+      <div>
+        <h2 class="text-2xl font-semibold text-[#373831]">Check-in</h2>
+        <p class="mt-1 text-sm text-[#37614B]">
+          Etapa {{ currentStepNumber() }} de 4
+        </p>
+      </div>
+
+      <span class="rounded-full px-3 py-1 text-sm font-medium text-[#64655C]">
+        Progresso Diário
+      </span>
+    </div>
+
+    <div class="mb-6">
+      <div class="h-2 w-full rounded-full bg-[#CAF9DC]">
+        <div
+          class="h-2 rounded-full bg-[#436D57] transition-all duration-300"
+          [style.width.%]="progressPercentage()"
+        ></div>
+      </div>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-6">
+      <app-checkin-step-feeling-component
+        *ngIf="currentStep() === 1"
+        [form]="feelingForm"
+      ></app-checkin-step-feeling-component>
+
+     <app-checkin-step-symptoms-component
+        *ngIf="currentStep() === 2"
+        [form]="symptomsForm"
+      ></app-checkin-step-symptoms-component>
+
+      <!--
+      <app-checkin-step-intensity-component
+        *ngIf="currentStep() === 3"
+        [reviewForm]="intensityForm"
+        [fullForm]="form"
+      ></app-checkin-step-intensity-component> -->
+  
+      <app-checkin-step-details-component
+        *ngIf="currentStep() === 4"
+        [form]="detailsForm"
+      ></app-checkin-step-details-component>
+
+      <div class="flex items-center justify-between pt-4">
+        <button
+          type="button"
+          (click)="prevStep()"
+          [disabled]="currentStep() === 1"
+          class="rounded-xl border border-[#D6D3D1] px-4 py-2 text-sm font-medium text-[#64655C] transition disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Voltar
+        </button>
+
+        <button
+          *ngIf="currentStep() < steps.length"
+          type="button"
+          (click)="nextStep()"
+          class="rounded-xl bg-[#4338CA] px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
+        >
+          Próximo
+        </button>
+
+        <button
+          *ngIf="currentStep() === steps.length"
+          type="submit"
+          class="rounded-xl bg-[#4338CA] px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
+        >
+          Enviar formulário
+        </button>
+      </div>
+    </form>
+</section>

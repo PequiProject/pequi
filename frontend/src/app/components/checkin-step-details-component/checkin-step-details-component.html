@@ -1,0 +1,44 @@
+<div
+  *ngIf="form"
+  [formGroup]="form"
+  class="space-y-6"
+  data-testid="details-step"
+>
+  <div>
+    <h3
+      class="text-[2rem] font-semibold leading-tight text-[#373831]"
+      data-testid="details-title"
+    >
+      Quer adicionar mais detalhes?
+    </h3>
+
+    <p
+      class="mt-2 max-w-2xl text-base leading-8 text-[#6B6B67]"
+      data-testid="details-description"
+    >
+      Descreva onde você está notando mudanças hoje. Cada detalhe ajuda.
+    </p>
+  </div>
+
+  <div
+    class="rounded-2xl border border-[#ECE7E2] bg-white p-4"
+    data-testid="details-textarea-block"
+  >
+    <label
+      for="notes"
+      class="mb-2 block text-sm font-medium text-[#373831]"
+      data-testid="details-textarea-label"
+    >
+      Observações adicionais (opcional)
+    </label>
+
+    <textarea
+      id="notes"
+      formControlName="notes"
+      rows="6"
+      placeholder="Ex.: senti mais desconforto no período da manhã, após caminhar, ou percebi melhora ao longo do dia."
+      data-testid="details-textarea"
+      class="min-h-36 w-full rounded-xl border border-[#D9D4CE] px-4 py-3 text-sm text-[#373831] outline-none transition placeholder:text-[#9A968F] focus:border-[#436D57]"
+    ></textarea>
+  </div>
+</div>

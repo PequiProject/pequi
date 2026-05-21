@@ -1,1 +1,65 @@
-<p>home works!</p>
+<div class="container">
+  <section class="calendar-section">
+    <div class="calendar-header">
+      <h2 class="month-title">{{ currentMonthYear }}</h2>
+      <button class="calendar-btn">
+        Calendário <lucide-icon [name]="CalendarIcon" [size]="20"></lucide-icon>
+      </button>
+    </div>
+
+    <div class="days-row">
+      @for (day of calendarWeek; track day.dayNumber) {
+        <div
+          class="day-card"
+          [class.active]="isSameDate(day.dateObj, selectedDate)"
+          (click)="selectDate(day.dateObj)"
+        >
+          <span class="day-name">{{ day.dayName }}</span>
+          <span class="day-number">{{ day.dayNumber }}</span>
+
+          <div class="dots-container">
+            @for (dot of day.dots; track $index) {
+              <div class="dot"></div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+<div>
+  <section class="section-container">
+    <h3 class="section-title">Ações rápidas</h3>
+
+    <div class="card-list">
+      @for (action of QuickAction; track $index) {
+        <div class="action-card" (click)="executeAction(action.path)">
+          <div class="icon-wrapper" [ngClass]="action.colorClass">
+            <lucide-icon [name]="action.icon" [size]="28"></lucide-icon>
+          </div>
+          <div class="card-text">
+            <span class="card-title">{{ action.title }}</span>
+            <span class="card-desc">{{ action.description }}</span>
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+
+  <section class="analysis-section">
+    <div class="analysis-card">
+      <div class="analysis-image-wrapper">
+        <div class="mock-image-bg"></div>
+      </div>
+
+      <div class="analysis-content">
+        <span class="analysis-tag">{{ weeklyArticle.tag }}</span>
+        <h3 class="analysis-title">{{ weeklyArticle.title }}</h3>
+        <p class="analysis-desc">{{ weeklyArticle.description }}</p>
+
+        <button class="analysis-btn">
+          {{ weeklyArticle.actionText }}
+        </button>
+      </div>
+    </div>
+  </section>
+</div>
