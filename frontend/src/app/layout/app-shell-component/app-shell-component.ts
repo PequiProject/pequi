@@ -50,6 +50,9 @@ export class AppShellComponent {
     } else if (onNotifications) {
       this.headerLayout.set('withBack');
       this.headerPageTitle.set('Notificações');
+    } else if (path.includes('/appointments/register')) {
+      this.headerLayout.set('withBack');
+      this.headerPageTitle.set('Registrar consulta');
     } else {
       this.headerLayout.set('default');
     }
