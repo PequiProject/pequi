@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - development
+      - main
+  push:
+    branches:
+      - development
+      - main
+  workflow_dispatch:
+
+# Cancela runs anteriores do mesmo branch/PR ao receber novo push
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    uses: ./.github/workflows/lint.yml
+
+  tests:
+    needs: lint
+    uses: ./.github/workflows/tests.yml
+
+  # secrets: inherit repassa GITHUB_TOKEN para Gitleaks e demais scanners
+  security:
+    needs: lint
+    uses: ./.github/workflows/security.yml
+    secrets: inherit

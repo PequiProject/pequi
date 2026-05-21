@@ -1,0 +1,122 @@
+name: Tests
+
+# Só é chamado pelo ci.yml — sem triggers próprios para evitar double execution
+on:
+  workflow_call:
+
+env:
+  TZ: UTC
+  LANG: C.UTF-8
+  PYTHONUNBUFFERED: 1
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: pequi
+          POSTGRES_PASSWORD: pequi
+          POSTGRES_DB: pequi_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pequi"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup UV
+        uses: astral-sh/setup-uv@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache UV virtualenv
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/uv
+            .venv
+          key: tests-${{ runner.os }}-uv-${{ hashFiles('**/uv.lock') }}
+          restore-keys: tests-${{ runner.os }}-uv-
+
+      - name: Install dependencies
+        run: uv sync --frozen --extra dev
+
+      # MinIO não suporta service container direto no GH Actions (precisa de CMD server /data)
+      # Iniciamos via docker run na etapa de setup
+      - name: Start MinIO
+        run: |
+          docker run -d \
+            --name minio \
+            -p 9000:9000 \
+            -e MINIO_ROOT_USER=minioadmin \
+            -e MINIO_ROOT_PASSWORD=minioadmin \
+            minio/minio:RELEASE.2024-11-07T00-52-20Z \
+            server /data
+          echo "Aguardando MinIO..."
+          timeout 60 bash -c \
+            'until curl -sf http://localhost:9000/minio/health/live; do sleep 2; done'
+          echo "MinIO pronto"
+
+      # Escrita via variável de ambiente para evitar o bug de leading-spaces do heredoc YAML
+      - name: Create test env
+        env:
+          ENV_CONTENT: |
+            ENV=test
+            DATABASE_URL=postgresql+asyncpg://pequi:pequi@localhost:5432/pequi_test
+            REDIS_URL=redis://localhost:6379/0
+            SENTRY_DSN=
+            JWT_SECRET=test-secret
+            STORAGE_ENDPOINT=http://localhost:9000
+            STORAGE_ACCESS_KEY=minioadmin
+            STORAGE_SECRET_KEY=minioadmin
+            STORAGE_BUCKET_IMAGES=pequi-images
+        run: printf '%s' "$ENV_CONTENT" > .env
+
+      - name: Run migrations
+        run: uv run alembic upgrade head
+
+      - name: Run tests with coverage
+        run: |
+          chmod +x scripts/run_tests.sh
+          scripts/run_tests.sh \
+            --cov=src/pequi \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            --cov-fail-under=80
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: |
+            coverage.xml
+            .coverage
+
+      - name: Upload pytest cache
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pytest-artifacts
+          path: .pytest_cache
