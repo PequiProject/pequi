@@ -9,6 +9,7 @@ import { CommunityFeed } from './features/comunity/community-feed/community-feed
 import { CommunityPostPage } from './features/comunity/community-post-page/community-post-page';
 import { Profile } from './features/profile/profile';
 import { Notification } from './components/notification/notification';
+import { PhotoRegister } from './features/photo-register/photo-register';
 
 export const routes: Routes = [
     {
@@ -25,6 +26,7 @@ export const routes: Routes = [
       { path: 'comunity/feed/:postId', component: CommunityPostPage, title: 'Post' },
       { path: 'profile', component: Profile, title: 'Perfil' },
       { path: 'notifications', component: Notification, title: 'Notificações' },
+      { path: 'photo-register', component: PhotoRegister, title: 'Registro de Fotos' },
     ],
   },
 ];

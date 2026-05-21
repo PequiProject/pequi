@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, signal } from '@angular/core';
-import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { Component, inject, signal, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { LucideAngularModule, User, Plus, History } from 'lucide-angular';
 
 export interface BodyMarker {
@@ -16,8 +16,10 @@ export interface BodyMarker {
   imports: [CommonModule, ReactiveFormsModule, LucideAngularModule],
   templateUrl: './photo-register.html',
 })
-export class PhotoRegister {
-  @Input() form!: FormGroup;
+export class PhotoRegister implements OnInit {
+  private readonly fb = inject(FormBuilder);
+
+  form!: FormGroup;
 
   currentView = signal<'front' | 'back'>('front');
   markers = signal<BodyMarker[]>([
@@ -28,6 +30,12 @@ export class PhotoRegister {
   readonly UserIcon = User;
   readonly PlusIcon = Plus;
   readonly HistoryIcon = History;
+
+  ngOnInit() {
+    this.form = this.fb.group({
+      markers: [this.markers()]
+    });
+  }
 
   setView(view: 'front' | 'back'): void {
     this.currentView.set(view);
