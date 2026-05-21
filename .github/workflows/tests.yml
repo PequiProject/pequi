@@ -86,11 +86,11 @@ jobs:
       - name: Create test env
         env:
           ENV_CONTENT: |
-            ENV=test
+            ENV=development
+            SECRET_KEY=test-secret-do-not-use-in-production
             DATABASE_URL=postgresql+asyncpg://pequi:pequi@localhost:5432/pequi_test
             REDIS_URL=redis://localhost:6379/0
             SENTRY_DSN=
-            JWT_SECRET=test-secret
             STORAGE_ENDPOINT=http://localhost:9000
             STORAGE_ACCESS_KEY=minioadmin
             STORAGE_SECRET_KEY=minioadmin
