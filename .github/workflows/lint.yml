@@ -4,6 +4,10 @@ name: Lint
 on:
   workflow_call:
 
+defaults:
+  run:
+    working-directory: backend
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -26,8 +30,8 @@ jobs:
         with:
           path: |
             ~/.cache/uv
-            .venv
-          key: lint-${{ runner.os }}-uv-${{ hashFiles('**/uv.lock') }}
+            backend/.venv
+          key: lint-${{ runner.os }}-uv-${{ hashFiles('backend/uv.lock') }}
           restore-keys: lint-${{ runner.os }}-uv-
 
       - name: Install dependencies

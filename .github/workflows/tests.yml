@@ -9,6 +9,10 @@ env:
   LANG: C.UTF-8
   PYTHONUNBUFFERED: 1
 
+defaults:
+  run:
+    working-directory: backend
+
 jobs:
   tests:
     runs-on: ubuntu-latest
@@ -55,8 +59,8 @@ jobs:
         with:
           path: |
             ~/.cache/uv
-            .venv
-          key: tests-${{ runner.os }}-uv-${{ hashFiles('**/uv.lock') }}
+            backend/.venv
+          key: tests-${{ runner.os }}-uv-${{ hashFiles('backend/uv.lock') }}
           restore-keys: tests-${{ runner.os }}-uv-
 
       - name: Install dependencies
@@ -111,12 +115,12 @@ jobs:
         with:
           name: coverage-report
           path: |
-            coverage.xml
-            .coverage
+            backend/coverage.xml
+            backend/.coverage
 
       - name: Upload pytest cache
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: pytest-artifacts
-          path: .pytest_cache
+          path: backend/.pytest_cache

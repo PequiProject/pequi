@@ -25,7 +25,11 @@ jobs:
     uses: ./.github/workflows/tests.yml
 
   # secrets: inherit repassa GITHUB_TOKEN para Gitleaks e demais scanners
+  # permissions: o caller deve conceder o que o reusable workflow pede (security-events: write)
   security:
     needs: lint
     uses: ./.github/workflows/security.yml
     secrets: inherit
+    permissions:
+      contents: read
+      security-events: write

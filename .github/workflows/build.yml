@@ -17,6 +17,10 @@ on:
 env:
   PYTHON_VERSION: "3.12"
 
+defaults:
+  run:
+    working-directory: backend
+
 jobs:
   build:
     name: Build + SonarQube
@@ -66,8 +70,8 @@ jobs:
         with:
           path: |
             ~/.cache/uv
-            .venv
-          key: build-${{ runner.os }}-uv-${{ hashFiles('**/uv.lock') }}
+            backend/.venv
+          key: build-${{ runner.os }}-uv-${{ hashFiles('backend/uv.lock') }}
           restore-keys: build-${{ runner.os }}-uv-
 
       - name: Install dependencies
@@ -102,7 +106,7 @@ jobs:
             --cov-fail-under=80
 
       - name: Build Docker image
-        run: docker build -t pequi-backend:ci backend/
+        run: docker build -t pequi-backend:ci .
 
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
