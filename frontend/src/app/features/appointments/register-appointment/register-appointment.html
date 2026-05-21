@@ -38,7 +38,7 @@
         ></div>
       </div>
       <p class="mt-2 text-xs text-[#64655C]">
-        Etapa {{ currentStepIndex() + 1 }} de {{ visibleSteps().length }}
+        Etapa {{ currentStepIndex() + 1 }} de {{ wizardStepCount }}
       </p>
     </div>
 
@@ -205,53 +205,16 @@
           @if (showValidation() && draft().performed === null) {
             <p class="text-xs text-[#B91C1C]">Selecione Sim ou Não.</p>
           }
-        </div>
-      }
 
-      @case ('details-prompt') {
-        <div class="space-y-4" data-testid="step-details-prompt">
-          <p class="text-base font-semibold text-[#373831]">
-            Deseja registrar alguma informação dessa consulta?
-          </p>
-          <p class="text-sm text-[#64655C]">
-            Você pode incluir conduta, medicamentos e orientações — tudo é opcional.
-          </p>
-          <div class="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              data-testid="wants-details-yes"
-              (click)="onWantsDetailsChange(true)"
-              class="rounded-xl border px-4 py-4 text-sm font-semibold transition"
-              [class.border-[#4338CA]]="draft().wantsFollowUpDetails === true"
-              [class.bg-[#EEF2FF]]="draft().wantsFollowUpDetails === true"
-              [class.text-[#4338CA]]="draft().wantsFollowUpDetails === true"
-              [class.border-[#E7E5E4]]="draft().wantsFollowUpDetails !== true"
-              [class.text-[#373831]]="draft().wantsFollowUpDetails !== true"
+          @if (draft().performed === true) {
+            <p class="border-t border-[#E7E5E4] pt-5 text-sm text-[#64655C]">
+              Você pode incluir conduta, medicamentos e orientações — tudo é opcional.
+            </p>
+            <form
+              [formGroup]="followUpForm"
+              class="space-y-5"
+              data-testid="step-follow-up"
             >
-              Sim
-            </button>
-            <button
-              type="button"
-              data-testid="wants-details-no"
-              (click)="onWantsDetailsChange(false)"
-              class="rounded-xl border px-4 py-4 text-sm font-semibold transition"
-              [class.border-[#4338CA]]="draft().wantsFollowUpDetails === false"
-              [class.bg-[#EEF2FF]]="draft().wantsFollowUpDetails === false"
-              [class.text-[#4338CA]]="draft().wantsFollowUpDetails === false"
-              [class.border-[#E7E5E4]]="draft().wantsFollowUpDetails !== false"
-              [class.text-[#373831]]="draft().wantsFollowUpDetails !== false"
-            >
-              Não
-            </button>
-          </div>
-          @if (showValidation() && draft().wantsFollowUpDetails === null) {
-            <p class="text-xs text-[#B91C1C]">Selecione Sim ou Não.</p>
-          }
-        </div>
-      }
-
-      @case ('follow-up') {
-        <form [formGroup]="followUpForm" class="space-y-5" data-testid="step-follow-up">
           @if (isSupervisedDoseType()) {
             <div
               class="rounded-xl bg-[#EEF2FF] px-4 py-3 text-sm text-[#3730A3]"
@@ -535,7 +498,9 @@
               class="w-full resize-none rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
             ></textarea>
           </div>
-        </form>
+            </form>
+          }
+        </div>
       }
 
       @case ('summary') {

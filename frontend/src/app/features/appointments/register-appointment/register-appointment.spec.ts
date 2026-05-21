@@ -25,7 +25,11 @@ describe('RegisterAppointmentComponent', () => {
     expect(fixture.componentInstance.currentStepId()).toBe('basics');
   });
 
-  it('skips follow-up when appointment not performed', () => {
+  it('always has three wizard steps', () => {
+    expect(fixture.componentInstance.wizardStepCount).toBe(3);
+  });
+
+  it('goes to summary from step 2 when appointment not performed', () => {
     const component = fixture.componentInstance;
     component.basicsForm.patchValue({
       appointmentDate: '2026-05-20',
@@ -38,5 +42,6 @@ describe('RegisterAppointmentComponent', () => {
     component.onPerformedChange(false);
     component.nextStep();
     expect(component.currentStepId()).toBe('summary');
+    expect(component.currentStepIndex()).toBe(2);
   });
 });

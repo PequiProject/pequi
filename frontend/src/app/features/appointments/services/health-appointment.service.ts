@@ -16,6 +16,7 @@ export class HealthAppointmentService {
 
   saveFromDraft(draft: HealthAppointmentDraft): HealthAppointment {
     const performed = draft.performed === true;
+    const followUp = performed ? this.buildFollowUp(draft.followUp) : undefined;
     const record: HealthAppointment = {
       id: crypto.randomUUID(),
       appointmentDate: draft.appointmentDate,
@@ -26,8 +27,8 @@ export class HealthAppointmentService {
       notes: draft.notes.trim() || undefined,
       performed,
       status: performed ? 'completed' : 'scheduled',
-      wantsFollowUpDetails: performed && draft.wantsFollowUpDetails === true,
-      followUp: performed && draft.wantsFollowUpDetails ? this.buildFollowUp(draft.followUp) : undefined,
+      wantsFollowUpDetails: !!followUp,
+      followUp,
       createdAt: new Date().toISOString(),
     };
 

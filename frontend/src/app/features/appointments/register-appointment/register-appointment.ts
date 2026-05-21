@@ -11,7 +11,10 @@ import {
 import { HealthAppointmentService } from '../services/health-appointment.service';
 import { PatientMedicationService } from '../services/patient-medication.service';
 
-type WizardStepId = 'basics' | 'performed' | 'details-prompt' | 'follow-up' | 'summary';
+type WizardStepId = 'basics' | 'performed' | 'summary';
+
+const WIZARD_STEPS: WizardStepId[] = ['basics', 'performed', 'summary'];
+const WIZARD_STEP_COUNT = WIZARD_STEPS.length;
 
 @Component({
   selector: 'app-register-appointment',
@@ -60,29 +63,15 @@ export class RegisterAppointmentComponent {
     guidanceReceived: [''],
   });
 
-  readonly visibleSteps = computed<WizardStepId[]>(() => {
-    const performed = this.draft().performed;
-    const wantsDetails = this.draft().wantsFollowUpDetails;
-    const steps: WizardStepId[] = ['basics', 'performed'];
-    if (performed === true) {
-      steps.push('details-prompt');
-      if (wantsDetails === true) {
-        steps.push('follow-up');
-      }
-    }
-    steps.push('summary');
-    return steps;
-  });
+  readonly wizardStepCount = WIZARD_STEP_COUNT;
 
   readonly currentStepId = computed(
-    () => this.visibleSteps()[this.currentStepIndex()] ?? 'basics'
+    () => WIZARD_STEPS[this.currentStepIndex()] ?? 'basics'
   );
 
-  readonly progressPercentage = computed(() => {
-    const total = this.visibleSteps().length;
-    if (total <= 1) return 100;
-    return ((this.currentStepIndex() + 1) / total) * 100;
-  });
+  readonly progressPercentage = computed(
+    () => ((this.currentStepIndex() + 1) / WIZARD_STEP_COUNT) * 100
+  );
 
   readonly stepLabel = computed(() => {
     switch (this.currentStepId()) {
@@ -90,12 +79,6 @@ export class RegisterAppointmentComponent {
         return 'Dados do compromisso';
       case 'performed':
         return 'Status do atendimento';
-      case 'details-prompt':
-        return 'Informações da consulta';
-      case 'follow-up':
-        return this.isSupervisedDoseType()
-          ? 'Dose e medicamentos'
-          : 'Detalhes do atendimento';
       case 'summary':
         return 'Revisão';
       default:
@@ -117,22 +100,10 @@ export class RegisterAppointmentComponent {
   });
 
   onPerformedChange(value: boolean): void {
-    this.draft.update((d) => ({
-      ...d,
-      performed: value,
-      wantsFollowUpDetails: value ? d.wantsFollowUpDetails : null,
-    }));
-    this.showValidation.set(false);
-  }
-
-  onWantsDetailsChange(value: boolean): void {
     this.draft.update((d) => {
-      const next = { ...d, wantsFollowUpDetails: value };
+      const next = { ...d, performed: value };
       if (value && d.type === 'dose_supervisionada') {
-        next.followUp = {
-          ...d.followUp,
-          registerSupervisedDose: true,
-        };
+        next.followUp = { ...d.followUp, registerSupervisedDose: true };
       }
       return next;
     });
@@ -226,11 +197,6 @@ export class RegisterAppointmentComponent {
     this.syncFollowUpFromForm();
     const fu = this.draft().followUp;
 
-    if (fu.hadMedicationChange === null) {
-      this.showValidation.set(true);
-      return false;
-    }
-
     if (fu.hadMedicationChange === true) {
       const name = fu.newMedicationName.trim();
       const dose = fu.newDoseDescription.trim();
@@ -276,29 +242,26 @@ export class RegisterAppointmentComponent {
           professional: raw.professional ?? '',
           notes: raw.notes ?? '',
         };
-        if (type === 'dose_supervisionada' && d.wantsFollowUpDetails === true) {
+        if (type === 'dose_supervisionada' && d.performed === true) {
           next.followUp = { ...d.followUp, registerSupervisedDose: true };
         }
         return next;
       });
     }
 
-    if (stepId === 'performed' && this.draft().performed === null) {
-      this.showValidation.set(true);
-      return;
-    }
-
-    if (stepId === 'details-prompt' && this.draft().wantsFollowUpDetails === null) {
-      this.showValidation.set(true);
-      return;
-    }
-
-    if (stepId === 'follow-up' && !this.validateFollowUpStep()) {
-      return;
+    if (stepId === 'performed') {
+      const { performed } = this.draft();
+      if (performed === null) {
+        this.showValidation.set(true);
+        return;
+      }
+      if (performed === true && !this.validateFollowUpStep()) {
+        return;
+      }
     }
 
     this.showValidation.set(false);
-    const maxIndex = this.visibleSteps().length - 1;
+    const maxIndex = WIZARD_STEP_COUNT - 1;
     if (this.currentStepIndex() < maxIndex) {
       this.currentStepIndex.update((i) => i + 1);
     }

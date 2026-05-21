@@ -18,7 +18,6 @@ describe('HealthAppointmentService', () => {
     professional: 'Dr. Silva',
     notes: 'Trazer exames',
     performed: false,
-    wantsFollowUpDetails: null,
   };
 
   beforeEach(() => {
@@ -43,10 +42,11 @@ describe('HealthAppointmentService', () => {
     const record = service.saveFromDraft({
       ...baseDraft,
       performed: true,
-      wantsFollowUpDetails: false,
     });
     expect(record.status).toBe('completed');
     expect(record.performed).toBe(true);
+    expect(record.wantsFollowUpDetails).toBe(false);
+    expect(record.followUp).toBeUndefined();
   });
 
   it('stores supervised dose when medication unchanged', () => {
@@ -54,7 +54,6 @@ describe('HealthAppointmentService', () => {
       ...baseDraft,
       type: 'dose_supervisionada',
       performed: true,
-      wantsFollowUpDetails: true,
       followUp: {
         ...EMPTY_FOLLOW_UP_DRAFT,
         hadMedicationChange: false,
@@ -72,7 +71,6 @@ describe('HealthAppointmentService', () => {
     const record = service.saveFromDraft({
       ...baseDraft,
       performed: true,
-      wantsFollowUpDetails: true,
       followUp: {
         ...EMPTY_FOLLOW_UP_DRAFT,
         hadMedicationChange: true,

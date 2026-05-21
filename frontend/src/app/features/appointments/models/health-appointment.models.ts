@@ -71,7 +71,6 @@ export interface HealthAppointmentDraft {
   professional: string;
   notes: string;
   performed: boolean | null;
-  wantsFollowUpDetails: boolean | null;
   followUp: AppointmentFollowUpDraft;
 }
 
@@ -97,6 +96,5 @@ export const EMPTY_APPOINTMENT_DRAFT: HealthAppointmentDraft = {
   professional: '',
   notes: '',
   performed: null,
-  wantsFollowUpDetails: null,
   followUp: { ...EMPTY_FOLLOW_UP_DRAFT },
 };
