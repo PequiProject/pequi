@@ -32,7 +32,9 @@ describe(CheckinStepFeelingComponent.name, () => {
   it('should render mood title', () => {
     const title = fixture.debugElement.query(By.css('[data-testid="mood-title"]'));
     expect(title).toBeTruthy();
-    expect((title.nativeElement as HTMLElement).textContent).toContain('Como você está hoje?');
+    expect((title.nativeElement as HTMLElement).textContent).toContain(
+      'Como você está se sentindo hoje?'
+    );
   });
 
   it('should render all mood options', () => {

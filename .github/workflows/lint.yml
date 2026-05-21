@@ -1,0 +1,57 @@
+name: Lint
+
+# Só é chamado pelo ci.yml — sem triggers próprios para evitar double execution
+on:
+  workflow_call:
+
+defaults:
+  run:
+    working-directory: backend
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup UV
+        uses: astral-sh/setup-uv@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Cache do virtualenv baseado no uv.lock para runs mais rápidas
+      - name: Cache UV virtualenv
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/uv
+            backend/.venv
+          key: lint-${{ runner.os }}-uv-${{ hashFiles('backend/uv.lock') }}
+          restore-keys: lint-${{ runner.os }}-uv-
+
+      - name: Install dependencies
+        run: uv sync --frozen --extra dev
+
+      - name: Ruff lint
+        run: uv run ruff check .
+
+      - name: Ruff format
+        run: uv run ruff format --check .
+
+      - name: Validate imports
+        run: uv run python -m compileall src
+
+      # Verifica existência de pelo menos uma migration — mais significativo que só checar a pasta
+      - name: Validate Alembic migrations
+        run: |
+          migration_count=$(find alembic/versions -maxdepth 1 -name "*.py" ! -name "__init__*" | wc -l)
+          if [ "$migration_count" -eq 0 ]; then
+            echo "::error::Nenhum arquivo de migration encontrado em alembic/versions/"
+            exit 1
+          fi
+          echo "Encontradas $migration_count migration(s) — OK"

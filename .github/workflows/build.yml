@@ -1,19 +1,115 @@
 name: Build
+
+# Responsabilidade exclusiva: cobertura XML para SonarQube + build e validação da imagem Docker
+# Lint e testes rápidos são responsabilidade do ci.yml
 on:
   push:
     branches:
       - main
+      - development
+
   pull_request:
-    types: [opened, synchronize, reopened]
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+env:
+  PYTHON_VERSION: "3.12"
+
+defaults:
+  run:
+    working-directory: backend
+
 jobs:
-  sonarqube:
-    name: SonarQube
+  build:
+    name: Build + SonarQube
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: pequi
+          POSTGRES_PASSWORD: pequi
+          POSTGRES_DB: pequi_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pequi"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+          fetch-depth: 0
+
+      - name: Setup UV
+        uses: astral-sh/setup-uv@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Cache UV virtualenv
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/uv
+            backend/.venv
+          key: build-${{ runner.os }}-uv-${{ hashFiles('backend/uv.lock') }}
+          restore-keys: build-${{ runner.os }}-uv-
+
+      - name: Install dependencies
+        run: uv sync --frozen --extra dev
+
+      - name: Create env
+        env:
+          ENV_CONTENT: |
+            ENV=development
+            SECRET_KEY=test-secret-do-not-use-in-production
+            DATABASE_URL=postgresql+asyncpg://pequi:pequi@localhost:5432/pequi_test
+            REDIS_URL=redis://localhost:6379/0
+            SENTRY_DSN=
+            STORAGE_ENDPOINT=http://localhost:9000
+            STORAGE_ACCESS_KEY=minioadmin
+            STORAGE_SECRET_KEY=minioadmin
+            STORAGE_BUCKET_IMAGES=pequi-images
+        run: printf '%s' "$ENV_CONTENT" > .env
+
+      - name: Run migrations
+        run: uv run alembic upgrade head
+
+      # Usa scripts/run_tests.sh conforme mandato do AGENTS.md:
+      # garante unsetting de credentials reais, TZ=UTC e paridade com CI local
+      - name: Run tests with coverage
+        run: |
+          chmod +x scripts/run_tests.sh
+          scripts/run_tests.sh \
+            --cov=src/pequi \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            --cov-fail-under=80
+
+      - name: Build Docker image
+        run: docker build -t pequi-backend:ci .
+
       - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602 # v6.0.0
+        uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}

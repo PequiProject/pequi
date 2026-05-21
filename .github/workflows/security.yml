@@ -1,0 +1,101 @@
+name: Security
+
+# Só é chamado pelo ci.yml — sem triggers próprios para evitar double execution
+on:
+  workflow_call:
+
+defaults:
+  run:
+    working-directory: backend
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+
+    # Permissões efetivas vêm do job caller em ci.yml (reusable workflows não elevam sozinhos)
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # fetch-depth completo necessário para Gitleaks inspecionar histórico
+          fetch-depth: 0
+
+      - name: Setup UV
+        uses: astral-sh/setup-uv@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      # Versões pinadas para builds reproduzíveis em sistema de saúde crítico
+      - name: Install security tools
+        run: |
+          uv tool install "pip-audit==2.7.3"
+          uv tool install "bandit==1.8.3"
+
+      - name: Run pip-audit (dependency CVEs)
+        run: pip-audit --strict
+
+      # Bandit: gera resultado tanto em tabela (para log legível) quanto SARIF (para Security tab)
+      - name: Run Bandit (table)
+        run: bandit -r src -ll
+
+      - name: Run Bandit (SARIF upload)
+        run: bandit -r src -ll -f sarif -o bandit.sarif
+        continue-on-error: true
+
+      - name: Upload Bandit SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: backend/bandit.sarif
+          category: bandit
+
+      # Lint do Dockerfile — detecta antipatterns antes do build
+      - name: Lint Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: backend/Dockerfile
+          failure-threshold: warning
+
+      - name: Scan secrets with Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Docker image for scanning
+        run: docker build -t pequi-security-check .
+
+      # Trivy: CRITICAL e HIGH com exit-code 1 bloqueiam o pipeline
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: pequi-security-check
+          format: table
+          exit-code: 1
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
+
+      # SBOM para rastreabilidade de componentes (requisito LGPD/auditoria clínica)
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: pequi-security-check
+          format: cyclonedx-json
+          output-file: backend/sbom.cyclonedx.json
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sbom
+          path: backend/sbom.cyclonedx.json

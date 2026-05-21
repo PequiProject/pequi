@@ -58,7 +58,7 @@
                     <a 
                         [routerLink]="item.route" 
                         routerLinkActive #rla="routerLinkActive"
-                        [routerLinkActiveOptions]="{ exact: true }" 
+                        [routerLinkActiveOptions]="linkActiveOptions(item)"
                         ariaCurrentWhenActive="page"
                         [attr.aria-label]="item.label"
                         class="flex min-h-11 items-center rounded-xl text-sm font-medium transition"
@@ -100,7 +100,7 @@
                     [routerLink]="item.route" 
                     routerLinkActive 
                     #rla="routerLinkActive"
-                    [routerLinkActiveOptions]="{ exact: true }" 
+                    [routerLinkActiveOptions]="linkActiveOptions(item)"
                     ariaCurrentWhenActive="page"
                     class="flex h-full min-h-11 flex-col items-center justify-center gap-1 rounded-xl px-2 text-xs font-medium transition"
                     [ngClass]="rla.isActive ? 'bg-[#E0E7FF] text-[#4338CA]' : 'bg-transparent text-[#78716C]'"

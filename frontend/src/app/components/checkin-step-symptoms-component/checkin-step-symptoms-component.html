@@ -1,124 +1,90 @@
-<div class="grid grid-cols-1 md:grid-cols-2 gap-8" [formGroup]="form">
-  <div class="flex flex-col items-center rounded-3xl bg-[#FCFBF8] p-6 shadow-sm">
-    <div class="text-center mb-6">
-      <h3 class="text-2xl font-bold text-[#222]">Mapa Corporal</h3>
-      <p class="text-sm text-[#666] mt-2 max-w-xs mx-auto">
-        Toque qualquer área na silhueta para criar um novo comentário ou revisar anotações
-        existentes.
-      </p>
-    </div>
+<div *ngIf="form" [formGroup]="form" class="space-y-6" data-testid="symptoms-step">
+  <div>
+    <h3 class="text-[2rem] font-semibold leading-tight text-[#373831]" data-testid="symptoms-title">
+      Você sentiu algum desses sintomas hoje?
+    </h3>
+    <p class="mt-2 max-w-md text-base leading-8 text-[#6B6B67]" data-testid="symptoms-description">
+      Seus comentários nos ajudam a aprimorar sua rotina de cuidados personalizada.
+    </p>
+  </div>
 
-    <div
-      class="relative w-full max-w-[280px] aspect-[1/2] mx-auto bg-white rounded-3xl p-4 shadow-inner"
+  <div class="flex flex-wrap gap-3" data-testid="symptoms-options">
+    <button
+      *ngFor="let symptom of symptoms"
+      type="button"
+      (click)="toggleSymptom(symptom.value)"
+      [attr.data-testid]="'symptom-option-' + symptom.value"
+      [attr.aria-pressed]="isSelected(symptom.value)"
+      class="rounded-full border px-5 py-3 text-lg font-medium transition"
+      [ngClass]="isSelected(symptom.value) ? symptom.selectedClass : symptom.unselectedClass"
     >
-      <img
-        [src]="
-          currentView() === 'front' ? 'assets/body_silhouette.svg' : 'assets/body_silhouette.svg'
-        "
-        alt="Silhueta do corpo humano"
-        class="w-full h-full object-contain cursor-crosshair"
-        (click)="addMarker($event)"
+      <span class="flex items-center gap-2">
+        <span *ngIf="isSelected(symptom.value)">✓</span>
+        <span>{{ symptom.label }}</span>
+      </span>
+    </button>
+  </div>
+
+  <div
+    *ngIf="hasNoSymptomsSelected"
+    class="rounded-2xl border border-[#BFE3C9] bg-[#EEF9F1] px-4 py-4 text-sm font-medium text-[#2F6B45]"
+    data-testid="no-symptoms-message"
+  >
+    Que ótimo! Continue firme no tratamento para mais dias sem sintomas!
+  </div>
+
+  <div *ngIf="!hasNoSymptomsSelected" class="rounded-2xl border border-[#ECE7E2] bg-white p-4" data-testid="custom-symptom-block">
+    <label for="customSymptom" class="mb-2 block text-sm font-medium text-[#373831]" data-testid="custom-symptom-label">
+      Adicionar outro sintoma
+    </label>
+
+    <div class="flex flex-col gap-3 sm:flex-row">
+      <input
+        id="customSymptom"
+        type="text"
+        formControlName="customSymptom"
+        placeholder="Digite um sintoma"
+        data-testid="custom-symptom-input"
+        class="min-h-12 flex-1 rounded-xl border border-[#D9D4CE] px-4 py-3 text-sm text-[#373831] outline-none transition placeholder:text-[#9A968F] focus:border-[#436D57]"
       />
 
-      @for (marker of visibleMarkers; track $index) {
-        <div
-          class="absolute w-6 h-6 -ml-3 -mt-3 rounded-full border-2 border-white flex items-center justify-center shadow-md transform transition-transform hover:scale-110 cursor-pointer"
-          [ngClass]="marker.status === 'active' ? 'bg-[#5b48d9]' : 'bg-[#3b6b82]'"
-          [style.left.%]="marker.x"
-          [style.top.%]="marker.y"
-        >
-          @if (marker.status === 'active') {
-            <span class="text-white text-xs font-bold">!</span>
-          }
-        </div>
-      }
+      <button
+        type="button"
+        (click)="addCustomSymptom()"
+        data-testid="custom-symptom-add-button"
+        class="min-h-12 rounded-xl bg-[#436D57] px-5 py-3 text-sm font-medium text-white transition hover:opacity-90"
+      >
+        Adicionar
+      </button>
     </div>
   </div>
 
-  <div class="flex flex-col gap-6">
-    <div class="bg-[#FCFBF8] rounded-3xl p-5 shadow-sm">
-      <h4 class="font-bold text-[#333] mb-4">Visão Geral</h4>
-      <div class="flex flex-col gap-3">
-        <div class="flex justify-between items-center bg-white p-3 rounded-2xl">
-          <span class="text-sm font-medium text-[#444]">Locais ativos</span>
-          <span class="bg-[#D8D4F7] text-[#5b48d9] text-xs font-bold px-3 py-1 rounded-full">
-            {{ activeCount | number: '2.0' }}
-          </span>
-        </div>
-        <div class="flex justify-between items-center bg-white p-3 rounded-2xl">
-          <span class="text-sm font-medium text-[#444]">Locais curados</span>
-          <span class="bg-[#D1F2D9] text-[#2F7A4A] text-xs font-bold px-3 py-1 rounded-full">
-            12
-          </span>
-        </div>
-      </div>
-    </div>
+  <div *ngIf="selectedSymptoms.length > 0" class="space-y-3" data-testid="selected-symptoms-section">
+    <p class="text-sm font-medium text-[#373831]" data-testid="selected-symptoms-title">
+      Sintomas registrados hoje
+    </p>
 
-    <div class="bg-[#FCFBF8] rounded-3xl p-5 shadow-sm">
-      <h4 class="font-bold text-[#333] mb-4">Modo de Visualização</h4>
-      <div class="flex flex-col gap-3">
+    <div class="flex flex-wrap gap-2" data-testid="selected-symptoms-list">
+      <span
+        *ngFor="let symptom of selectedSymptoms"
+        class="inline-flex items-center gap-2 rounded-full bg-[#F0F4F1] px-4 py-2 text-sm text-[#373831]"
+        [attr.data-testid]="'selected-symptom-' + symptom"
+      >
+        {{ symptom }}
         <button
           type="button"
-          (click)="setView('front')"
-          [ngClass]="
-            currentView() === 'front' ? 'bg-[#5b48d9] text-white' : 'bg-[#EFECE3] text-[#333]'
-          "
-          class="flex items-center gap-3 p-3 rounded-2xl font-medium transition-colors w-full text-left"
+          (click)="removeSymptom(symptom)"
+          class="text-[#64655C] transition hover:text-[#373831]"
+          [attr.aria-label]="'Remover sintoma ' + symptom"
+          [attr.data-testid]="'remove-symptom-' + symptom"
         >
-          <lucide-icon [name]="UserIcon" [size]="20"></lucide-icon>
-          Visão frontal
+          ×
         </button>
-        <button
-          type="button"
-          (click)="setView('back')"
-          [ngClass]="
-            currentView() === 'back' ? 'bg-[#5b48d9] text-white' : 'bg-[#EFECE3] text-[#333]'
-          "
-          class="flex items-center gap-3 p-3 rounded-2xl font-medium transition-colors w-full text-left"
-        >
-          <lucide-icon [name]="UserIcon" [size]="20"></lucide-icon>
-          Visão traseira
-        </button>
-      </div>
-    </div>
-
-    <div class="flex flex-col gap-4">
-      <div class="bg-[#FCFBF8] rounded-3xl p-5 shadow-sm flex flex-col gap-3">
-        <div
-          class="w-10 h-10 bg-[#D8D4F7] rounded-xl flex items-center justify-center text-[#5b48d9]"
-        >
-          <lucide-icon [name]="PlusIcon" [size]="20"></lucide-icon>
-        </div>
-        <div>
-          <h4 class="font-bold text-[#333]">Adicionar Local</h4>
-          <p class="text-xs text-[#666] mt-1 leading-relaxed">
-            Documente uma nova alteração ou sensação na pele com fotos e anotações.
-          </p>
-        </div>
-      </div>
-
-      <div class="bg-[#FCFBF8] rounded-3xl p-5 shadow-sm flex flex-col gap-3">
-        <div
-          class="w-10 h-10 bg-[#BDE3F0] rounded-xl flex items-center justify-center text-[#3b6b82]"
-        >
-          <lucide-icon [name]="HistoryIcon" [size]="20"></lucide-icon>
-        </div>
-        <div>
-          <h4 class="font-bold text-[#333]">Área de Revisão</h4>
-          <p class="text-xs text-[#666] mt-1 leading-relaxed">
-            Acompanhe a evolução de locais registrados ao longo do tempo.
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <div
-      class="border border-dashed border-[#A0C4B0] bg-[#F2F8F4] rounded-3xl p-5 text-center mt-2"
-    >
-      <p class="text-[#2F7A4A] text-sm font-medium italic">
-        "Notou algo novo hoje? Mudanças leves valem a pena serem documentadas para o seu registro de
-        bem-estar a longo prazo."
-      </p>
+      </span>
     </div>
   </div>
+
+  <p *ngIf="showError" class="text-sm font-medium text-red-600" data-testid="symptoms-error">
+    Selecione pelo menos um sintoma ou marque “Nenhum sintoma hoje” para continuar.
+  </p>
 </div>
