@@ -4,10 +4,10 @@ from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pequi.core.dependencies import (
+    get_actor_from_token,
     get_current_professional,
     get_current_user,
     get_db,
-    get_token_payload,
 )
 from pequi.core.rate_limit import limiter
 from pequi.repositories.dose_repo import DoseRepository
@@ -77,11 +77,10 @@ async def create_treatment(
 async def get_treatment(
     request: Request,
     treatment_id: UUID,
-    payload: dict = Depends(get_token_payload),
+    actor: tuple[UUID, str] = Depends(get_actor_from_token),
     session: AsyncSession = Depends(get_db),
 ) -> TreatmentResponse:
-    actor_user_id = UUID(payload["sub"])
-    actor_role = payload["role"]
+    actor_user_id, actor_role = actor
 
     treatment_repo, patient_repo, professional_repo, _, _ = _make_repos(session)
     use_case = GetTreatmentUseCase(treatment_repo, patient_repo, professional_repo)
@@ -99,11 +98,10 @@ async def register_dose(
     request: Request,
     treatment_id: UUID,
     body: DoseLogCreate,
-    payload: dict = Depends(get_token_payload),
+    actor: tuple[UUID, str] = Depends(get_actor_from_token),
     session: AsyncSession = Depends(get_db),
 ) -> DoseLogResponse:
-    actor_user_id = UUID(payload["sub"])
-    actor_role = payload["role"]
+    actor_user_id, actor_role = actor
 
     treatment_repo, patient_repo, professional_repo, dose_repo, _ = _make_repos(session)
     use_case = RegisterDoseUseCase(treatment_repo, dose_repo, patient_repo, professional_repo)
@@ -120,11 +118,10 @@ async def register_dose(
 async def get_adherence(
     request: Request,
     treatment_id: UUID,
-    payload: dict = Depends(get_token_payload),
+    actor: tuple[UUID, str] = Depends(get_actor_from_token),
     session: AsyncSession = Depends(get_db),
 ) -> AdherenceSnapshotResponse:
-    actor_user_id = UUID(payload["sub"])
-    actor_role = payload["role"]
+    actor_user_id, actor_role = actor
 
     treatment_repo, patient_repo, professional_repo, _, _ = _make_repos(session)
     use_case = GetAdherenceUseCase(treatment_repo, patient_repo, professional_repo)
@@ -138,7 +135,7 @@ async def get_adherence(
 
 
 @symptoms_router.get("", response_model=list[SymptomResponse])
-@limiter.limit("200/minute")
+@limiter.limit("50/minute")
 async def list_symptoms(
     request: Request,
     _user_id: UUID = Depends(get_current_user),

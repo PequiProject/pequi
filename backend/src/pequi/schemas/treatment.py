@@ -15,7 +15,11 @@ class TreatmentCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     patient_id: UUID
-    regimen: str = Field(..., pattern="^(PB|MB)$", description="Esquema MDT: PB ou MB")
+    regimen: str = Field(
+        ...,
+        pattern="^(PB|MB)$",
+        description="WHO MDT code: PB (paucibacillary, 6mo) or MB (multibacillary, 12mo)",
+    )
     start_date: date
     notes: str | None = Field(default=None, max_length=2000)
 

@@ -24,7 +24,6 @@ from pequi.schemas.dose_log import DoseLogCreate
 from pequi.use_cases.get_adherence import GetAdherenceUseCase
 from pequi.use_cases.register_dose import RegisterDoseUseCase
 
-
 # ---------------------------------------------------------------------------
 # Helpers de fixtures
 # ---------------------------------------------------------------------------
@@ -138,7 +137,7 @@ async def test_patient_can_register_daily_dose(create_tables, db_session):
 
 @pytest.mark.asyncio
 async def test_duplicate_dose_returns_conflict(create_tables, db_session):
-    """Registrar dose duplicada (mesmo treatment_id + drug_name + expected_at) lança ConflictError."""
+    """Dose duplicada (treatment_id + drug_name + expected_at) lança ConflictError."""
     health_unit = await _create_health_unit(db_session)
     patient_user = await _create_user(db_session, email="patient2@test.com", role="patient")
     prof_user = await _create_user(db_session, email="prof2@test.com", role="health_professional")

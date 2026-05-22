@@ -1,4 +1,5 @@
 import uuid
+from decimal import Decimal
 from enum import StrEnum
 
 from sqlalchemy import Column, Date, DateTime, Enum, ForeignKey, Index, Numeric, SmallInteger, Text
@@ -9,6 +10,12 @@ from pequi.database import Base
 
 
 class TreatmentRegimen(StrEnum):
+    """Códigos WHO do esquema MDT (abreviações internacionais em inglês).
+
+    PB — Paucibacillary (regime de 6 meses).
+    MB — Multibacillary (regime de 12 meses).
+    """
+
     PB = "PB"
     MB = "MB"
 
@@ -94,5 +101,13 @@ class DoseSchedule(Base):
         Enum(DoseFrequency, name="dose_frequency_enum"),
         nullable=False,
     )
+    # Nullable no schema para migrações/import; obrigatório ao popular via worker (M9).
     dose_mg = Column(Numeric(6, 2), nullable=True)
     month_number = Column(SmallInteger, nullable=True)
+
+    @staticmethod
+    def validate_dose_mg(dose_mg: Decimal | None, drug_name: str) -> Decimal:
+        """Garante dose em mg ao criar grades — evita schedules sem dosagem clínica."""
+        if dose_mg is None or dose_mg <= 0:
+            raise ValueError(f"dose_mg is required and must be positive for drug '{drug_name}'")
+        return dose_mg
