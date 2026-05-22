@@ -4,8 +4,7 @@ from pequi.core.exceptions import ForbiddenError, NotFoundError
 from pequi.repositories.checkin_repo import CheckinRepository
 from pequi.repositories.health_professional_repo import HealthProfessionalRepository
 from pequi.repositories.patient_repo import PatientRepository
-from pequi.schemas.checkin import CheckinResponse
-from pequi.use_cases.submit_checkin import _to_response
+from pequi.schemas.checkin import CheckinResponse, checkin_to_response
 
 
 class GetCheckinUseCase:
@@ -38,7 +37,7 @@ class GetCheckinUseCase:
         else:
             raise ForbiddenError("Acesso negado.")
 
-        return _to_response(checkin)
+        return checkin_to_response(checkin)
 
     async def _validate_professional_access(
         self,

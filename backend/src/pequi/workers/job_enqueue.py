@@ -2,9 +2,23 @@
 
 from uuid import UUID
 
+from arq import create_pool
+from arq.connections import ArqRedis, RedisSettings
+
+from pequi.config import get_settings
 from pequi.core.logging import get_logger
+from pequi.workers.settings import WorkerSettings
 
 logger = get_logger(__name__)
+_arq_pool: ArqRedis | None = None
+
+
+async def _get_pool() -> ArqRedis:
+    global _arq_pool
+    if _arq_pool is None:
+        settings = get_settings()
+        _arq_pool = await create_pool(RedisSettings.from_dsn(settings.REDIS_URL))
+    return _arq_pool
 
 
 class JobEnqueuer:
@@ -14,29 +28,16 @@ class JobEnqueuer:
 
 class ArqJobEnqueuer(JobEnqueuer):
     async def enqueue_ai_feedback(self, checkin_id: UUID) -> None:
-        from arq import create_pool
-        from arq.connections import RedisSettings
-
-        from pequi.config import get_settings
-        from pequi.workers.settings import WorkerSettings
-
-        settings = get_settings()
-        redis = RedisSettings.from_dsn(settings.REDIS_URL)
-        pool = await create_pool(redis)
-        try:
-            await pool.enqueue_job(
-                "ai_feedback_job",
-                str(checkin_id),
-                _queue_name=WorkerSettings.queue_name,
-            )
-            logger.info("ai_feedback.enqueued", checkin_id=str(checkin_id))
-        finally:
-            await pool.close()
+        pool = await _get_pool()
+        await pool.enqueue_job(
+            "ai_feedback_job",
+            str(checkin_id),
+            _queue_name=WorkerSettings.queue_name,
+        )
+        logger.info("ai_feedback.enqueued", checkin_id=str(checkin_id))
 
 
 class NoOpJobEnqueuer(JobEnqueuer):
-    """Usado em testes — não exige Redis."""
-
     def __init__(self) -> None:
         self.enqueued: list[UUID] = []
 

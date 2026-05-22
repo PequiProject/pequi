@@ -23,6 +23,7 @@ def _make_checkin(*, intensity: int = 5, mood: CheckinMood = CheckinMood.ok) -> 
 async def test_symptom_spike_critical_when_intensity_ge_8():
     alert_repo = AsyncMock()
     alert_repo.create.side_effect = lambda a: a
+    alert_repo.has_unresolved = AsyncMock(return_value=False)
     checkin_repo = AsyncMock()
     checkin_repo.get_recent_moods.return_value = []
     dose_repo = AsyncMock()

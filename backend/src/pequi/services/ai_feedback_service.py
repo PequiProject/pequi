@@ -48,6 +48,8 @@ class AIFeedbackService:
                 max_tokens=256,
                 messages=[{"role": "user", "content": prompt}],
             )
+            if not response.content:
+                return _FALLBACK_FEEDBACK
             text = response.content[0].text.strip()  # type: ignore[union-attr]
         except Exception:
             logger.warning("ai_feedback.api_error", checkin_id=str(checkin.id))

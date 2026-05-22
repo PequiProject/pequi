@@ -4,7 +4,7 @@ from uuid import uuid4
 
 import pytest
 
-from pequi.core.exceptions import ConflictError, ForbiddenError
+from pequi.core.exceptions import ConflictError, ForbiddenError, ValidationFailedError
 from pequi.models.alert import AlertSeverity, AlertType
 from pequi.models.symptom import Symptom, SymptomCategory
 from pequi.repositories.alert_repo import AlertRepository
@@ -125,6 +125,35 @@ async def test_ai_feedback_job_enqueued_when_intensity_ge_7(create_tables, db_se
     assert len(enqueuer.enqueued) == 1
     assert enqueuer.enqueued[0] == result.id
     assert result.ai_feedback is None
+
+
+@pytest.mark.asyncio
+async def test_duplicate_symptom_ids_rejected(create_tables, db_session):
+    health_unit = await _create_health_unit(db_session)
+    patient_user = await _create_user(db_session, email="chk6b@test.com", role="patient")
+    await _create_patient(db_session, user=patient_user, health_unit=health_unit)
+    symptom = await _create_symptom(db_session)
+    data = CheckinCreate(mood="ok", symptom_intensity=3, symptom_ids=[symptom.id, symptom.id])
+    with pytest.raises(ValidationFailedError):
+        await _make_submit_use_case(db_session).execute(patient_user.id, data)
+
+
+@pytest.mark.asyncio
+async def test_enqueue_failure_does_not_block_checkin(create_tables, db_session):
+    health_unit = await _create_health_unit(db_session)
+    patient_user = await _create_user(db_session, email="chk6@test.com", role="patient")
+    await _create_patient(db_session, user=patient_user, health_unit=health_unit)
+    symptom = await _create_symptom(db_session)
+
+    class FailingEnqueuer(NoOpJobEnqueuer):
+        async def enqueue_ai_feedback(self, checkin_id):
+            raise RuntimeError("redis down")
+
+    data = CheckinCreate(mood="bad", symptom_intensity=8, symptom_ids=[symptom.id])
+    result = await _make_submit_use_case(db_session, enqueuer=FailingEnqueuer()).execute(
+        patient_user.id, data
+    )
+    assert result.symptom_intensity == 8
 
 
 @pytest.mark.asyncio

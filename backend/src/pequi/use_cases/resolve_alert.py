@@ -39,6 +39,9 @@ class ResolveAlertUseCase:
                 "Profissional não tem acesso a alertas de pacientes de outra unidade."
             )
 
+        if alert.resolved:
+            return AlertResponse.model_validate(alert)
+
         alert.resolved = True
         alert.resolved_at = datetime.now(UTC)
         alert.resolved_by = professional_user_id

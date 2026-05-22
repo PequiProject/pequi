@@ -3,8 +3,7 @@ from uuid import UUID
 from pequi.core.exceptions import NotFoundError
 from pequi.repositories.checkin_repo import CheckinRepository
 from pequi.repositories.patient_repo import PatientRepository
-from pequi.schemas.checkin import CheckinListResponse
-from pequi.use_cases.submit_checkin import _to_response
+from pequi.schemas.checkin import CheckinListResponse, checkin_to_response
 
 
 class GetCheckinHistoryUseCase:
@@ -31,6 +30,6 @@ class GetCheckinHistoryUseCase:
             patient.id, limit=limit, offset=offset
         )
         return CheckinListResponse(
-            items=[_to_response(c) for c in items],
+            items=[checkin_to_response(c) for c in items],
             total=total,
         )

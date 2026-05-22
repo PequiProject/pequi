@@ -16,7 +16,7 @@ class CheckinRepository:
     async def has_checkin_on_date(self, patient_id: UUID, day: date) -> bool:
         stmt = select(Checkin.id).where(
             Checkin.patient_id == patient_id,
-            func.date(Checkin.checked_in_at) == day,
+            func.date(func.timezone("UTC", Checkin.checked_in_at)) == day,
         )
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none() is not None

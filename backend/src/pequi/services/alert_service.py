@@ -29,7 +29,9 @@ class AlertService:
         created: list[Alert] = []
 
         spike = self._evaluate_symptom_spike(checkin)
-        if spike is not None:
+        if spike is not None and not await self._alert_repo.has_unresolved(
+            checkin.patient_id, AlertType.symptom_spike
+        ):
             created.append(await self._alert_repo.create(spike))
 
         if await self._should_create_mood_decline(checkin.patient_id) and not await self._alert_repo.has_unresolved(

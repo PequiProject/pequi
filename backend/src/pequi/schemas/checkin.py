@@ -55,3 +55,20 @@ class CheckinResponse(BaseModel):
 class CheckinListResponse(BaseModel):
     items: list[CheckinResponse]
     total: int
+
+
+def checkin_to_response(checkin) -> CheckinResponse:
+    symptoms = checkin.symptoms or []
+    return CheckinResponse(
+        id=checkin.id,
+        patient_id=checkin.patient_id,
+        mood=checkin.mood.value,
+        symptom_intensity=checkin.symptom_intensity,
+        symptom_ids=[s.id for s in symptoms],
+        symptoms=[SymptomBrief.model_validate(s) for s in symptoms],
+        general_notes=checkin.general_notes,
+        ai_feedback=checkin.ai_feedback,
+        ai_feedback_at=checkin.ai_feedback_at,
+        checked_in_at=checkin.checked_in_at,
+        created_at=checkin.created_at,
+    )

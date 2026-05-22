@@ -9,7 +9,7 @@ from pequi.core.dependencies import (
     get_current_professional,
     get_db,
 )
-from pequi.core.rate_limit import limiter
+from pequi.core.rate_limit import limiter, user_limiter
 from pequi.repositories.alert_repo import AlertRepository
 from pequi.repositories.checkin_repo import CheckinRepository
 from pequi.repositories.dose_repo import DoseRepository
@@ -48,7 +48,7 @@ def _checkin_repos(session: AsyncSession) -> tuple[
 
 
 @router.post("", response_model=CheckinResponse, status_code=201)
-@limiter.limit("10/minute")
+@user_limiter.limit("10/minute")
 async def submit_checkin(
     request: Request,
     body: CheckinCreate,
@@ -62,7 +62,7 @@ async def submit_checkin(
 
 
 @router.get("", response_model=CheckinListResponse)
-@limiter.limit("100/minute")
+@user_limiter.limit("100/minute")
 async def get_checkin_history(
     request: Request,
     user_id: UUID = Depends(get_current_patient),

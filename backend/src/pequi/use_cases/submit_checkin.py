@@ -1,34 +1,22 @@
 from datetime import UTC, datetime
 from uuid import UUID
 
+from sqlalchemy.exc import IntegrityError
+
 from pequi.core.exceptions import ConflictError, NotFoundError, ValidationFailedError
+from pequi.core.logging import get_logger
 from pequi.repositories.alert_repo import AlertRepository
 from pequi.repositories.checkin_repo import CheckinRepository
 from pequi.repositories.dose_repo import DoseRepository
 from pequi.repositories.patient_repo import PatientRepository
 from pequi.repositories.treatment_repo import SymptomRepository
-from pequi.schemas.checkin import CheckinCreate, CheckinResponse, SymptomBrief
+from pequi.schemas.checkin import CheckinCreate, CheckinResponse, checkin_to_response
 from pequi.services.alert_service import AlertService
 from pequi.workers.job_enqueue import ArqJobEnqueuer, JobEnqueuer
 
+logger = get_logger(__name__)
 _AI_FEEDBACK_INTENSITY_THRESHOLD = 7
-
-
-def _to_response(checkin) -> CheckinResponse:
-    symptoms = checkin.symptoms or []
-    return CheckinResponse(
-        id=checkin.id,
-        patient_id=checkin.patient_id,
-        mood=checkin.mood.value,
-        symptom_intensity=checkin.symptom_intensity,
-        symptom_ids=[s.id for s in symptoms],
-        symptoms=[SymptomBrief.model_validate(s) for s in symptoms],
-        general_notes=checkin.general_notes,
-        ai_feedback=checkin.ai_feedback,
-        ai_feedback_at=checkin.ai_feedback_at,
-        checked_in_at=checkin.checked_in_at,
-        created_at=checkin.created_at,
-    )
+_DUPLICATE_CHECKIN_MSG = "Já existe um check-in registrado para hoje."
 
 
 class SubmitCheckinUseCase:
@@ -51,9 +39,12 @@ class SubmitCheckinUseCase:
         if patient is None:
             raise NotFoundError("PatientProfile")
 
+        if len(data.symptom_ids) != len(set(data.symptom_ids)):
+            raise ValidationFailedError("symptom_ids não pode conter duplicatas.")
+
         today = datetime.now(UTC).date()
         if await self._checkin_repo.has_checkin_on_date(patient.id, today):
-            raise ConflictError("Já existe um check-in registrado para hoje.")
+            raise ConflictError(_DUPLICATE_CHECKIN_MSG)
 
         catalog = await self._symptom_repo.get_by_ids(data.symptom_ids)
         if len(catalog) != len(set(data.symptom_ids)):
@@ -61,18 +52,22 @@ class SubmitCheckinUseCase:
                 "Um ou mais symptom_ids são inválidos ou não existem no catálogo."
             )
 
-        checkin = await self._checkin_repo.create(patient.id, data)
+        try:
+            checkin = await self._checkin_repo.create(patient.id, data)
+        except IntegrityError as exc:
+            cname = getattr(getattr(exc, "orig", None), "constraint_name", None) or ""
+            if cname == "uq_checkins_patient_one_per_day":
+                raise ConflictError(_DUPLICATE_CHECKIN_MSG) from exc
+            if "checkin_symptoms" in cname:
+                raise ValidationFailedError("symptom_ids não pode conter duplicatas.") from exc
+            raise
+
         await self._alert_service.evaluate_after_checkin(checkin)
 
         if data.symptom_intensity >= _AI_FEEDBACK_INTENSITY_THRESHOLD:
-            await self._job_enqueuer.enqueue_ai_feedback(checkin.id)
+            try:
+                await self._job_enqueuer.enqueue_ai_feedback(checkin.id)
+            except Exception:
+                logger.exception("ai_feedback.enqueue_failed", checkin_id=str(checkin.id))
 
-        return _to_response(checkin)
-
-
-def build_alert_service(session) -> AlertService:
-    return AlertService(
-        AlertRepository(session),
-        CheckinRepository(session),
-        DoseRepository(session),
-    )
+        return checkin_to_response(checkin)
