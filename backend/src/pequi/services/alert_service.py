@@ -32,7 +32,9 @@ class AlertService:
         if spike is not None:
             created.append(await self._alert_repo.create(spike))
 
-        if await self._should_create_mood_decline(checkin.patient_id):
+        if await self._should_create_mood_decline(checkin.patient_id) and not await self._alert_repo.has_unresolved(
+            checkin.patient_id, AlertType.mood_decline
+        ):
             mood_alert = Alert(
                 id=uuid.uuid4(),
                 patient_id=checkin.patient_id,
@@ -43,7 +45,9 @@ class AlertService:
             created.append(await self._alert_repo.create(mood_alert))
 
         missed_count = await self._dose_repo.count_missed_doses_in_week(checkin.patient_id)
-        if missed_count > _MISSED_DOSES_THRESHOLD:
+        if missed_count > _MISSED_DOSES_THRESHOLD and not await self._alert_repo.has_unresolved(
+            checkin.patient_id, AlertType.missed_doses
+        ):
             dose_alert = Alert(
                 id=uuid.uuid4(),
                 patient_id=checkin.patient_id,

@@ -3,7 +3,7 @@ from uuid import UUID
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from pequi.models.alert import Alert
+from pequi.models.alert import Alert, AlertType
 
 
 class AlertRepository:
@@ -45,6 +45,14 @@ class AlertRepository:
         )
         result = await self._session.execute(stmt)
         return list(result.scalars().all()), total
+
+    async def has_unresolved(self, patient_id: UUID, alert_type: AlertType) -> bool:
+        stmt = select(Alert.id).where(
+            Alert.patient_id == patient_id,
+            Alert.type == alert_type,
+            Alert.resolved.is_(False),
+        )
+        return (await self._session.execute(stmt)).scalar_one_or_none() is not None
 
     async def list_active(self, patient_id: UUID) -> list[Alert]:
         items, _ = await self.list_by_patient(patient_id, resolved=False, limit=100)

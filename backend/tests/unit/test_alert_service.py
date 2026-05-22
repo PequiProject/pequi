@@ -41,6 +41,7 @@ async def test_symptom_spike_critical_when_intensity_ge_8():
 async def test_symptom_spike_high_when_intensity_ge_6():
     alert_repo = AsyncMock()
     alert_repo.create.side_effect = lambda a: a
+    alert_repo.has_unresolved = AsyncMock(return_value=False)
     checkin_repo = AsyncMock()
     checkin_repo.get_recent_moods.return_value = []
     dose_repo = AsyncMock()
@@ -59,6 +60,7 @@ async def test_symptom_spike_high_when_intensity_ge_6():
 async def test_no_spike_when_intensity_below_6():
     alert_repo = AsyncMock()
     alert_repo.create.side_effect = lambda a: a
+    alert_repo.has_unresolved = AsyncMock(return_value=False)
     checkin_repo = AsyncMock()
     checkin_repo.get_recent_moods.return_value = []
     dose_repo = AsyncMock()
@@ -76,6 +78,7 @@ async def test_no_spike_when_intensity_below_6():
 async def test_mood_decline_after_three_terrible_days():
     alert_repo = AsyncMock()
     alert_repo.create.side_effect = lambda a: a
+    alert_repo.has_unresolved = AsyncMock(return_value=False)
     checkin_repo = AsyncMock()
     checkin_repo.get_recent_moods.return_value = [
         CheckinMood.terrible,
@@ -91,3 +94,36 @@ async def test_mood_decline_after_three_terrible_days():
     alerts = await service.evaluate_after_checkin(checkin)
 
     assert any(a.type == AlertType.mood_decline for a in alerts)
+
+
+@pytest.mark.asyncio
+async def test_mood_decline_not_created_with_only_two_terrible_days():
+    alert_repo = AsyncMock()
+    alert_repo.create.side_effect = lambda a: a
+    alert_repo.has_unresolved.return_value = False
+    checkin_repo = AsyncMock()
+    checkin_repo.get_recent_moods.return_value = [CheckinMood.terrible, CheckinMood.terrible]
+    dose_repo = AsyncMock()
+    dose_repo.count_missed_doses_in_week.return_value = 0
+
+    service = AlertService(alert_repo, checkin_repo, dose_repo)
+    alerts = await service.evaluate_after_checkin(_make_checkin(mood=CheckinMood.terrible))
+
+    assert not any(a.type == AlertType.mood_decline for a in alerts)
+
+
+@pytest.mark.asyncio
+async def test_missed_doses_when_more_than_three_in_week():
+    alert_repo = AsyncMock()
+    alert_repo.create.side_effect = lambda a: a
+    alert_repo.has_unresolved.return_value = False
+    checkin_repo = AsyncMock()
+    checkin_repo.get_recent_moods.return_value = []
+    dose_repo = AsyncMock()
+    dose_repo.count_missed_doses_in_week.return_value = 4
+
+    service = AlertService(alert_repo, checkin_repo, dose_repo)
+    alerts = await service.evaluate_after_checkin(_make_checkin(intensity=2))
+
+    dose = next(a for a in alerts if a.type == AlertType.missed_doses)
+    assert dose.severity == AlertSeverity.high
