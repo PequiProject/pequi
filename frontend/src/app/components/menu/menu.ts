@@ -16,6 +16,8 @@ type NavItem = {
   label: string;
   route: string;
   icon: LucideIcon;
+  /** When false, child routes (e.g. /comunity/feed) also mark the item active. */
+  exactLink?: boolean;
 };
 
 @Component({
@@ -40,8 +42,12 @@ export class Menu {
     { label: 'Jornada', route: '/journey', icon: LucideMap },
     { label: 'Check In', route: '/checkin', icon: LucideMapPinned },
     { label: 'Educação', route: '/education', icon: LucideGraduationCap },
-    { label: 'Comunidade', route: '/comunity', icon: LucideUsers },
+    { label: 'Comunidade', route: '/comunity', icon: LucideUsers, exactLink: false },
   ];
+
+  linkActiveOptions(item: NavItem): { exact: boolean } {
+    return { exact: item.exactLink !== false };
+  }
 
   toggleSidebar(): void {
     const next = !this.isCollapsed();

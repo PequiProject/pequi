@@ -1,0 +1,16 @@
+<div
+  [class]="containerClass()"
+  [attr.data-testid]="anonymous() ? 'anonymous-avatar' : 'public-avatar'"
+  aria-hidden="true"
+>
+  @if (anonymous()) {
+    <lucide-icon
+      [name]="LucideVenetianMask"
+      [size]="iconSize()"
+      [strokeWidth]="2"
+      aria-hidden="true"
+    />
+  } @else {
+    {{ initials() }}
+  }
+</div>

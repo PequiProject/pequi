@@ -5,8 +5,11 @@ import { Journey } from './features/journey/journey';
 import { CheckinComponent } from './features/checkin/checkin';
 import { Education } from './features/education/education';
 import { Comunity } from './features/comunity/comunity';
+import { CommunityFeed } from './features/comunity/community-feed/community-feed';
+import { CommunityPostPage } from './features/comunity/community-post-page/community-post-page';
 import { Profile } from './features/profile/profile';
 import { Notification } from './components/notification/notification';
+import { RegisterAppointmentComponent } from './features/appointments/register-appointment/register-appointment';
 
 export const routes: Routes = [
     {
@@ -17,8 +20,15 @@ export const routes: Routes = [
       { path: 'home', component: HomeComponent, title: 'Início' },
       { path: 'journey', component: Journey, title: 'Jornada' },
       { path: 'checkin', component: CheckinComponent, title: 'Check In' },
+      {
+        path: 'appointments/register',
+        component: RegisterAppointmentComponent,
+        title: 'Registrar consulta',
+      },
       { path: 'education', component: Education, title: 'Educação' },
       { path: 'comunity', component: Comunity, title: 'Comunidade' },
+      { path: 'comunity/feed', component: CommunityFeed, title: 'Comunidade' },
+      { path: 'comunity/feed/:postId', component: CommunityPostPage, title: 'Post' },
       { path: 'profile', component: Profile, title: 'Perfil' },
       { path: 'notifications', component: Notification, title: 'Notificações' },
     ],

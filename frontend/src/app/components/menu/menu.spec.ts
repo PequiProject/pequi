@@ -1,7 +1,7 @@
 // menu.spec.ts
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { vi } from 'vitest';
 import { Menu } from './menu';
 import { HomeComponent } from '../../features/home/home';
@@ -9,6 +9,8 @@ import { Journey } from '../../features/journey/journey';
 import { CheckinComponent } from '../../features/checkin/checkin';
 import { Education } from '../../features/education/education';
 import { Comunity } from '../../features/comunity/comunity';
+import { CommunityFeed } from '../../features/comunity/community-feed/community-feed';
+import { CommunityPostPage } from '../../features/comunity/community-post-page/community-post-page';
 
 
 describe(Menu.name, () => {
@@ -25,6 +27,8 @@ describe(Menu.name, () => {
           { path: 'checkin', component: CheckinComponent },
           { path: 'education', component: Education },
           { path: 'comunity', component: Comunity },
+          { path: 'comunity/feed', component: CommunityFeed },
+          { path: 'comunity/feed/:postId', component: CommunityPostPage },
         ]),
       ],
     }).compileComponents();
@@ -93,5 +97,19 @@ it('should render all menu items in desktop and mobile nav', () => {
   it('should return route in trackByRoute', () => {
     const item = component.navItems[0];
     expect(component.trackByRoute(0, item)).toBe('/home');
+  });
+
+  it('should keep Comunidade active on feed route', async () => {
+    const router = TestBed.inject(Router);
+    await router.navigateByUrl('/comunity/feed');
+    fixture.detectChanges();
+
+    const communityItem = component.navItems.find((i) => i.route === '/comunity')!;
+    const communityLink = fixture.debugElement
+      .queryAll(By.css('nav a'))
+      .find((el) => el.nativeElement.getAttribute('href')?.includes('/comunity'));
+
+    expect(component.linkActiveOptions(communityItem)).toEqual({ exact: false });
+    expect(communityLink?.nativeElement.className).toContain('bg-[#E0E7FF]');
   });
 });

@@ -26,24 +26,6 @@
       }
     </div>
   </section>
-
-  <section class="section-container">
-    <h3 class="section-title">Ações rápidas</h3>
-
-    <div class="card-list">
-      @for (action of QuickAction; track $index) {
-        <div class="action-card">
-          <div class="icon-wrapper" [ngClass]="action.colorClass">
-            <lucide-icon [name]="action.icon" [size]="28"></lucide-icon>
-          </div>
-          <div class="card-text">
-            <span class="card-title">{{ action.title }}</span>
-            <span class="card-desc">{{ action.description }}</span>
-          </div>
-        </div>
-      }
-    </div>
-  </section>
 <div>
   <section class="section-container">
     <h3 class="section-title">Ações rápidas</h3>

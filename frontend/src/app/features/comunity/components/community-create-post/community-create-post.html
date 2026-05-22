@@ -1,0 +1,109 @@
+<div
+  class="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="create-post-title"
+  data-testid="create-post-dialog"
+  (click)="onBackdropClick($event)"
+>
+  <div
+    class="flex max-h-[90dvh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-lg ring-1 ring-[#E7E5E4] lg:max-w-xl"
+    data-testid="create-post-panel"
+    (click)="$event.stopPropagation()"
+  >
+    <header class="flex shrink-0 items-center justify-between border-b border-[#E7E5E4] px-5 py-4">
+      <h2 id="create-post-title" class="text-base font-bold text-[#4338CA] sm:text-lg">
+        Novo post
+      </h2>
+      <button
+        type="button"
+        data-testid="close-create-post"
+        (click)="onClose()"
+        class="rounded-full p-2 text-[#64655C] transition hover:bg-[#F5F5F4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4338CA]"
+        aria-label="Fechar"
+      >
+        <lucide-icon [name]="LucideX" [size]="20" [strokeWidth]="2" />
+      </button>
+    </header>
+
+    <form
+      class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 py-4"
+      autocomplete="off"
+      (submit)="$event.preventDefault(); submit()"
+    >
+      <app-community-author-mode-picker
+        [selected]="authorMode()"
+        (modeChange)="onAuthorModeChange($event)"
+      />
+
+      <div>
+        <label for="post-title" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+          Título
+        </label>
+        <input
+          id="post-title"
+          type="text"
+          data-testid="post-title-input"
+          [value]="title()"
+          (input)="onTitleInput($event)"
+          maxlength="120"
+          placeholder="Ex.: Minha experiência com o tratamento"
+          class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] placeholder:text-[#A8A29E] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[#4338CA]/30"
+        />
+        @if (showValidation() && !title().trim()) {
+          <p class="mt-1 text-xs text-[#B91C1C]" data-testid="title-error">Informe um título.</p>
+        }
+      </div>
+
+      <div>
+        <label for="post-description" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+          Descrição
+        </label>
+        <textarea
+          id="post-description"
+          data-testid="post-description-input"
+          rows="4"
+          [value]="description()"
+          (input)="onDescriptionInput($event)"
+          maxlength="2000"
+          placeholder="Conte sua história, dúvida ou mensagem de apoio..."
+          class="w-full resize-none rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] placeholder:text-[#A8A29E] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[#4338CA]/30"
+        ></textarea>
+        @if (showValidation() && !description().trim()) {
+          <p class="mt-1 text-xs text-[#B91C1C]" data-testid="description-error">
+            Informe uma descrição.
+          </p>
+        }
+      </div>
+
+      <app-community-post-category-picker
+        [selected]="categories()"
+        (categoriesChange)="onCategoriesChange($event)"
+      />
+      @if (showValidation() && categories().length === 0) {
+        <p class="-mt-2 text-xs text-[#B91C1C]" data-testid="category-error">
+          Escolha ao menos uma tag.
+        </p>
+      }
+
+      <footer class="flex shrink-0 gap-3 border-t border-[#E7E5E4] pt-2">
+        <button
+          type="button"
+          data-testid="cancel-create-post"
+          (click)="onClose()"
+          class="flex-1 rounded-xl border border-[#D6D3D1] px-4 py-2.5 text-sm font-semibold text-[#373831] transition hover:bg-[#FAFAF9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4338CA]"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          data-testid="submit-create-post"
+          class="flex-1 rounded-xl bg-[#4338CA] px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4338CA] disabled:opacity-50"
+          [disabled]="!canSubmit()"
+        >
+          Publicar
+        </button>
+      </footer>
+    </form>
+  </div>
+</div>

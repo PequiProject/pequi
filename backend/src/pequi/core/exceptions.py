@@ -2,6 +2,9 @@ from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
+# Starlette ≥0.40: HTTP_422_UNPROCESSABLE_CONTENT substitui HTTP_422_UNPROCESSABLE_ENTITY
+HTTP_422_UNPROCESSABLE = getattr(status, "HTTP_422_UNPROCESSABLE_CONTENT", 422)
+
 
 class PequiException(Exception):
     """Base para exceções de domínio do Pequi."""
@@ -37,7 +40,7 @@ class UnauthorizedError(PequiException):
 
 class ValidationFailedError(PequiException):
     def __init__(self, message: str) -> None:
-        super().__init__(message, status.HTTP_422_UNPROCESSABLE_ENTITY)
+        super().__init__(message, HTTP_422_UNPROCESSABLE)
 
 
 def register_exception_handlers(app: FastAPI) -> None:
@@ -58,7 +61,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(ValidationError)
     async def validation_exception_handler(request: Request, exc: ValidationError) -> JSONResponse:
         return JSONResponse(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=HTTP_422_UNPROCESSABLE,
             content={"detail": exc.errors()},
         )
 

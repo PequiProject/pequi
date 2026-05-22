@@ -1,0 +1,17 @@
+<label class="relative block w-full" data-testid="community-search">
+  <span class="sr-only">Buscar na comunidade</span>
+  <lucide-icon
+    [name]="LucideSearch"
+    [size]="18"
+    class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#64655C]"
+    [strokeWidth]="2"
+    aria-hidden="true"
+  />
+  <input
+    type="search"
+    [value]="value()"
+    (input)="onInput($event)"
+    [placeholder]="placeholder()"
+    class="w-full rounded-full border border-[#E7E5E4] bg-[#FAFAF9] py-3 pl-14 pr-4 text-sm text-[#373831] placeholder:text-[#A8A29E] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[#4338CA]/30 sm:py-3.5 sm:pl-[3.75rem] sm:text-base"
+  />
+</label>
