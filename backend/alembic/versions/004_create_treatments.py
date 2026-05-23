@@ -22,34 +22,22 @@ def upgrade() -> None:
     # ------------------------------------------------------------------
     # ENUM types
     # ------------------------------------------------------------------
-    symptom_category_enum = postgresql.ENUM(
-        "dermatological",
-        "neurological",
-        "systemic",
-        name="symptom_category_enum",
+    op.execute(
+        "CREATE TYPE IF NOT EXISTS symptom_category_enum "
+        "AS ENUM ('dermatological', 'neurological', 'systemic')"
     )
-    treatment_regimen_enum = postgresql.ENUM(
-        "PB",
-        "MB",
-        name="treatment_regimen_enum",
+    op.execute(
+        "CREATE TYPE IF NOT EXISTS treatment_regimen_enum "
+        "AS ENUM ('PB', 'MB')"
     )
-    treatment_status_enum = postgresql.ENUM(
-        "active",
-        "completed",
-        "abandoned",
-        "suspended",
-        name="treatment_status_enum",
+    op.execute(
+        "CREATE TYPE IF NOT EXISTS treatment_status_enum "
+        "AS ENUM ('active', 'completed', 'abandoned', 'suspended')"
     )
-    dose_frequency_enum = postgresql.ENUM(
-        "daily",
-        "monthly_supervised",
-        name="dose_frequency_enum",
+    op.execute(
+        "CREATE TYPE IF NOT EXISTS dose_frequency_enum "
+        "AS ENUM ('daily', 'monthly_supervised')"
     )
-
-    symptom_category_enum.create(op.get_bind(), checkfirst=True)
-    treatment_regimen_enum.create(op.get_bind(), checkfirst=True)
-    treatment_status_enum.create(op.get_bind(), checkfirst=True)
-    dose_frequency_enum.create(op.get_bind(), checkfirst=True)
 
     # ------------------------------------------------------------------
     # health_professionals — stub mínimo para FK de treatments.
