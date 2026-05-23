@@ -26,17 +26,13 @@ def upgrade() -> None:
         "CREATE TYPE IF NOT EXISTS symptom_category_enum "
         "AS ENUM ('dermatological', 'neurological', 'systemic')"
     )
-    op.execute(
-        "CREATE TYPE IF NOT EXISTS treatment_regimen_enum "
-        "AS ENUM ('PB', 'MB')"
-    )
+    op.execute("CREATE TYPE IF NOT EXISTS treatment_regimen_enum AS ENUM ('PB', 'MB')")
     op.execute(
         "CREATE TYPE IF NOT EXISTS treatment_status_enum "
         "AS ENUM ('active', 'completed', 'abandoned', 'suspended')"
     )
     op.execute(
-        "CREATE TYPE IF NOT EXISTS dose_frequency_enum "
-        "AS ENUM ('daily', 'monthly_supervised')"
+        "CREATE TYPE IF NOT EXISTS dose_frequency_enum AS ENUM ('daily', 'monthly_supervised')"
     )
 
     # ------------------------------------------------------------------
