@@ -10,9 +10,9 @@ from pequi.models.dose_log import DoseLog
 from pequi.models.symptom import Symptom, SymptomCategory
 from pequi.repositories.alert_repo import AlertRepository
 from pequi.repositories.checkin_repo import CheckinRepository
+from pequi.repositories.dose_repo import DoseRepository
 from pequi.schemas.checkin import CheckinCreate
 from pequi.services.alert_service import AlertService
-from pequi.repositories.dose_repo import DoseRepository
 from tests.integration.test_dose_flow import (
     _create_health_unit,
     _create_patient,
@@ -43,7 +43,9 @@ async def test_mood_decline_after_three_terrible_checkins(create_tables, db_sess
         await repo.create(patient.id, data, checked_in_at=now - timedelta(days=days_ago))
     checkin = await repo.create(patient.id, data, checked_in_at=now)
     alerts = await svc.evaluate_after_checkin(checkin)
-    assert any(a.type == AlertType.mood_decline and a.severity == AlertSeverity.medium for a in alerts)
+    assert any(
+        a.type == AlertType.mood_decline and a.severity == AlertSeverity.medium for a in alerts
+    )
 
 
 @pytest.mark.asyncio
@@ -75,4 +77,6 @@ async def test_missed_doses_alert_when_four_missed_in_week(create_tables, db_ses
     alerts = await AlertService(
         AlertRepository(db_session), repo, DoseRepository(db_session)
     ).evaluate_after_checkin(checkin)
-    assert any(a.type == AlertType.missed_doses and a.severity == AlertSeverity.high for a in alerts)
+    assert any(
+        a.type == AlertType.missed_doses and a.severity == AlertSeverity.high for a in alerts
+    )

@@ -23,19 +23,26 @@ def upgrade() -> None:
     # ENUM types
     # ------------------------------------------------------------------
     symptom_category_enum = postgresql.ENUM(
-        "dermatological", "neurological", "systemic",
+        "dermatological",
+        "neurological",
+        "systemic",
         name="symptom_category_enum",
     )
     treatment_regimen_enum = postgresql.ENUM(
-        "PB", "MB",
+        "PB",
+        "MB",
         name="treatment_regimen_enum",
     )
     treatment_status_enum = postgresql.ENUM(
-        "active", "completed", "abandoned", "suspended",
+        "active",
+        "completed",
+        "abandoned",
+        "suspended",
         name="treatment_status_enum",
     )
     dose_frequency_enum = postgresql.ENUM(
-        "daily", "monthly_supervised",
+        "daily",
+        "monthly_supervised",
         name="dose_frequency_enum",
     )
 
@@ -70,12 +77,14 @@ def upgrade() -> None:
         sa.Column("deleted_at", sa.TIMESTAMP(timezone=True), nullable=True),
         sa.UniqueConstraint("user_id", name="uq_health_professionals_user_id"),
         sa.ForeignKeyConstraint(
-            ["user_id"], ["users.id"],
+            ["user_id"],
+            ["users.id"],
             name="fk_health_professionals_user_id_users",
             ondelete="RESTRICT",
         ),
         sa.ForeignKeyConstraint(
-            ["health_unit_id"], ["health_units.id"],
+            ["health_unit_id"],
+            ["health_units.id"],
             name="fk_health_professionals_health_unit_id_health_units",
             ondelete="RESTRICT",
         ),
@@ -107,7 +116,9 @@ def upgrade() -> None:
         sa.Column(
             "category",
             sa.Enum(
-                "dermatological", "neurological", "systemic",
+                "dermatological",
+                "neurological",
+                "systemic",
                 name="symptom_category_enum",
                 create_type=False,
             ),
@@ -135,7 +146,10 @@ def upgrade() -> None:
         sa.Column(
             "status",
             sa.Enum(
-                "active", "completed", "abandoned", "suspended",
+                "active",
+                "completed",
+                "abandoned",
+                "suspended",
                 name="treatment_status_enum",
                 create_type=False,
             ),
@@ -157,12 +171,14 @@ def upgrade() -> None:
         ),
         sa.Column("deleted_at", sa.TIMESTAMP(timezone=True), nullable=True),
         sa.ForeignKeyConstraint(
-            ["patient_id"], ["patient_profiles.id"],
+            ["patient_id"],
+            ["patient_profiles.id"],
             name="fk_treatments_patient_id_patient_profiles",
             ondelete="RESTRICT",
         ),
         sa.ForeignKeyConstraint(
-            ["prescribed_by"], ["health_professionals.id"],
+            ["prescribed_by"],
+            ["health_professionals.id"],
             name="fk_treatments_prescribed_by_health_professionals",
             ondelete="RESTRICT",
         ),
@@ -188,7 +204,8 @@ def upgrade() -> None:
         sa.Column("dose_mg", sa.Numeric(6, 2), nullable=True),
         sa.Column("month_number", sa.SmallInteger(), nullable=True),
         sa.ForeignKeyConstraint(
-            ["treatment_id"], ["treatments.id"],
+            ["treatment_id"],
+            ["treatments.id"],
             name="fk_dose_schedules_treatment_id_treatments",
             ondelete="RESTRICT",
         ),
@@ -216,16 +233,20 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.UniqueConstraint(
-            "treatment_id", "drug_name", "expected_at",
+            "treatment_id",
+            "drug_name",
+            "expected_at",
             name="uq_dose_logs_dedup",
         ),
         sa.ForeignKeyConstraint(
-            ["treatment_id"], ["treatments.id"],
+            ["treatment_id"],
+            ["treatments.id"],
             name="fk_dose_logs_treatment_id_treatments",
             ondelete="RESTRICT",
         ),
         sa.ForeignKeyConstraint(
-            ["registered_by"], ["users.id"],
+            ["registered_by"],
+            ["users.id"],
             name="fk_dose_logs_registered_by_users",
             ondelete="SET NULL",
         ),
@@ -253,22 +274,20 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.ForeignKeyConstraint(
-            ["patient_id"], ["patient_profiles.id"],
+            ["patient_id"],
+            ["patient_profiles.id"],
             name="fk_adherence_snapshots_patient_id_patient_profiles",
             ondelete="RESTRICT",
         ),
         sa.ForeignKeyConstraint(
-            ["treatment_id"], ["treatments.id"],
+            ["treatment_id"],
+            ["treatments.id"],
             name="fk_adherence_snapshots_treatment_id_treatments",
             ondelete="RESTRICT",
         ),
     )
-    op.create_index(
-        "ix_adherence_snapshots_treatment_id", "adherence_snapshots", ["treatment_id"]
-    )
-    op.create_index(
-        "ix_adherence_snapshots_patient_id", "adherence_snapshots", ["patient_id"]
-    )
+    op.create_index("ix_adherence_snapshots_treatment_id", "adherence_snapshots", ["treatment_id"])
+    op.create_index("ix_adherence_snapshots_patient_id", "adherence_snapshots", ["patient_id"])
     op.create_index(
         "ix_adherence_snapshots_calculated_at", "adherence_snapshots", ["calculated_at"]
     )

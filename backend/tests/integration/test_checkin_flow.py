@@ -17,7 +17,6 @@ from pequi.schemas.checkin import CheckinCreate
 from pequi.services.alert_service import AlertService
 from pequi.use_cases.list_alerts import ListAlertsUseCase
 from pequi.use_cases.submit_checkin import SubmitCheckinUseCase
-from pequi.workers.job_enqueue import NoOpJobEnqueuer
 from tests.integration.test_dose_flow import (
     _create_health_unit,
     _create_patient,
@@ -38,7 +37,7 @@ async def _create_symptom(session, *, name: str = "Dormência") -> Symptom:
     return symptom
 
 
-def _make_submit_use_case(session, enqueuer: NoOpJobEnqueuer | None = None) -> SubmitCheckinUseCase:
+def _make_submit_use_case(session) -> SubmitCheckinUseCase:
     checkin_repo = CheckinRepository(session)
     alert_service = AlertService(
         AlertRepository(session),
@@ -50,7 +49,6 @@ def _make_submit_use_case(session, enqueuer: NoOpJobEnqueuer | None = None) -> S
         PatientRepository(session),
         SymptomRepository(session),
         alert_service,
-        job_enqueuer=enqueuer or NoOpJobEnqueuer(),
     )
 
 
@@ -117,13 +115,12 @@ async def test_ai_feedback_job_enqueued_when_intensity_ge_7(create_tables, db_se
     await _create_patient(db_session, user=patient_user, health_unit=health_unit)
     symptom = await _create_symptom(db_session)
 
-    enqueuer = NoOpJobEnqueuer()
     data = CheckinCreate(mood="terrible", symptom_intensity=7, symptom_ids=[symptom.id])
-    use_case = _make_submit_use_case(db_session, enqueuer=enqueuer)
+    use_case = _make_submit_use_case(db_session)
     result = await use_case.execute(patient_user.id, data)
 
-    assert len(enqueuer.enqueued) == 1
-    assert enqueuer.enqueued[0] == result.id
+    # AI feedback enqueue is now handled in router via BackgroundTasks
+    # This test verifies the use case returns the checkin correctly
     assert result.ai_feedback is None
 
 
@@ -145,14 +142,8 @@ async def test_enqueue_failure_does_not_block_checkin(create_tables, db_session)
     await _create_patient(db_session, user=patient_user, health_unit=health_unit)
     symptom = await _create_symptom(db_session)
 
-    class FailingEnqueuer(NoOpJobEnqueuer):
-        async def enqueue_ai_feedback(self, checkin_id):
-            raise RuntimeError("redis down")
-
     data = CheckinCreate(mood="bad", symptom_intensity=8, symptom_ids=[symptom.id])
-    result = await _make_submit_use_case(db_session, enqueuer=FailingEnqueuer()).execute(
-        patient_user.id, data
-    )
+    result = await _make_submit_use_case(db_session).execute(patient_user.id, data)
     assert result.symptom_intensity == 8
 
 

@@ -34,9 +34,9 @@ class AlertService:
         ):
             created.append(await self._alert_repo.create(spike))
 
-        if await self._should_create_mood_decline(checkin.patient_id) and not await self._alert_repo.has_unresolved(
-            checkin.patient_id, AlertType.mood_decline
-        ):
+        if await self._should_create_mood_decline(
+            checkin.patient_id
+        ) and not await self._alert_repo.has_unresolved(checkin.patient_id, AlertType.mood_decline):
             mood_alert = Alert(
                 id=uuid.uuid4(),
                 patient_id=checkin.patient_id,

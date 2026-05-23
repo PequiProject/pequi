@@ -16,7 +16,6 @@ from pequi.use_cases.get_checkin_history import GetCheckinHistoryUseCase
 from tests.integration.test_dose_flow import (
     _create_health_unit,
     _create_patient,
-    _create_professional,
     _create_user,
 )
 

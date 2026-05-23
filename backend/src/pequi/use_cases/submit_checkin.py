@@ -5,14 +5,11 @@ from sqlalchemy.exc import IntegrityError
 
 from pequi.core.exceptions import ConflictError, NotFoundError, ValidationFailedError
 from pequi.core.logging import get_logger
-from pequi.repositories.alert_repo import AlertRepository
 from pequi.repositories.checkin_repo import CheckinRepository
-from pequi.repositories.dose_repo import DoseRepository
 from pequi.repositories.patient_repo import PatientRepository
 from pequi.repositories.treatment_repo import SymptomRepository
 from pequi.schemas.checkin import CheckinCreate, CheckinResponse, checkin_to_response
 from pequi.services.alert_service import AlertService
-from pequi.workers.job_enqueue import ArqJobEnqueuer, JobEnqueuer
 
 logger = get_logger(__name__)
 _AI_FEEDBACK_INTENSITY_THRESHOLD = 7
@@ -26,13 +23,11 @@ class SubmitCheckinUseCase:
         patient_repo: PatientRepository,
         symptom_repo: SymptomRepository,
         alert_service: AlertService,
-        job_enqueuer: JobEnqueuer | None = None,
     ) -> None:
         self._checkin_repo = checkin_repo
         self._patient_repo = patient_repo
         self._symptom_repo = symptom_repo
         self._alert_service = alert_service
-        self._job_enqueuer = job_enqueuer or ArqJobEnqueuer()
 
     async def execute(self, user_id: UUID, data: CheckinCreate) -> CheckinResponse:
         patient = await self._patient_repo.get_by_user_id(user_id)
@@ -63,11 +58,4 @@ class SubmitCheckinUseCase:
             raise
 
         await self._alert_service.evaluate_after_checkin(checkin)
-
-        if data.symptom_intensity >= _AI_FEEDBACK_INTENSITY_THRESHOLD:
-            try:
-                await self._job_enqueuer.enqueue_ai_feedback(checkin.id)
-            except Exception:
-                logger.exception("ai_feedback.enqueue_failed", checkin_id=str(checkin.id))
-
         return checkin_to_response(checkin)

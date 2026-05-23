@@ -1,10 +1,13 @@
 from uuid import UUID
 
 from pequi.core.exceptions import ForbiddenError, NotFoundError
+from pequi.core.logging import get_logger
 from pequi.repositories.alert_repo import AlertRepository
 from pequi.repositories.health_professional_repo import HealthProfessionalRepository
 from pequi.repositories.patient_repo import PatientRepository
 from pequi.schemas.alert import AlertListResponse, AlertResponse
+
+logger = get_logger(__name__)
 
 
 class ListAlertsUseCase:
@@ -28,9 +31,7 @@ class ListAlertsUseCase:
         limit: int = 50,
         offset: int = 0,
     ) -> AlertListResponse:
-        target_patient_id = await self._resolve_patient_id(
-            actor_user_id, actor_role, patient_id
-        )
+        target_patient_id = await self._resolve_patient_id(actor_user_id, actor_role, patient_id)
         items, total = await self._alert_repo.list_by_patient(
             target_patient_id,
             resolved=resolved,
@@ -56,9 +57,7 @@ class ListAlertsUseCase:
 
         if actor_role == "health_professional":
             if patient_id is None:
-                raise ForbiddenError(
-                    "Profissional deve informar patient_id para listar alertas."
-                )
+                raise ForbiddenError("Profissional deve informar patient_id para listar alertas.")
             professional = await self._professional_repo.get_by_user_id(actor_user_id)
             if professional is None:
                 raise ForbiddenError("Perfil de profissional não encontrado.")
@@ -67,6 +66,11 @@ class ListAlertsUseCase:
                 raise ForbiddenError(
                     "Profissional não tem acesso a alertas de pacientes de outra unidade."
                 )
+            logger.info(
+                "audit.alerts.accessed_by_professional",
+                professional_user_id=str(actor_user_id),
+                patient_id=str(patient_id),
+            )
             return patient.id
 
         raise ForbiddenError("Acesso negado.")

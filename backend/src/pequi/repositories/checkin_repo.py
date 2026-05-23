@@ -49,9 +49,7 @@ class CheckinRepository:
 
     async def get_by_id(self, checkin_id: UUID) -> Checkin | None:
         stmt = (
-            select(Checkin)
-            .where(Checkin.id == checkin_id)
-            .options(selectinload(Checkin.symptoms))
+            select(Checkin).where(Checkin.id == checkin_id).options(selectinload(Checkin.symptoms))
         )
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
@@ -63,8 +61,8 @@ class CheckinRepository:
         limit: int = 50,
         offset: int = 0,
     ) -> tuple[list[Checkin], int]:
-        count_stmt = select(func.count()).select_from(Checkin).where(
-            Checkin.patient_id == patient_id
+        count_stmt = (
+            select(func.count()).select_from(Checkin).where(Checkin.patient_id == patient_id)
         )
         total = (await self._session.execute(count_stmt)).scalar_one()
 

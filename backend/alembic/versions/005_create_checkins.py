@@ -19,15 +19,25 @@ depends_on: str | Sequence[str] | None = None
 
 def upgrade() -> None:
     checkin_mood_enum = postgresql.ENUM(
-        "terrible", "bad", "ok", "good", "great",
+        "terrible",
+        "bad",
+        "ok",
+        "good",
+        "great",
         name="checkin_mood_enum",
     )
     alert_type_enum = postgresql.ENUM(
-        "symptom_spike", "missed_doses", "mood_decline", "new_lesion",
+        "symptom_spike",
+        "missed_doses",
+        "mood_decline",
+        "new_lesion",
         name="alert_type_enum",
     )
     alert_severity_enum = postgresql.ENUM(
-        "low", "medium", "high", "critical",
+        "low",
+        "medium",
+        "high",
+        "critical",
         name="alert_severity_enum",
     )
 
@@ -42,7 +52,11 @@ def upgrade() -> None:
         sa.Column(
             "mood",
             postgresql.ENUM(
-                "terrible", "bad", "ok", "good", "great",
+                "terrible",
+                "bad",
+                "ok",
+                "good",
+                "great",
                 name="checkin_mood_enum",
                 create_type=False,
             ),
@@ -115,7 +129,10 @@ def upgrade() -> None:
         sa.Column(
             "type",
             postgresql.ENUM(
-                "symptom_spike", "missed_doses", "mood_decline", "new_lesion",
+                "symptom_spike",
+                "missed_doses",
+                "mood_decline",
+                "new_lesion",
                 name="alert_type_enum",
                 create_type=False,
             ),
@@ -124,7 +141,10 @@ def upgrade() -> None:
         sa.Column(
             "severity",
             postgresql.ENUM(
-                "low", "medium", "high", "critical",
+                "low",
+                "medium",
+                "high",
+                "critical",
                 name="alert_severity_enum",
                 create_type=False,
             ),

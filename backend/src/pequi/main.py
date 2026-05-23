@@ -73,12 +73,8 @@ def _register_routers(app: FastAPI) -> None:
 
     app.include_router(patient_router.router, prefix="/v1/patients", tags=["patients"])
     app.include_router(auth_router.router, prefix="/v1/auth", tags=["auth"])
-    app.include_router(
-        treatment_router.router, prefix="/v1/treatments", tags=["treatments"]
-    )
-    app.include_router(
-        treatment_router.symptoms_router, prefix="/v1/symptoms", tags=["symptoms"]
-    )
+    app.include_router(treatment_router.router, prefix="/v1/treatments", tags=["treatments"])
+    app.include_router(treatment_router.symptoms_router, prefix="/v1/symptoms", tags=["symptoms"])
     app.include_router(checkin_router.router, prefix="/v1/checkins", tags=["checkins"])
     app.include_router(checkin_router.alerts_router, prefix="/v1/alerts", tags=["alerts"])
 

@@ -1,10 +1,13 @@
 from uuid import UUID
 
 from pequi.core.exceptions import ForbiddenError, NotFoundError
+from pequi.core.logging import get_logger
 from pequi.repositories.checkin_repo import CheckinRepository
 from pequi.repositories.health_professional_repo import HealthProfessionalRepository
 from pequi.repositories.patient_repo import PatientRepository
 from pequi.schemas.checkin import CheckinResponse, checkin_to_response
+
+logger = get_logger(__name__)
 
 
 class GetCheckinUseCase:
@@ -34,6 +37,12 @@ class GetCheckinUseCase:
                 raise ForbiddenError("Paciente não tem acesso a este check-in.")
         elif actor_role == "health_professional":
             await self._validate_professional_access(actor_user_id, checkin.patient_id)
+            logger.info(
+                "audit.checkin.accessed_by_professional",
+                professional_user_id=str(actor_user_id),
+                patient_id=str(checkin.patient_id),
+                checkin_id=str(checkin_id),
+            )
         else:
             raise ForbiddenError("Acesso negado.")
 
