@@ -51,6 +51,16 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 
+[tool.coverage.run]
+source = ["src/pequi"]
+omit = [
+    "src/pequi/**/__init__.py",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
+
 [tool.ruff]
 line-length = 100
 target-version = "py312"
