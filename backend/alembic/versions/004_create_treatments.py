@@ -12,6 +12,15 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
 
+from pequi.db.pg_enums import (
+    create_m3_enums,
+    dose_frequency_enum,
+    drop_m3_enums_op,
+    symptom_category_enum,
+    treatment_regimen_enum,
+    treatment_status_enum,
+)
+
 revision: str = "004_create_treatments"
 down_revision: str | None = "003_add_user_foreign_keys"
 branch_labels: str | Sequence[str] | None = None
@@ -22,27 +31,7 @@ def upgrade() -> None:
     # ------------------------------------------------------------------
     # ENUM types
     # ------------------------------------------------------------------
-    symptom_category_enum = postgresql.ENUM(
-        "dermatological", "neurological", "systemic",
-        name="symptom_category_enum",
-    )
-    treatment_regimen_enum = postgresql.ENUM(
-        "PB", "MB",
-        name="treatment_regimen_enum",
-    )
-    treatment_status_enum = postgresql.ENUM(
-        "active", "completed", "abandoned", "suspended",
-        name="treatment_status_enum",
-    )
-    dose_frequency_enum = postgresql.ENUM(
-        "daily", "monthly_supervised",
-        name="dose_frequency_enum",
-    )
-
-    symptom_category_enum.create(op.get_bind(), checkfirst=True)
-    treatment_regimen_enum.create(op.get_bind(), checkfirst=True)
-    treatment_status_enum.create(op.get_bind(), checkfirst=True)
-    dose_frequency_enum.create(op.get_bind(), checkfirst=True)
+    create_m3_enums(op.get_bind(), checkfirst=True)
 
     # ------------------------------------------------------------------
     # health_professionals — stub mínimo para FK de treatments.
@@ -70,12 +59,14 @@ def upgrade() -> None:
         sa.Column("deleted_at", sa.TIMESTAMP(timezone=True), nullable=True),
         sa.UniqueConstraint("user_id", name="uq_health_professionals_user_id"),
         sa.ForeignKeyConstraint(
-            ["user_id"], ["users.id"],
+            ["user_id"],
+            ["users.id"],
             name="fk_health_professionals_user_id_users",
             ondelete="RESTRICT",
         ),
         sa.ForeignKeyConstraint(
-            ["health_unit_id"], ["health_units.id"],
+            ["health_unit_id"],
+            ["health_units.id"],
             name="fk_health_professionals_health_unit_id_health_units",
             ondelete="RESTRICT",
         ),
@@ -86,8 +77,6 @@ def upgrade() -> None:
         ["health_unit_id"],
     )
 
-    # Adiciona FK de patient_profiles.health_unit_id → health_units.id
-    # (o campo existia desde 002 mas sem constraint explícita)
     op.create_foreign_key(
         "fk_patient_profiles_health_unit_id_health_units",
         "patient_profiles",
@@ -106,11 +95,7 @@ def upgrade() -> None:
         sa.Column("name", sa.Text(), nullable=False),
         sa.Column(
             "category",
-            sa.Enum(
-                "dermatological", "neurological", "systemic",
-                name="symptom_category_enum",
-                create_type=False,
-            ),
+            symptom_category_enum(create_type=False),
             nullable=False,
         ),
         sa.Column("description", sa.Text(), nullable=True),
@@ -127,18 +112,14 @@ def upgrade() -> None:
         sa.Column("prescribed_by", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column(
             "regimen",
-            sa.Enum("PB", "MB", name="treatment_regimen_enum", create_type=False),
+            treatment_regimen_enum(create_type=False),
             nullable=False,
         ),
         sa.Column("start_date", sa.DATE(), nullable=False),
         sa.Column("expected_end", sa.DATE(), nullable=False),
         sa.Column(
             "status",
-            sa.Enum(
-                "active", "completed", "abandoned", "suspended",
-                name="treatment_status_enum",
-                create_type=False,
-            ),
+            treatment_status_enum(create_type=False),
             nullable=False,
             server_default="active",
         ),
@@ -157,12 +138,14 @@ def upgrade() -> None:
         ),
         sa.Column("deleted_at", sa.TIMESTAMP(timezone=True), nullable=True),
         sa.ForeignKeyConstraint(
-            ["patient_id"], ["patient_profiles.id"],
+            ["patient_id"],
+            ["patient_profiles.id"],
             name="fk_treatments_patient_id_patient_profiles",
             ondelete="RESTRICT",
         ),
         sa.ForeignKeyConstraint(
-            ["prescribed_by"], ["health_professionals.id"],
+            ["prescribed_by"],
+            ["health_professionals.id"],
             name="fk_treatments_prescribed_by_health_professionals",
             ondelete="RESTRICT",
         ),
@@ -182,13 +165,14 @@ def upgrade() -> None:
         sa.Column("drug_name", sa.Text(), nullable=False),
         sa.Column(
             "frequency",
-            sa.Enum("daily", "monthly_supervised", name="dose_frequency_enum", create_type=False),
+            dose_frequency_enum(create_type=False),
             nullable=False,
         ),
         sa.Column("dose_mg", sa.Numeric(6, 2), nullable=True),
         sa.Column("month_number", sa.SmallInteger(), nullable=True),
         sa.ForeignKeyConstraint(
-            ["treatment_id"], ["treatments.id"],
+            ["treatment_id"],
+            ["treatments.id"],
             name="fk_dose_schedules_treatment_id_treatments",
             ondelete="RESTRICT",
         ),
@@ -216,16 +200,20 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.UniqueConstraint(
-            "treatment_id", "drug_name", "expected_at",
+            "treatment_id",
+            "drug_name",
+            "expected_at",
             name="uq_dose_logs_dedup",
         ),
         sa.ForeignKeyConstraint(
-            ["treatment_id"], ["treatments.id"],
+            ["treatment_id"],
+            ["treatments.id"],
             name="fk_dose_logs_treatment_id_treatments",
             ondelete="RESTRICT",
         ),
         sa.ForeignKeyConstraint(
-            ["registered_by"], ["users.id"],
+            ["registered_by"],
+            ["users.id"],
             name="fk_dose_logs_registered_by_users",
             ondelete="SET NULL",
         ),
@@ -253,22 +241,20 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.ForeignKeyConstraint(
-            ["patient_id"], ["patient_profiles.id"],
+            ["patient_id"],
+            ["patient_profiles.id"],
             name="fk_adherence_snapshots_patient_id_patient_profiles",
             ondelete="RESTRICT",
         ),
         sa.ForeignKeyConstraint(
-            ["treatment_id"], ["treatments.id"],
+            ["treatment_id"],
+            ["treatments.id"],
             name="fk_adherence_snapshots_treatment_id_treatments",
             ondelete="RESTRICT",
         ),
     )
-    op.create_index(
-        "ix_adherence_snapshots_treatment_id", "adherence_snapshots", ["treatment_id"]
-    )
-    op.create_index(
-        "ix_adherence_snapshots_patient_id", "adherence_snapshots", ["patient_id"]
-    )
+    op.create_index("ix_adherence_snapshots_treatment_id", "adherence_snapshots", ["treatment_id"])
+    op.create_index("ix_adherence_snapshots_patient_id", "adherence_snapshots", ["patient_id"])
     op.create_index(
         "ix_adherence_snapshots_calculated_at", "adherence_snapshots", ["calculated_at"]
     )
@@ -290,7 +276,4 @@ def downgrade() -> None:
     op.drop_index("ix_health_professionals_health_unit_id", "health_professionals")
     op.drop_table("health_professionals")
 
-    op.execute("DROP TYPE IF EXISTS dose_frequency_enum")
-    op.execute("DROP TYPE IF EXISTS treatment_status_enum")
-    op.execute("DROP TYPE IF EXISTS treatment_regimen_enum")
-    op.execute("DROP TYPE IF EXISTS symptom_category_enum")
+    drop_m3_enums_op(op)

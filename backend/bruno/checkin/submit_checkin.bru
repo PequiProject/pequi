@@ -1,0 +1,46 @@
+meta {
+  name: Submit Checkin
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/v1/checkins
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "mood": "ok",
+    "symptom_intensity": 5,
+    "symptom_ids": ["{{symptomId}}"],
+    "general_notes": "Dor leve nas mãos"
+  }
+}
+
+assert {
+  res.status: eq 201
+  res.body.id: isDefined
+  res.body.checked_in_at: isDefined
+  res.body.patient_id: isDefined
+  res.body.mood: eq "ok"
+}
+
+docs {
+  Registra check-in diário do paciente (PEQ-100).
+
+  - Um check-in por dia (409 se já existir).
+  - symptom_intensity: 0-10.
+  - symptom_ids: N:M com catálogo /v1/symptoms.
+
+  Rate limit: 10/minuto.
+}

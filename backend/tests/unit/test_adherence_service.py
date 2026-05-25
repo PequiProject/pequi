@@ -52,7 +52,5 @@ class TestAdherenceServiceCalculatePct:
             (180, 120, Decimal("66.67")),
         ],
     )
-    def test_parametric_cases(
-        self, total: int, taken: int, expected: Decimal
-    ) -> None:
+    def test_parametric_cases(self, total: int, taken: int, expected: Decimal) -> None:
         assert AdherenceService.calculate_pct(total, taken) == expected

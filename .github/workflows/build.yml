@@ -78,18 +78,19 @@ jobs:
         run: uv sync --frozen --extra dev
 
       - name: Create env
-        env:
-          ENV_CONTENT: |
-            ENV=development
-            SECRET_KEY=test-secret-do-not-use-in-production
-            DATABASE_URL=postgresql+asyncpg://pequi:pequi@localhost:5432/pequi_test
-            REDIS_URL=redis://localhost:6379/0
-            SENTRY_DSN=
-            STORAGE_ENDPOINT=http://localhost:9000
-            STORAGE_ACCESS_KEY=minioadmin
-            STORAGE_SECRET_KEY=minioadmin
-            STORAGE_BUCKET_IMAGES=pequi-images
-        run: printf '%s' "$ENV_CONTENT" > .env
+        run: |
+          cat > .env <<'EOF'
+          ENV=development
+          SECRET_KEY=test-secret-do-not-use-in-production
+          DATABASE_URL=postgresql+asyncpg://pequi:pequi@localhost:5432/pequi_test
+          DATABASE_URL_TEST=postgresql+asyncpg://pequi:pequi@localhost:5432/pequi_test
+          REDIS_URL=redis://localhost:6379/0
+          SENTRY_DSN=
+          STORAGE_ENDPOINT=http://localhost:9000
+          STORAGE_ACCESS_KEY=minioadmin
+          STORAGE_SECRET_KEY=minioadmin
+          STORAGE_BUCKET_IMAGES=pequi-images
+          EOF
 
       - name: Run migrations
         run: uv run alembic upgrade head

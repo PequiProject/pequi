@@ -67,20 +67,16 @@ def _register_routers(app: FastAPI) -> None:
     app.include_router(health_router)
 
     from pequi.routers import auth as auth_router
+    from pequi.routers import checkin as checkin_router
     from pequi.routers import patient as patient_router
     from pequi.routers import treatment as treatment_router
 
     app.include_router(patient_router.router, prefix="/v1/patients", tags=["patients"])
     app.include_router(auth_router.router, prefix="/v1/auth", tags=["auth"])
-    app.include_router(
-        treatment_router.router, prefix="/v1/treatments", tags=["treatments"]
-    )
-    app.include_router(
-        treatment_router.symptoms_router, prefix="/v1/symptoms", tags=["symptoms"]
-    )
-
-    # M4: checkin.router → prefix="/v1/checkins"
-    # ...
+    app.include_router(treatment_router.router, prefix="/v1/treatments", tags=["treatments"])
+    app.include_router(treatment_router.symptoms_router, prefix="/v1/symptoms", tags=["symptoms"])
+    app.include_router(checkin_router.router, prefix="/v1/checkins", tags=["checkins"])
+    app.include_router(checkin_router.alerts_router, prefix="/v1/alerts", tags=["alerts"])
 
 
 app = create_app()
