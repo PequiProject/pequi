@@ -44,7 +44,7 @@ describe(CheckinStepDetailsComponent.name, () => {
     const descriptionText = getByTestId('details-description').nativeElement.textContent;
 
     expect(titleText).toContain('Quer adicionar mais detalhes?');
-    expect(descriptionText).toContain('Descreva onde você está notando mudanças hoje. Cada detalhe ajuda.');
+    expect(descriptionText).toContain('Descreva onde você está notando mudanças ou detalhe os seus principais sintomas de hoje. Cada detalhe ajuda.');
   });
 
   it('should render textarea block, label and textarea', () => {

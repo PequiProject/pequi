@@ -33,12 +33,10 @@
         [form]="symptomsForm"
       ></app-checkin-step-symptoms-component>
 
-      <!--
       <app-checkin-step-intensity-component
         *ngIf="currentStep() === 3"
-        [reviewForm]="intensityForm"
-        [fullForm]="form"
-      ></app-checkin-step-intensity-component> -->
+        [form]="intensityForm"
+      ></app-checkin-step-intensity-component>
   
       <app-checkin-step-details-component
         *ngIf="currentStep() === 4"
@@ -56,20 +54,12 @@
         </button>
 
         <button
-          *ngIf="currentStep() < steps.length"
           type="button"
-          (click)="nextStep()"
-          class="rounded-xl bg-[#4338CA] px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
+          (click)="currentStep() === 4 ? submit() : nextStep()"
+          [disabled]="isCurrentStepInvalid()"
+          class="min-h-12 rounded-xl bg-[#4338CA] px-5 py-3 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Próximo
-        </button>
-
-        <button
-          *ngIf="currentStep() === steps.length"
-          type="submit"
-          class="rounded-xl bg-[#4338CA] px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
-        >
-          Enviar formulário
+          {{ currentStep() === 4 ? 'Enviar registro' : 'Próximo' }}
         </button>
       </div>
     </form>
