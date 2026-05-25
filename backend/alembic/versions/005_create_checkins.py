@@ -95,11 +95,9 @@ def upgrade() -> None:
         "checkins",
         ["patient_id"],
     )
-    op.create_index(
-        "uq_checkins_patient_one_per_day",
-        "checkins",
-        ["patient_id", sa.text("(checked_in_at AT TIME ZONE 'UTC')::date")],
-        unique=True,
+    op.execute(
+        "CREATE UNIQUE INDEX uq_checkins_patient_one_per_day "
+        "ON checkins (patient_id, DATE((checked_in_at AT TIME ZONE 'UTC')))"
     )
 
     op.create_table(
