@@ -1,0 +1,37 @@
+meta {
+  name: Resolve Alert
+  type: http
+  seq: 5
+}
+
+patch {
+  url: {{baseUrl}}/v1/alerts/{{alertId}}/resolve
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "notes": "Paciente orientado na consulta."
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.resolved: eq true
+  res.body.id: eq "{{alertId}}"
+}
+
+docs {
+  Profissional resolve um alerta (mesma unidade do paciente).
+
+  Rate limit: 20/minuto.
+}

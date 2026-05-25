@@ -62,3 +62,10 @@ class SymptomRepository:
         stmt = select(Symptom).order_by(Symptom.category, Symptom.name)
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
+
+    async def get_by_ids(self, symptom_ids: list[UUID]) -> list[Symptom]:
+        if not symptom_ids:
+            return []
+        stmt = select(Symptom).where(Symptom.id.in_(symptom_ids))
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())

@@ -1,7 +1,7 @@
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pequi.core.logging import get_logger
@@ -51,3 +51,25 @@ class DoseRepository:
         )
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
+
+    async def count_missed_doses_in_week(self, patient_id: UUID) -> int:
+        """Doses esperadas na última semana sem taken_at e não puladas."""
+        from pequi.models.treatment import Treatment
+
+        week_ago = datetime.now(UTC) - timedelta(days=7)
+        now = datetime.now(UTC)
+        stmt = (
+            select(func.count())
+            .select_from(DoseLog)
+            .join(Treatment, DoseLog.treatment_id == Treatment.id)
+            .where(
+                Treatment.patient_id == patient_id,
+                Treatment.deleted_at.is_(None),
+                DoseLog.expected_at >= week_ago,
+                DoseLog.expected_at <= now,
+                DoseLog.taken_at.is_(None),
+                DoseLog.skipped.is_(False),
+            )
+        )
+        result = await self._session.execute(stmt)
+        return result.scalar_one()

@@ -9,14 +9,16 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
+import pequi.models  # noqa: F401 — registra todas as tabelas no metadata antes do create_all
 from pequi.config import get_settings
 from pequi.core.dependencies import get_db
-from pequi.core.rate_limit import limiter
+from pequi.core.rate_limit import limiter, user_limiter
 from pequi.database import Base
 from pequi.main import app
 
 # Disable rate limiting for tests
 limiter.enabled = False
+user_limiter.enabled = False
 
 settings = get_settings()
 

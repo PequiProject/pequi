@@ -16,7 +16,7 @@ Contrato HTTP da API v1. Fonte: `docs/milestones/M*.md`.
 | `auth/*` | M1 | 🔜 |
 | `patient/*` (demais) | M2 | 🔜 |
 | `treatment/`, `dose/` | M3 | 🔜 |
-| `checkin/` | M4 | 🔜 |
+| `checkin/` | M4 | ✅ |
 | `body_map/` | M5 | 🔜 |
 | `community/` | M6 | 🔜 |
 | `articles/` | M7 | 🔜 |
