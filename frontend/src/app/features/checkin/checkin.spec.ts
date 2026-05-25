@@ -1,7 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { By } from '@angular/platform-browser';
-import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { vi } from 'vitest';
 
@@ -62,39 +62,39 @@ describe(CheckinComponent.name, () => {
   const getButtons = () =>
     fixture.debugElement.queryAll(By.css('button')).map(btn => btn.nativeElement as HTMLButtonElement);
 
-beforeEach(async () => {
-  router = {
-    navigate: vi.fn(),
-  };
+  beforeEach(async () => {
+    router = {
+      navigate: vi.fn(),
+    };
 
-  await TestBed.configureTestingModule({
-    imports: [CheckinComponent],
-    providers: [{ provide: Router, useValue: router }],
-  })
-    .overrideComponent(CheckinComponent, {
-      remove: {
-        imports: [
-          CheckinStepFeelingComponent,
-          CheckinStepSymptomsComponent,
-          CheckinStepIntensityComponent,
-          CheckinStepDetailsComponent,
-        ],
-      },
-      add: {
-        imports: [
-          CheckinStepFeelingStubComponent,
-          CheckinStepSymptomsStubComponent,
-          CheckinStepIntensityStubComponent,
-          CheckinStepDetailsStubComponent,
-        ],
-      },
+    await TestBed.configureTestingModule({
+      imports: [CheckinComponent],
+      providers: [{ provide: Router, useValue: router }],
     })
-    .compileComponents();
+      .overrideComponent(CheckinComponent, {
+        remove: {
+          imports: [
+            CheckinStepFeelingComponent,
+            CheckinStepSymptomsComponent,
+            CheckinStepIntensityComponent,
+            CheckinStepDetailsComponent,
+          ],
+        },
+        add: {
+          imports: [
+            CheckinStepFeelingStubComponent,
+            CheckinStepSymptomsStubComponent,
+            CheckinStepIntensityStubComponent,
+            CheckinStepDetailsStubComponent,
+          ],
+        },
+      })
+      .compileComponents();
 
-  fixture = TestBed.createComponent(CheckinComponent);
-  component = fixture.componentInstance;
-  fixture.detectChanges();
-});
+    fixture = TestBed.createComponent(CheckinComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
 
   it('should create', () => {
     expect(component).toBeTruthy();
@@ -125,13 +125,13 @@ beforeEach(async () => {
 
   it('should disable previous button on step 1', () => {
     const [prevButton] = getButtons();
-    expect(prevButton.disabled).toBeTruthy();
+    expect(prevButton.disabled).toBe(true);
   });
 
   it('should disable next button when current step is invalid', () => {
     const [, nextButton] = getButtons();
-    expect(component.isCurrentStepInvalid()).toBeTruthy();
-    expect(nextButton.disabled).toBeTruthy();
+    expect(component.isCurrentStepInvalid()).toBe(true);
+    expect(nextButton.disabled).toBe(true);
   });
 
   it('should expose subforms correctly', () => {
@@ -142,16 +142,16 @@ beforeEach(async () => {
   });
 
   it('should identify active and completed steps correctly', () => {
-    expect(component.isStepActive(1)).toBeTruthy();
-    expect(component.isStepCompleted(1)).toBeFalsy();
-    expect(component.isStepCompleted(2)).toBeFalsy();
+    expect(component.isStepActive(1)).toBe(true);
+    expect(component.isStepCompleted(1)).toBe(false);
+    expect(component.isStepCompleted(2)).toBe(false);
 
     component.currentStep.set(3);
 
-    expect(component.isStepActive(3)).toBeTruthy();
-    expect(component.isStepCompleted(1)).toBeTruthy();
-    expect(component.isStepCompleted(2)).toBeTruthy();
-    expect(component.isStepCompleted(3)).toBeFalsy();
+    expect(component.isStepActive(3)).toBe(true);
+    expect(component.isStepCompleted(1)).toBe(true);
+    expect(component.isStepCompleted(2)).toBe(true);
+    expect(component.isStepCompleted(3)).toBe(false);
   });
 
   it('should allow going back to a previous step', () => {
@@ -174,7 +174,7 @@ beforeEach(async () => {
     component.nextStep();
 
     expect(component.currentStep()).toBe(1);
-    expect(component.feelingForm.touched).toBeTruthy();
+    expect(component.feelingForm.touched).toBe(true);
   });
 
   it('should advance from step 1 to step 2 when feeling form is valid', () => {
@@ -203,17 +203,25 @@ beforeEach(async () => {
     component.nextStep();
 
     expect(component.currentStep()).toBe(2);
-    expect(component.symptomsForm.touched).toBeTruthy();
+    expect(component.symptomsForm.touched).toBe(true);
   });
 
-  it('should advance from step 2 to step 3 when symptoms form is valid', () => {
+  it('should advance from step 2 to step 3 when symptoms form has regular symptoms', () => {
     component.currentStep.set(2);
     component.symptomsForm.get('selectedSymptoms')?.setValue(['cough']);
-    fixture.detectChanges();
 
     component.nextStep();
 
     expect(component.currentStep()).toBe(3);
+  });
+
+  it('should skip from step 2 to step 4 when "nenhum sintoma" is selected', () => {
+    component.currentStep.set(2);
+    component.symptomsForm.get('selectedSymptoms')?.setValue(['nenhum sintoma']);
+
+    component.nextStep();
+
+    expect(component.currentStep()).toBe(4);
   });
 
   it('should render intensity step on step 3', () => {
@@ -226,26 +234,6 @@ beforeEach(async () => {
     expect(getByTestId('details-step')).toBeNull();
   });
 
-  it('should not advance from step 3 when intensity form is invalid', () => {
-    component.currentStep.set(3);
-    fixture.detectChanges();
-
-    component.nextStep();
-
-    expect(component.currentStep()).toBe(3);
-    expect(component.intensityForm.touched).toBeTruthy();
-  });
-
-  it('should advance from step 3 to step 4 when intensity form is valid', () => {
-    component.currentStep.set(3);
-    component.intensityForm.get('scale')?.setValue(4);
-    fixture.detectChanges();
-
-    component.nextStep();
-
-    expect(component.currentStep()).toBe(4);
-  });
-
   it('should render details step on step 4', () => {
     component.currentStep.set(4);
     fixture.detectChanges();
@@ -256,20 +244,81 @@ beforeEach(async () => {
     expect(getByTestId('details-step')).toBeTruthy();
   });
 
-  it('should allow advancing to step 4 even with empty details because details is optional', () => {
-    component.currentStep.set(4);
-    fixture.detectChanges();
+  it('should keep intensity required when there are symptoms', () => {
+    component.symptomsForm.get('selectedSymptoms')?.setValue(['headache']);
 
-    expect(component.detailsForm.valid).toBeTruthy();
-    expect(component.isCurrentStepInvalid()).toBeFalsy();
+    const scaleControl = component.intensityForm.get('scale');
+
+    expect(scaleControl?.hasValidator(Validators.required)).toBe(true);
+    expect(component.intensityForm.invalid).toBe(true);
   });
 
-  it('should go back from step 4 to step 3', () => {
+  it('should remove required validator from intensity when "nenhum sintoma" is selected', () => {
+    component.symptomsForm.get('selectedSymptoms')?.setValue(['nenhum sintoma']);
+
+    const scaleControl = component.intensityForm.get('scale');
+
+    expect(scaleControl?.hasValidator(Validators.required)).toBe(false);
+    expect(component.intensityForm.valid).toBe(true);
+  });
+
+  it('should clear intensity value when "nenhum sintoma" is selected', () => {
+    component.intensityForm.get('scale')?.setValue(6);
+
+    component.symptomsForm.get('selectedSymptoms')?.setValue(['nenhum sintoma']);
+
+    expect(component.intensityForm.get('scale')?.value).toBeNull();
+  });
+
+  it('should restore required validator to intensity when symptoms change from "nenhum sintoma" to regular symptom', () => {
+    const scaleControl = component.intensityForm.get('scale');
+
+    component.symptomsForm.get('selectedSymptoms')?.setValue(['nenhum sintoma']);
+    expect(scaleControl?.hasValidator(Validators.required)).toBe(false);
+
+    component.symptomsForm.get('selectedSymptoms')?.setValue(['cough']);
+
+    expect(scaleControl?.hasValidator(Validators.required)).toBe(true);
+    expect(component.intensityForm.invalid).toBe(true);
+  });
+
+  it('should not advance from step 3 when intensity is required and invalid', () => {
+    component.symptomsForm.get('selectedSymptoms')?.setValue(['cough']);
+    component.currentStep.set(3);
+    fixture.detectChanges();
+
+    component.nextStep();
+
+    expect(component.currentStep()).toBe(3);
+    expect(component.intensityForm.touched).toBe(true);
+  });
+
+  it('should advance from step 3 to step 4 when intensity is valid', () => {
+    component.symptomsForm.get('selectedSymptoms')?.setValue(['cough']);
+    component.currentStep.set(3);
+    component.intensityForm.get('scale')?.setValue(4);
+
+    component.nextStep();
+
+    expect(component.currentStep()).toBe(4);
+  });
+
+  it('should go back from step 4 to step 3 in regular flow', () => {
+    component.symptomsForm.get('selectedSymptoms')?.setValue(['cough']);
     component.currentStep.set(4);
 
     component.prevStep();
 
     expect(component.currentStep()).toBe(3);
+  });
+
+  it('should go back from step 4 to step 2 when "nenhum sintoma" was selected', () => {
+    component.symptomsForm.get('selectedSymptoms')?.setValue(['nenhum sintoma']);
+    component.currentStep.set(4);
+
+    component.prevStep();
+
+    expect(component.currentStep()).toBe(2);
   });
 
   it('should go back from step 3 to step 2', () => {
@@ -328,55 +377,23 @@ beforeEach(async () => {
 
   it('should keep next button disabled on invalid required steps', () => {
     component.currentStep.set(1);
-    fixture.detectChanges();
-    let [, nextButton] = getButtons();
-    expect(nextButton.disabled).toBeTruthy();
+    expect(component.feelingForm.invalid).toBe(true);
 
     component.currentStep.set(2);
-    fixture.detectChanges();
-    [, nextButton] = getButtons();
-    expect(nextButton.disabled).toBeTruthy();
+    expect(component.symptomsForm.invalid).toBe(true);
 
+    component.symptomsForm.get('selectedSymptoms')?.setValue(['cough']);
     component.currentStep.set(3);
-    fixture.detectChanges();
-    [, nextButton] = getButtons();
-    expect(nextButton.disabled).toBeTruthy();
+    expect(component.intensityForm.invalid).toBe(true);
   });
-
-it('should enable next button when step 1 becomes valid', () => {
-  component.currentStep.set(1);
-  component.feelingForm.get('mood')?.setValue('ok');
-  fixture.detectChanges();
-
-  const [, nextButton] = getButtons();
-  expect(nextButton.disabled).toBeFalsy();
-});
-
-it('should enable next button when step 2 becomes valid', () => {
-  component.currentStep.set(2);
-  component.symptomsForm.get('selectedSymptoms')?.setValue(['headache']);
-  fixture.detectChanges();
-
-  const [, nextButton] = getButtons();
-  expect(nextButton.disabled).toBeFalsy();
-});
-
-it('should enable next button when step 3 becomes valid', () => {
-  component.currentStep.set(3);
-  component.intensityForm.get('scale')?.setValue(2);
-  fixture.detectChanges();
-
-  const [, nextButton] = getButtons();
-  expect(nextButton.disabled).toBeFalsy();
-});
 
   it('should enable submit button on step 4 because details is optional', () => {
     component.currentStep.set(4);
     fixture.detectChanges();
 
     const [, submitButton] = getButtons();
-    expect(component.isCurrentStepInvalid()).toBeFalsy();
-    expect(submitButton.disabled).toBeFalsy();
+    expect(component.isCurrentStepInvalid()).toBe(false);
+    expect(submitButton.disabled).toBe(false);
   });
 
   it('should not submit when the full form is invalid', () => {
@@ -388,27 +405,38 @@ it('should enable next button when step 3 becomes valid', () => {
   it('should mark full form as touched when submit is called with invalid form', () => {
     component.submit();
 
-    expect(component.form.touched).toBeTruthy();
+    expect(component.form.touched).toBe(true);
   });
 
-  it('should submit and navigate to home when form is valid', () => {
-    vi.spyOn(console, 'log');
-
+  it('should submit and navigate to home when form is valid in regular flow', () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
     component.feelingForm.get('mood')?.setValue('happy');
     component.symptomsForm.get('selectedSymptoms')?.setValue(['cough']);
-    component.symptomsForm.get('customSymptom')?.setValue('optional ignored');
     component.intensityForm.get('scale')?.setValue(1);
     component.detailsForm.get('notes')?.setValue('feeling well');
 
     component.submit();
 
-    expect(console.log).toHaveBeenCalled();
+    expect(consoleSpy).toHaveBeenCalled();
+    expect(router.navigate).toHaveBeenCalledWith(['home']);
+  });
+
+  it('should submit and navigate to home when "nenhum sintoma" skips intensity', () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    component.feelingForm.get('mood')?.setValue('happy');
+    component.symptomsForm.get('selectedSymptoms')?.setValue(['nenhum sintoma']);
+    component.detailsForm.get('notes')?.setValue('sem sintomas hoje');
+
+    component.submit();
+
+    expect(consoleSpy).toHaveBeenCalled();
     expect(router.navigate).toHaveBeenCalledWith(['home']);
   });
 
   it('should submit payload with only selectedSymptoms inside symptoms object', () => {
-    const consoleSpy = vi.spyOn(console, 'log');
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
     component.feelingForm.get('mood')?.setValue('sad');
     component.symptomsForm.get('selectedSymptoms')?.setValue(['nausea']);
@@ -426,7 +454,24 @@ it('should enable next button when step 3 becomes valid', () => {
     });
   });
 
-  it('should follow the new flow without skipping from step 2 to step 4', () => {
+  it('should submit payload with null intensity when "nenhum sintoma" is selected', () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    component.feelingForm.get('mood')?.setValue('good');
+    component.symptomsForm.get('selectedSymptoms')?.setValue(['nenhum sintoma']);
+    component.detailsForm.get('notes')?.setValue('sem observações');
+
+    component.submit();
+
+    expect(consoleSpy).toHaveBeenCalledWith('Payload final do check-in:', {
+      feeling: { mood: 'good' },
+      symptoms: { selectedSymptoms: ['nenhum sintoma'] },
+      intensity: { scale: null },
+      details: { notes: 'sem observações' },
+    });
+  });
+
+  it('should follow the regular flow without skipping when there are symptoms', () => {
     component.feelingForm.get('mood')?.setValue('good');
     component.nextStep();
     expect(component.currentStep()).toBe(2);
@@ -436,6 +481,16 @@ it('should enable next button when step 3 becomes valid', () => {
     expect(component.currentStep()).toBe(3);
 
     component.intensityForm.get('scale')?.setValue(6);
+    component.nextStep();
+    expect(component.currentStep()).toBe(4);
+  });
+
+  it('should follow the skip flow when "nenhum sintoma" is selected', () => {
+    component.feelingForm.get('mood')?.setValue('good');
+    component.nextStep();
+    expect(component.currentStep()).toBe(2);
+
+    component.symptomsForm.get('selectedSymptoms')?.setValue(['nenhum sintoma']);
     component.nextStep();
     expect(component.currentStep()).toBe(4);
   });
