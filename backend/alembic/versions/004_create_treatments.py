@@ -12,6 +12,15 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
 
+from pequi.db.pg_enums import (
+    create_m3_enums,
+    dose_frequency_enum,
+    drop_m3_enums_op,
+    symptom_category_enum,
+    treatment_regimen_enum,
+    treatment_status_enum,
+)
+
 revision: str = "004_create_treatments"
 down_revision: str | None = "003_add_user_foreign_keys"
 branch_labels: str | Sequence[str] | None = None
@@ -22,18 +31,7 @@ def upgrade() -> None:
     # ------------------------------------------------------------------
     # ENUM types
     # ------------------------------------------------------------------
-    op.execute(
-        "CREATE TYPE IF NOT EXISTS symptom_category_enum "
-        "AS ENUM ('dermatological', 'neurological', 'systemic')"
-    )
-    op.execute("CREATE TYPE IF NOT EXISTS treatment_regimen_enum AS ENUM ('PB', 'MB')")
-    op.execute(
-        "CREATE TYPE IF NOT EXISTS treatment_status_enum "
-        "AS ENUM ('active', 'completed', 'abandoned', 'suspended')"
-    )
-    op.execute(
-        "CREATE TYPE IF NOT EXISTS dose_frequency_enum AS ENUM ('daily', 'monthly_supervised')"
-    )
+    create_m3_enums(op.get_bind(), checkfirst=True)
 
     # ------------------------------------------------------------------
     # health_professionals — stub mínimo para FK de treatments.
@@ -79,8 +77,6 @@ def upgrade() -> None:
         ["health_unit_id"],
     )
 
-    # Adiciona FK de patient_profiles.health_unit_id → health_units.id
-    # (o campo existia desde 002 mas sem constraint explícita)
     op.create_foreign_key(
         "fk_patient_profiles_health_unit_id_health_units",
         "patient_profiles",
@@ -99,13 +95,7 @@ def upgrade() -> None:
         sa.Column("name", sa.Text(), nullable=False),
         sa.Column(
             "category",
-            sa.Enum(
-                "dermatological",
-                "neurological",
-                "systemic",
-                name="symptom_category_enum",
-                create_type=False,
-            ),
+            symptom_category_enum(create_type=False),
             nullable=False,
         ),
         sa.Column("description", sa.Text(), nullable=True),
@@ -122,21 +112,14 @@ def upgrade() -> None:
         sa.Column("prescribed_by", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column(
             "regimen",
-            sa.Enum("PB", "MB", name="treatment_regimen_enum", create_type=False),
+            treatment_regimen_enum(create_type=False),
             nullable=False,
         ),
         sa.Column("start_date", sa.DATE(), nullable=False),
         sa.Column("expected_end", sa.DATE(), nullable=False),
         sa.Column(
             "status",
-            sa.Enum(
-                "active",
-                "completed",
-                "abandoned",
-                "suspended",
-                name="treatment_status_enum",
-                create_type=False,
-            ),
+            treatment_status_enum(create_type=False),
             nullable=False,
             server_default="active",
         ),
@@ -182,7 +165,7 @@ def upgrade() -> None:
         sa.Column("drug_name", sa.Text(), nullable=False),
         sa.Column(
             "frequency",
-            sa.Enum("daily", "monthly_supervised", name="dose_frequency_enum", create_type=False),
+            dose_frequency_enum(create_type=False),
             nullable=False,
         ),
         sa.Column("dose_mg", sa.Numeric(6, 2), nullable=True),
@@ -293,7 +276,4 @@ def downgrade() -> None:
     op.drop_index("ix_health_professionals_health_unit_id", "health_professionals")
     op.drop_table("health_professionals")
 
-    op.execute("DROP TYPE IF EXISTS dose_frequency_enum")
-    op.execute("DROP TYPE IF EXISTS treatment_status_enum")
-    op.execute("DROP TYPE IF EXISTS treatment_regimen_enum")
-    op.execute("DROP TYPE IF EXISTS symptom_category_enum")
+    drop_m3_enums_op(op)

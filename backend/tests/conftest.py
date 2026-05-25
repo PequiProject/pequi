@@ -22,9 +22,7 @@ user_limiter.enabled = False
 
 settings = get_settings()
 
-TEST_DATABASE_URL = settings.DATABASE_URL_TEST or settings.DATABASE_URL.replace(
-    "/pequi", "/pequi_test"
-)
+TEST_DATABASE_URL = settings.get_test_database_url()
 
 test_engine = create_async_engine(
     TEST_DATABASE_URL,
