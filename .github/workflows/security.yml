@@ -76,7 +76,7 @@ jobs:
 
       # Trivy: CRITICAL e HIGH com exit-code 1 bloqueiam o pipeline
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.27.0
+        uses: aquasecurity/trivy-action@master
         with:
           image-ref: pequi-security-check
           format: table
