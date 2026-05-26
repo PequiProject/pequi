@@ -75,8 +75,8 @@ export class CheckinComponent {
   });
 
   constructor() {
-    this.setupCurrentStepValidationWatcher();
-    this.setupIntensityConditionalValidation();
+      // this.setupCurrentStepValidationWatcher();
+      // this.setupIntensityConditionalValidation();
   }
 
   get currentStepNumber(): WritableSignal<number> {
@@ -128,10 +128,10 @@ export class CheckinComponent {
         return;
 
       case 2:
-        if (this.hasNoSymptomsSelected()) {
-          this.currentStep.set(4);
-          return;
-        }
+        // if (this.hasNoSymptomsSelected()) {
+        //   this.currentStep.set(4);
+        //   return;
+        // }
 
         this.currentStep.set(3);
         return;
@@ -148,10 +148,10 @@ export class CheckinComponent {
   prevStep(): void {
     switch (this.currentStep()) {
       case 4:
-        if (this.hasNoSymptomsSelected()) {
-          this.currentStep.set(2);
-          return;
-        }
+        // if (this.hasNoSymptomsSelected()) {
+        //   this.currentStep.set(2);
+        //   return;
+        // }
 
         this.currentStep.set(3);
         return;

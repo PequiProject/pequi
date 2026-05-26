@@ -9,28 +9,74 @@
     </div>
 
     <div
-      class="relative w-full max-w-[280px] aspect-[1/2] mx-auto bg-white rounded-3xl p-4 shadow-inner"
+      class="relative w-full max-w-[280px] aspect-[1/2] mx-auto bg-transparent rounded-3xl shadow-inner overflow-visible"
     >
       <img
         [src]="
-          currentView() === 'front' ? 'assets/body_silhouette.svg' : 'assets/body_silhouette.svg'
+          currentView() === 'front' ? 'assets/body-silhouette-front.svg' : 'assets/body-silhouette-back.svg'
         "
         alt="Silhueta do corpo humano"
         class="w-full h-full object-contain cursor-crosshair"
         (click)="addMarker($event)"
       />
 
-      @for (marker of visibleMarkers; track $index) {
+      @for (marker of visibleMarkers; track marker.id) {
         <div
-          class="absolute w-6 h-6 -ml-3 -mt-3 rounded-full border-2 border-white flex items-center justify-center shadow-md transform transition-transform hover:scale-110 cursor-pointer"
-          [ngClass]="marker.status === 'active' ? 'bg-[#5b48d9]' : 'bg-[#3b6b82]'"
+          class="absolute w-6 h-6 -ml-3 -mt-3 rounded-full border-2 border-white flex items-center justify-center shadow-md transform transition-all hover:scale-110 cursor-pointer z-10"
+          [ngClass]="{
+            'bg-[#5b48d9]': marker.status === 'active',
+            'bg-[#3b6b82]': marker.status === 'review',
+            'bg-[#2F7A4A]': marker.status === 'cured'
+          }"
           [style.left.%]="marker.x"
           [style.top.%]="marker.y"
+          (click)="toggleMenu($event, marker.id)"
         >
           @if (marker.status === 'active') {
             <span class="text-white text-xs font-bold">!</span>
           }
+          @if (marker.status === 'cured') {
+            <lucide-icon [name]="CircleCheckIcon" [size]="12" class="text-white>"></lucide-icon>
+          }
         </div>
+        @if (selectedMarkerId() === marker.id) {
+          <div
+            class="absolute z-20 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 p-3 flex flex-col gap-2"
+            [style.left.%]="marker.x"
+            [style.top.%]="marker.y"
+            style="transform: translate(15px, -50%);"
+          >
+            <div class="border-b border-gray-100 pb-2">
+              <span class="text-xs text-gray-500 uppercase tracking-wider front-semibold">Local</span>
+              <p class="font-bold text-[#333] text-sm">{{ marker.bodyPart }}</p>
+            </div>
+            @if (marker.status !== 'cured') {
+              <button 
+                type="button"
+                (click)="markAsCured(marker.id)"
+                class="flex items-center gap-2 w-full text-left p-2 rounded-xl text-sm font-medium text-[#2F7A4A] hover:bg-[#D1F2D9] transition-colors">
+                <lucide-icon [name]="CircleCheckIcon" [size]="16"></lucide-icon>
+                Marcar como curado
+              </button>
+            } @else {
+              <button 
+                type="button"
+                (click)="markAsActive(marker.id)"
+                class="flex items-center gap-2 w-full text-left p-2 rounded-xl text-sm font-medium text-[#5b48d9] hover:bg-[#D8D4F7] transition-colors">
+                <lucide-icon [name]="PlusIcon" [size]="16"></lucide-icon>
+                Reativar local
+              </button>
+            }
+
+            <button 
+              type="button"
+              (click)="removeMarker(marker.id)"
+              class="flex items-center gap-2 w-full text-left p-2 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">
+              <lucide-icon [name]="TrashIcon" [size]="16"></lucide-icon>
+              Remover local
+            </button>
+          </div>
+        }
       }
     </div>
   </div>
@@ -48,7 +94,7 @@
         <div class="flex justify-between items-center bg-white p-3 rounded-2xl">
           <span class="text-sm font-medium text-[#444]">Locais curados</span>
           <span class="bg-[#D1F2D9] text-[#2F7A4A] text-xs font-bold px-3 py-1 rounded-full">
-            12
+            {{ curedCount | number: '2.0' }}
           </span>
         </div>
       </div>
