@@ -151,6 +151,11 @@
   color: #5b48d9;
 }
 
+.yellow-icon {
+  background-color: #f5f6e7;
+  color: #d9c148;
+}
+
 .card-text {
   display: flex;
   flex-direction: column;

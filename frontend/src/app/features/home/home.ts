@@ -1,6 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule, ImagePlus, CirclePlus, Calendar, Stethoscope } from 'lucide-angular';
+import { LucideAngularModule, ImagePlus, CirclePlus, Calendar, Stethoscope, Pill } from 'lucide-angular';
 import { Router } from '@angular/router';
 
 interface QuickAction {
@@ -40,6 +40,7 @@ export class HomeComponent implements OnInit {
   readonly CirclePlus = CirclePlus;
   readonly CalendarIcon = Calendar;
   readonly Stethoscope = Stethoscope;
+  readonly Pill = Pill;
 
   currentMonthYear: string = '';
   calendarWeek: CalendarWeek[] = [];
@@ -52,6 +53,13 @@ export class HomeComponent implements OnInit {
       icon: this.CirclePlus,
       colorClass: 'blue-icon',
       path: '/checkin',
+    },
+        {
+      title: 'Registrar medicamentos',
+      description: 'Veja quais remédios tomar hoje',
+      icon: this.Pill,
+      colorClass: 'yellow-icon',
+      path: '/medication',
     },
     {
       title: 'Registrar consulta',
