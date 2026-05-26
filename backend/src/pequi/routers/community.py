@@ -10,6 +10,7 @@ from pequi.core.dependencies import (
     get_db,
 )
 from pequi.core.rate_limit import user_limiter
+from pequi.repositories.audit_repo import AuditRepository
 from pequi.repositories.community_repo import CommunityRepository
 from pequi.repositories.patient_repo import PatientRepository
 from pequi.schemas.community import (
@@ -48,8 +49,6 @@ def _community_repos(
 def _admin_community_repos(
     session: AsyncSession,
 ) -> tuple[CommunityRepository, AuditRepository]:
-    from pequi.repositories.audit_repo import AuditRepository
-
     return (
         CommunityRepository(session),
         AuditRepository(session),
