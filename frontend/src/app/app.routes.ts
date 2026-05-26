@@ -10,6 +10,7 @@ import { CommunityPostPage } from './features/comunity/community-post-page/commu
 import { Profile } from './features/profile/profile';
 import { Notification } from './components/notification/notification';
 import { PhotoRegister } from './features/photo-register/photo-register';
+import { RegisterAppointmentComponent } from './features/appointments/register-appointment/register-appointment';
 
 export const routes: Routes = [
     {
@@ -20,6 +21,11 @@ export const routes: Routes = [
       { path: 'home', component: HomeComponent, title: 'Início' },
       { path: 'journey', component: Journey, title: 'Jornada' },
       { path: 'checkin', component: CheckinComponent, title: 'Check In' },
+      {
+        path: 'appointments/register',
+        component: RegisterAppointmentComponent,
+        title: 'Registrar consulta',
+      },
       { path: 'education', component: Education, title: 'Educação' },
       { path: 'comunity', component: Comunity, title: 'Comunidade' },
       { path: 'comunity/feed', component: CommunityFeed, title: 'Comunidade' },

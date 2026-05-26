@@ -1,0 +1,26 @@
+meta {
+  name: Get Checkin By Id
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/v1/checkins/{{checkinId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.id: eq "{{checkinId}}"
+}
+
+docs {
+  Detalhe de um check-in — paciente (próprio) ou profissional (mesma unidade).
+
+  Rate limit: 100/minuto.
+}

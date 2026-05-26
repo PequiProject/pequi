@@ -43,8 +43,26 @@ async def get_token_payload(
     return payload
 
 
+def _parse_user_id_from_payload(payload: dict) -> UUID:
+    try:
+        return UUID(payload["sub"])
+    except (KeyError, ValueError, TypeError) as exc:
+        raise UnauthorizedError("Invalid token") from exc
+
+
 async def get_current_user(payload: dict = Depends(get_token_payload)) -> UUID:
-    return UUID(payload["sub"])
+    return _parse_user_id_from_payload(payload)
+
+
+async def get_actor_from_token(
+    payload: dict = Depends(get_token_payload),
+) -> tuple[UUID, str]:
+    """Retorna (user_id, role) do token de acesso; 401 se sub ou role inválidos."""
+    user_id = _parse_user_id_from_payload(payload)
+    role = payload.get("role")
+    if not role or not isinstance(role, str):
+        raise UnauthorizedError("Invalid token")
+    return user_id, role
 
 
 class RoleChecker:
@@ -54,7 +72,7 @@ class RoleChecker:
     def __call__(self, payload: dict = Depends(get_token_payload)) -> UUID:
         if payload.get("role") not in self.allowed_roles:
             raise ForbiddenError(f"Access denied. Allowed roles: {', '.join(self.allowed_roles)}")
-        return UUID(payload["sub"])
+        return _parse_user_id_from_payload(payload)
 
 
 get_current_patient = RoleChecker(["patient"])
@@ -78,6 +96,7 @@ __all__ = [
     "get_db",
     "get_token_payload",
     "get_current_user",
+    "get_actor_from_token",
     "get_current_patient",
     "get_current_professional",
     "get_current_admin",

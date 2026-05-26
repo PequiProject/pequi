@@ -3,6 +3,7 @@ from typing import Literal
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy.engine import make_url
 
 
 class Settings(BaseSettings):
@@ -66,6 +67,16 @@ class Settings(BaseSettings):
     @property
     def is_development(self) -> bool:
         return self.ENV == "development"
+
+    def get_test_database_url(self) -> str:
+        """URL do PostgreSQL de testes.
+
+        Nunca derive por ``str.replace`` na URL completa: isso altera o usuário
+        em ``://pequi:`` quando o path já contém ``pequi_test`` (comum no CI).
+        """
+        if self.DATABASE_URL_TEST:
+            return self.DATABASE_URL_TEST
+        return str(make_url(self.DATABASE_URL).set(database="pequi_test"))
 
 
 @lru_cache

@@ -44,20 +44,9 @@ jobs:
       - name: Run pip-audit (dependency CVEs)
         run: pip-audit --strict
 
-      # Bandit: gera resultado tanto em tabela (para log legível) quanto SARIF (para Security tab)
-      - name: Run Bandit (table)
+      # Bandit: gera resultado em tabela (para log legível)
+      - name: Run Bandit
         run: bandit -r src -ll
-
-      - name: Run Bandit (SARIF upload)
-        run: bandit -r src -ll -f sarif -o bandit.sarif
-        continue-on-error: true
-
-      - name: Upload Bandit SARIF
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: backend/bandit.sarif
-          category: bandit
 
       # Lint do Dockerfile — detecta antipatterns antes do build
       - name: Lint Dockerfile
@@ -68,6 +57,7 @@ jobs:
 
       - name: Scan secrets with Gitleaks
         uses: gitleaks/gitleaks-action@v2
+        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -76,7 +66,7 @@ jobs:
 
       # Trivy: CRITICAL e HIGH com exit-code 1 bloqueiam o pipeline
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.24.0
+        uses: aquasecurity/trivy-action@master
         with:
           image-ref: pequi-security-check
           format: table

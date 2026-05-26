@@ -1,6 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule, ImagePlus, CirclePlus, Calendar } from 'lucide-angular';
+import { LucideAngularModule, ImagePlus, CirclePlus, Calendar, Stethoscope } from 'lucide-angular';
 import { Router, RouterLink } from '@angular/router';
 
 interface QuickAction {
@@ -16,22 +16,6 @@ interface CalendarWeek {
   dayName: string;
   dayNumber: number;
   dots: number[];
-}
-
-interface CalendarWeek {
-  dateObj: Date;
-  dayName: string;
-  dayNumber: number;
-  dots: number[];
-}
-
-interface Article {
-  tag: string;
-  title: string;
-  description: string;
-  imageUrl: string;
-  actionText: string;
-  actionUrl: string;
 }
 
 interface Article {
@@ -55,6 +39,7 @@ export class HomeComponent implements OnInit {
   readonly ImagePlus = ImagePlus;
   readonly CirclePlus = CirclePlus;
   readonly CalendarIcon = Calendar;
+  readonly Stethoscope = Stethoscope;
 
   currentMonthYear: string = '';
   calendarWeek: CalendarWeek[] = [];
@@ -67,6 +52,13 @@ export class HomeComponent implements OnInit {
       icon: this.CirclePlus,
       colorClass: 'blue-icon',
       path: '/checkin',
+    },
+    {
+      title: 'Registrar consulta',
+      description: 'Consultas, exames e retornos',
+      icon: this.Stethoscope,
+      colorClass: 'purple-icon',
+      path: '/appointments/register',
     },
     {
       title: 'Registro de Fotos',
@@ -88,7 +80,8 @@ export class HomeComponent implements OnInit {
   };
 
   executeAction(path: string) {
-    this.router.navigate([path]);
+    if (!path) return;
+    void this.router.navigate([path]);
   }
 
   ngOnInit(): void {

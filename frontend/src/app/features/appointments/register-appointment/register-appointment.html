@@ -1,0 +1,620 @@
+<section class="mx-auto w-full max-w-lg" data-testid="register-appointment-page">
+  @if (saved()) {
+    <div
+      class="flex flex-col items-center rounded-2xl bg-white px-6 py-10 text-center shadow-sm ring-1 ring-[#E7E5E4]"
+      data-testid="appointment-success"
+    >
+      <div
+        class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#E8F5E9] text-[#2E7D32]"
+      >
+        <lucide-icon [name]="LucideCheck" [size]="32" [strokeWidth]="2.5" />
+      </div>
+      <h2 class="text-xl font-bold text-[#373831]">Registro salvo</h2>
+      <p class="mt-2 text-sm text-[#64655C]">
+        Seu compromisso foi registrado como
+        <span class="font-semibold text-[#4338CA]">{{ savedStatusLabel() }}</span>.
+        Em breve ele aparecerá no histórico e nas rotinas.
+      </p>
+      <button
+        type="button"
+        data-testid="back-to-home"
+        (click)="goHome()"
+        class="mt-8 w-full rounded-xl bg-[#4338CA] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90"
+      >
+        Voltar ao início
+      </button>
+    </div>
+  } @else {
+    <div class="mb-6">
+      <h2 class="text-2xl font-semibold text-[#373831]">Registrar consulta</h2>
+      <p class="mt-1 text-sm text-[#37614B]">{{ stepLabel() }}</p>
+    </div>
+
+    <div class="mb-6">
+      <div class="h-2 w-full rounded-full bg-[#CAF9DC]">
+        <div
+          class="h-2 rounded-full bg-[#436D57] transition-all duration-300"
+          [style.width.%]="progressPercentage()"
+        ></div>
+      </div>
+      <p class="mt-2 text-xs text-[#64655C]">
+        Etapa {{ currentStepIndex() + 1 }} de {{ wizardStepCount }}
+      </p>
+    </div>
+
+    @switch (currentStepId()) {
+      @case ('basics') {
+        <form [formGroup]="basicsForm" class="space-y-4" data-testid="step-basics">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="appointment-date" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+                Data
+              </label>
+              <input
+                id="appointment-date"
+                type="date"
+                formControlName="appointmentDate"
+                data-testid="appointment-date"
+                class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+              />
+              @if (showValidation() && basicsForm.controls.appointmentDate.invalid) {
+                <p class="mt-1 text-xs text-[#B91C1C]">Informe a data.</p>
+              }
+            </div>
+            <div>
+              <label for="appointment-time" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+                Hora
+              </label>
+              <input
+                id="appointment-time"
+                type="time"
+                formControlName="appointmentTime"
+                data-testid="appointment-time"
+                class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+              />
+              @if (showValidation() && basicsForm.controls.appointmentTime.invalid) {
+                <p class="mt-1 text-xs text-[#B91C1C]">Informe a hora.</p>
+              }
+            </div>
+          </div>
+
+          <div>
+            <label for="appointment-location" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+              Local
+            </label>
+            <input
+              id="appointment-location"
+              type="text"
+              formControlName="location"
+              data-testid="appointment-location"
+              placeholder="Ex.: UBS Centro, Hospital Regional"
+              class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] placeholder:text-[#A8A29E] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+            />
+            @if (showValidation() && basicsForm.controls.location.invalid) {
+              <p class="mt-1 text-xs text-[#B91C1C]">Informe o local.</p>
+            }
+          </div>
+
+          <div>
+            <span class="mb-2 block text-sm font-semibold text-[#373831]">Tipo</span>
+            <div class="flex flex-wrap gap-2" data-testid="appointment-type-options">
+              @for (option of appointmentTypes; track option.value) {
+                <label
+                  class="cursor-pointer rounded-full border px-3 py-2 text-sm font-medium transition"
+                  [class.border-[#4338CA]]="basicsForm.controls.type.value === option.value"
+                  [class.bg-[#EEF2FF]]="basicsForm.controls.type.value === option.value"
+                  [class.text-[#4338CA]]="basicsForm.controls.type.value === option.value"
+                  [class.border-[#E7E5E4]]="basicsForm.controls.type.value !== option.value"
+                  [class.text-[#64655C]]="basicsForm.controls.type.value !== option.value"
+                >
+                  <input
+                    type="radio"
+                    class="sr-only"
+                    formControlName="type"
+                    [value]="option.value"
+                  />
+                  {{ option.label }}
+                </label>
+              }
+            </div>
+            @if (showValidation() && basicsForm.controls.type.invalid) {
+              <p class="mt-1 text-xs text-[#B91C1C]">Selecione o tipo.</p>
+            }
+          </div>
+
+          <div>
+            <label
+              for="appointment-professional"
+              class="mb-1.5 block text-sm font-semibold text-[#373831]"
+            >
+              Profissional
+              <span class="font-normal text-[#A8A29E]">(opcional)</span>
+            </label>
+            <input
+              id="appointment-professional"
+              type="text"
+              formControlName="professional"
+              data-testid="appointment-professional"
+              placeholder="Ex.: Dr. Silva, Enf. Maria"
+              class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] placeholder:text-[#A8A29E] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+            />
+          </div>
+
+          <div>
+            <label for="appointment-notes" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+              Observações
+              <span class="font-normal text-[#A8A29E]">(opcional)</span>
+            </label>
+            <textarea
+              id="appointment-notes"
+              rows="3"
+              formControlName="notes"
+              data-testid="appointment-notes"
+              placeholder="Lembrete, preparo para exame, documentos..."
+              class="w-full resize-none rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] placeholder:text-[#A8A29E] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+            ></textarea>
+          </div>
+        </form>
+      }
+
+      @case ('performed') {
+        <div class="space-y-4" data-testid="step-performed">
+          <p class="text-sm text-[#64655C]">
+            Isso ajuda a saber se o compromisso já aconteceu ou ainda está pendente.
+          </p>
+          <fieldset>
+            <legend class="mb-3 text-sm font-semibold text-[#373831]">Consulta realizada?</legend>
+            <div class="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                data-testid="performed-yes"
+                (click)="onPerformedChange(true)"
+                class="rounded-xl border px-4 py-4 text-sm font-semibold transition"
+                [class.border-[#4338CA]]="draft().performed === true"
+                [class.bg-[#EEF2FF]]="draft().performed === true"
+                [class.text-[#4338CA]]="draft().performed === true"
+                [class.border-[#E7E5E4]]="draft().performed !== true"
+                [class.text-[#373831]]="draft().performed !== true"
+              >
+                Sim
+              </button>
+              <button
+                type="button"
+                data-testid="performed-no"
+                (click)="onPerformedChange(false)"
+                class="rounded-xl border px-4 py-4 text-sm font-semibold transition"
+                [class.border-[#4338CA]]="draft().performed === false"
+                [class.bg-[#EEF2FF]]="draft().performed === false"
+                [class.text-[#4338CA]]="draft().performed === false"
+                [class.border-[#E7E5E4]]="draft().performed !== false"
+                [class.text-[#373831]]="draft().performed !== false"
+              >
+                Não
+              </button>
+            </div>
+          </fieldset>
+          @if (draft().performed === false) {
+            <p
+              class="rounded-xl bg-[#FFF7ED] px-4 py-3 text-sm text-[#9A3412]"
+              data-testid="scheduled-hint"
+            >
+              O registro ficará como <strong>agendado/pendente</strong> até você marcar como
+              realizada.
+            </p>
+          }
+          @if (showValidation() && draft().performed === null) {
+            <p class="text-xs text-[#B91C1C]">Selecione Sim ou Não.</p>
+          }
+
+          @if (draft().performed === true) {
+            <p class="border-t border-[#E7E5E4] pt-5 text-sm text-[#64655C]">
+              Você pode incluir conduta, medicamentos e orientações (opcional).
+            </p>
+            <form
+              [formGroup]="followUpForm"
+              class="space-y-5"
+              data-testid="step-follow-up"
+            >
+          @if (isSupervisedDoseType()) {
+            <div
+              class="rounded-xl bg-[#EEF2FF] px-4 py-3 text-sm text-[#3730A3]"
+              data-testid="supervised-dose-hint"
+            >
+              <div class="mb-1 flex items-center gap-2 font-semibold">
+                <lucide-icon [name]="LucidePill" [size]="18" />
+                Dose supervisionada mensal
+              </div>
+              <p>
+                Registre a dose que você tomou neste atendimento. Isso ajuda a manter seu histórico
+                de tratamento em dia.
+              </p>
+            </div>
+          }
+
+          <section class="space-y-4 rounded-2xl border border-[#E7E5E4] bg-[#FAFAF9] p-4">
+            <h3 class="text-sm font-semibold text-[#373831]">Dose e medicamentos</h3>
+
+            <label
+              class="flex cursor-pointer items-start gap-3 rounded-xl border border-[#E7E5E4] bg-white px-4 py-3"
+              data-testid="register-dose-label"
+            >
+              <input
+                type="checkbox"
+                class="mt-1 h-4 w-4 accent-[#4338CA]"
+                data-testid="register-supervised-dose"
+                [checked]="draft().followUp.registerSupervisedDose"
+                (change)="onRegisterDoseChange($any($event.target).checked)"
+              />
+              <span class="text-sm text-[#373831]">
+                <span class="font-semibold">Registrar dose tomada neste atendimento</span>
+                <span class="mt-0.5 block text-[#64655C]">
+                  Marque se você recebeu ou tomou a dose supervisionada hoje.
+                </span>
+              </span>
+            </label>
+
+            <fieldset>
+              <legend class="mb-2 text-sm font-semibold text-[#373831]">
+                Houve mudança de medicamento?
+              </legend>
+              <div class="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  data-testid="med-change-yes"
+                  (click)="onHadMedicationChange(true)"
+                  class="rounded-xl border px-4 py-3 text-sm font-semibold transition"
+                  [class.border-[#4338CA]]="draft().followUp.hadMedicationChange === true"
+                  [class.bg-[#EEF2FF]]="draft().followUp.hadMedicationChange === true"
+                  [class.text-[#4338CA]]="draft().followUp.hadMedicationChange === true"
+                  [class.border-[#E7E5E4]]="draft().followUp.hadMedicationChange !== true"
+                >
+                  Sim, mudou
+                </button>
+                <button
+                  type="button"
+                  data-testid="med-change-no"
+                  (click)="onHadMedicationChange(false)"
+                  class="rounded-xl border px-4 py-3 text-sm font-semibold transition"
+                  [class.border-[#4338CA]]="draft().followUp.hadMedicationChange === false"
+                  [class.bg-[#EEF2FF]]="draft().followUp.hadMedicationChange === false"
+                  [class.text-[#4338CA]]="draft().followUp.hadMedicationChange === false"
+                  [class.border-[#E7E5E4]]="draft().followUp.hadMedicationChange !== false"
+                >
+                  Não mudou
+                </button>
+              </div>
+              @if (showValidation() && draft().followUp.hadMedicationChange === null) {
+                <p class="mt-2 text-xs text-[#B91C1C]">Informe se houve mudança de medicamento.</p>
+              }
+            </fieldset>
+
+            @if (draft().followUp.hadMedicationChange === false && draft().followUp.registerSupervisedDose) {
+              <div class="space-y-3 border-t border-[#E7E5E4] pt-3" data-testid="existing-med-dose">
+                <p class="text-sm text-[#64655C]">
+                  Selecione o medicamento que você está tomando. Em breve você poderá cadastrar
+                  seus remédios no perfil.
+                </p>
+
+                @if (patientMedications().length > 0) {
+                  <div class="flex flex-wrap gap-2" data-testid="medication-options">
+                    @for (med of patientMedications(); track med.id) {
+                      <button
+                        type="button"
+                        (click)="onMedicationSelect(med.id)"
+                        class="rounded-full border px-3 py-2 text-left text-sm font-medium transition"
+                        [class.border-[#4338CA]]="draft().followUp.selectedMedicationId === med.id"
+                        [class.bg-[#EEF2FF]]="draft().followUp.selectedMedicationId === med.id"
+                        [class.text-[#4338CA]]="draft().followUp.selectedMedicationId === med.id"
+                        [class.border-[#E7E5E4]]="draft().followUp.selectedMedicationId !== med.id"
+                      >
+                        {{ med.name }}
+                        @if (med.dosage) {
+                          <span class="block text-xs font-normal opacity-80">{{ med.dosage }}</span>
+                        }
+                      </button>
+                    }
+                    <button
+                      type="button"
+                      data-testid="medication-other"
+                      (click)="onMedicationOtherSelect()"
+                      class="rounded-full border px-3 py-2 text-sm font-medium transition"
+                      [class.border-[#4338CA]]="draft().followUp.selectedMedicationId === 'other'"
+                      [class.bg-[#EEF2FF]]="draft().followUp.selectedMedicationId === 'other'"
+                      [class.text-[#4338CA]]="draft().followUp.selectedMedicationId === 'other'"
+                      [class.border-[#E7E5E4]]="draft().followUp.selectedMedicationId !== 'other'"
+                    >
+                      Outro medicamento
+                    </button>
+                  </div>
+                } @else {
+                  <p
+                    class="rounded-lg bg-white px-3 py-2 text-xs text-[#64655C]"
+                    data-testid="no-profile-meds"
+                  >
+                    Nenhum medicamento no perfil ainda — informe o nome abaixo.
+                  </p>
+                }
+
+                @if (
+                  patientMedications().length === 0 ||
+                  draft().followUp.selectedMedicationId === 'other'
+                ) {
+                  <div>
+                    <label
+                      for="other-medication"
+                      class="mb-1.5 block text-sm font-semibold text-[#373831]"
+                    >
+                      Nome do medicamento
+                    </label>
+                    <input
+                      id="other-medication"
+                      type="text"
+                      formControlName="otherMedicationName"
+                      data-testid="other-medication-name"
+                      (input)="onOtherMedicationInput($event)"
+                      placeholder="Ex.: Rifampicina + Dapsona"
+                      class="w-full rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+                    />
+                  </div>
+                }
+
+                <div>
+                  <label
+                    for="supervised-dose-notes"
+                    class="mb-1.5 block text-sm font-semibold text-[#373831]"
+                  >
+                    Observações da dose
+                    <span class="font-normal text-[#A8A29E]">(opcional)</span>
+                  </label>
+                  <input
+                    id="supervised-dose-notes"
+                    type="text"
+                    formControlName="supervisedDoseNotes"
+                    data-testid="supervised-dose-notes"
+                    placeholder="Ex.: Dose mensal aplicada no posto"
+                    class="w-full rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+                  />
+                </div>
+
+                @if (showValidation() && !draft().followUp.otherMedicationName.trim()) {
+                  <p class="text-xs text-[#B91C1C]">Selecione ou informe o medicamento da dose.</p>
+                }
+              </div>
+            }
+
+            @if (draft().followUp.hadMedicationChange === true) {
+              <div class="space-y-3 border-t border-[#E7E5E4] pt-3" data-testid="med-change-fields">
+                <p class="text-sm text-[#64655C]">
+                  Descreva a mudança e registre o novo medicamento com a dose indicada pelo
+                  profissional.
+                </p>
+
+                <div>
+                  <label
+                    for="med-change-desc"
+                    class="mb-1.5 block text-sm font-semibold text-[#373831]"
+                  >
+                    O que mudou?
+                    <span class="font-normal text-[#A8A29E]">(opcional)</span>
+                  </label>
+                  <textarea
+                    id="med-change-desc"
+                    rows="2"
+                    formControlName="medicationChangeDescription"
+                    data-testid="medication-change-description"
+                    placeholder="Ex.: Troca por reação, ajuste do esquema..."
+                    class="w-full resize-none rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+                  ></textarea>
+                </div>
+
+                <div>
+                  <label
+                    for="new-medication-name"
+                    class="mb-1.5 block text-sm font-semibold text-[#373831]"
+                  >
+                    Novo medicamento
+                  </label>
+                  <input
+                    id="new-medication-name"
+                    type="text"
+                    formControlName="newMedicationName"
+                    data-testid="new-medication-name"
+                    placeholder="Ex.: Clofazimina"
+                    class="w-full rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+                  />
+                  @if (showValidation() && !followUpForm.controls.newMedicationName.value?.trim()) {
+                    <p class="mt-1 text-xs text-[#B91C1C]">Informe o novo medicamento.</p>
+                  }
+                </div>
+
+                <div>
+                  <label
+                    for="new-dose-description"
+                    class="mb-1.5 block text-sm font-semibold text-[#373831]"
+                  >
+                    Nova dose / posologia
+                  </label>
+                  <input
+                    id="new-dose-description"
+                    type="text"
+                    formControlName="newDoseDescription"
+                    data-testid="new-dose-description"
+                    placeholder="Ex.: 1 cápsula ao dia, dose mensal supervisionada"
+                    class="w-full rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+                  />
+                  @if (showValidation() && !followUpForm.controls.newDoseDescription.value?.trim()) {
+                    <p class="mt-1 text-xs text-[#B91C1C]">Informe a nova dose ou posologia.</p>
+                  }
+                </div>
+              </div>
+            }
+
+            @if (
+              draft().followUp.hadMedicationChange === false && !draft().followUp.registerSupervisedDose
+            ) {
+              <p class="text-xs text-[#64655C]">
+                Você pode marcar o registro da dose acima quando quiser anotar o atendimento mensal.
+              </p>
+            }
+          </section>
+
+          <div>
+            <label for="follow-up-conduct" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+              Conduta <span class="font-normal text-[#A8A29E]">(opcional)</span>
+            </label>
+            <textarea
+              id="follow-up-conduct"
+              rows="2"
+              formControlName="conduct"
+              data-testid="follow-up-conduct"
+              placeholder="Ex.: Continuar tratamento, solicitar novo exame..."
+              class="w-full resize-none rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+            ></textarea>
+          </div>
+
+          <div>
+            <label for="follow-up-next" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+              Próxima consulta <span class="font-normal text-[#A8A29E]">(opcional)</span>
+            </label>
+            <input
+              id="follow-up-next"
+              type="date"
+              formControlName="nextAppointmentDate"
+              data-testid="follow-up-next"
+              class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+            />
+          </div>
+
+          <div>
+            <label for="follow-up-guidance" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+              Orientação recebida <span class="font-normal text-[#A8A29E]">(opcional)</span>
+            </label>
+            <textarea
+              id="follow-up-guidance"
+              rows="3"
+              formControlName="guidanceReceived"
+              data-testid="follow-up-guidance"
+              placeholder="Cuidados, sinais de alerta, hábitos..."
+              class="w-full resize-none rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+            ></textarea>
+          </div>
+            </form>
+          }
+        </div>
+      }
+
+      @case ('summary') {
+        <div
+          class="space-y-4 rounded-2xl bg-white p-5 ring-1 ring-[#E7E5E4]"
+          data-testid="step-summary"
+        >
+          <div class="flex items-center gap-2 text-[#4338CA]">
+            <lucide-icon [name]="LucideCalendar" [size]="20" />
+            <span class="text-sm font-semibold">Resumo do registro</span>
+          </div>
+
+          <dl class="space-y-3 text-sm">
+            <div class="flex justify-between gap-4">
+              <dt class="text-[#64655C]">Data e hora</dt>
+              <dd class="text-right font-medium text-[#373831]">
+                {{ formatDate(draft().appointmentDate) }} · {{ draft().appointmentTime }}
+              </dd>
+            </div>
+            <div class="flex justify-between gap-4">
+              <dt class="text-[#64655C]">Local</dt>
+              <dd class="text-right font-medium text-[#373831]">{{ draft().location }}</dd>
+            </div>
+            <div class="flex justify-between gap-4">
+              <dt class="text-[#64655C]">Tipo</dt>
+              <dd class="text-right font-medium text-[#373831]">{{ typeLabel() }}</dd>
+            </div>
+            @if (draft().professional) {
+              <div class="flex justify-between gap-4">
+                <dt class="text-[#64655C]">Profissional</dt>
+                <dd class="text-right font-medium text-[#373831]">{{ draft().professional }}</dd>
+              </div>
+            }
+            @if (draft().notes) {
+              <div>
+                <dt class="text-[#64655C]">Observações</dt>
+                <dd class="mt-1 font-medium text-[#373831]">{{ draft().notes }}</dd>
+              </div>
+            }
+            @if (draft().followUp.hadMedicationChange === true) {
+              <div class="border-t border-[#E7E5E4] pt-3">
+                <dt class="text-[#64655C]">Mudança de medicamento</dt>
+                <dd class="mt-1 font-medium text-[#373831]">
+                  {{ draft().followUp.newMedicationName }} —
+                  {{ draft().followUp.newDoseDescription }}
+                </dd>
+                @if (draft().followUp.medicationChangeDescription) {
+                  <dd class="mt-1 text-xs text-[#64655C]">
+                    {{ draft().followUp.medicationChangeDescription }}
+                  </dd>
+                }
+              </div>
+            }
+            @if (
+              draft().followUp.hadMedicationChange === false &&
+              draft().followUp.registerSupervisedDose &&
+              draft().followUp.otherMedicationName
+            ) {
+              <div class="border-t border-[#E7E5E4] pt-3">
+                <dt class="text-[#64655C]">Dose registrada</dt>
+                <dd class="mt-1 font-medium text-[#373831]">
+                  {{ selectedMedicationLabel() }}
+                  @if (draft().followUp.supervisedDoseNotes) {
+                    <span class="block text-xs text-[#64655C]">
+                      {{ draft().followUp.supervisedDoseNotes }}
+                    </span>
+                  }
+                </dd>
+              </div>
+            }
+            <div class="flex justify-between gap-4 border-t border-[#E7E5E4] pt-3">
+              <dt class="text-[#64655C]">Status</dt>
+              <dd class="text-right font-semibold text-[#4338CA]">
+                @if (draft().performed) {
+                  Realizada
+                } @else {
+                  Agendado / pendente
+                }
+              </dd>
+            </div>
+          </dl>
+        </div>
+      }
+    }
+
+    <div class="mt-8 flex items-center justify-between gap-3">
+      <button
+        type="button"
+        (click)="prevStep()"
+        [disabled]="currentStepIndex() === 0"
+        class="rounded-xl border border-[#D6D3D1] px-4 py-2.5 text-sm font-semibold text-[#64655C] transition disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        Voltar
+      </button>
+
+      @if (currentStepId() !== 'summary') {
+        <button
+          type="button"
+          data-testid="wizard-next"
+          (click)="nextStep()"
+          class="rounded-xl bg-[#4338CA] px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+        >
+          Continuar
+        </button>
+      } @else {
+        <button
+          type="button"
+          data-testid="wizard-submit"
+          (click)="submit()"
+          class="rounded-xl bg-[#4338CA] px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+        >
+          Salvar registro
+        </button>
+      }
+    </div>
+  }
+</section>

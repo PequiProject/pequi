@@ -146,6 +146,11 @@
   color: #4caf50;
 }
 
+.purple-icon {
+  background-color: #ede7f6;
+  color: #5b48d9;
+}
+
 .card-text {
   display: flex;
   flex-direction: column;

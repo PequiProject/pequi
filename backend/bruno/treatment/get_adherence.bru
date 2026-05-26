@@ -1,0 +1,40 @@
+meta {
+  name: Get Adherence Snapshot
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/v1/treatments/{{treatmentId}}/adherence
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.id: isDefined
+  res.body.treatment_id: eq "{{treatmentId}}"
+  res.body.patient_id: isDefined
+  res.body.period_start: isDefined
+  res.body.period_end: isDefined
+  res.body.total_doses: isDefined
+  res.body.taken_doses: isDefined
+  res.body.adherence_pct: isDefined
+  res.body.calculated_at: isDefined
+}
+
+docs {
+  Retorna o snapshot de adesão mais recente para o tratamento.
+
+  IMPORTANTE: A adesão NUNCA é calculada em tempo real.
+  Este endpoint lê exclusivamente da tabela `adherence_snapshots`,
+  populada pelo worker assíncrono (M9).
+
+  Retorna 404 caso nenhum snapshot tenha sido calculado ainda.
+
+  Acessível por paciente (próprio tratamento) e profissional (mesma unidade).
+  Rate limit: 100/minuto.
+}
