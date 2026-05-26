@@ -45,6 +45,17 @@ def _community_repos(
     )
 
 
+def _admin_community_repos(
+    session: AsyncSession,
+) -> tuple[CommunityRepository, AuditRepository]:
+    from pequi.repositories.audit_repo import AuditRepository
+
+    return (
+        CommunityRepository(session),
+        AuditRepository(session),
+    )
+
+
 @router.get("/posts", response_model=PostListResponse)
 @user_limiter.limit("100/minute")
 async def list_posts(
@@ -159,8 +170,8 @@ async def moderate_post(
     session: AsyncSession = Depends(get_db),
 ) -> PostResponse:
     """Modera post (admin only) — marca como moderado/removido."""
-    community_repo, _ = _community_repos(session)
-    use_case = ModeratePostUseCase(community_repo)
+    community_repo, audit_repo = _admin_community_repos(session)
+    use_case = ModeratePostUseCase(community_repo, audit_repo)
     return await use_case.execute(post_id, body, admin_user_id)
 
 
@@ -173,6 +184,6 @@ async def deanonymize(
     session: AsyncSession = Depends(get_db),
 ) -> DeanonymizeResponse:
     """Deanonymiza anonymous_id (admin only) — expõe user_id real com auditoria."""
-    community_repo, _ = _community_repos(session)
-    use_case = DeanonymizeUseCase(community_repo)
+    community_repo, audit_repo = _admin_community_repos(session)
+    use_case = DeanonymizeUseCase(community_repo, audit_repo)
     return await use_case.execute(anonymous_id, admin_user_id)

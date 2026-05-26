@@ -217,13 +217,59 @@ class CommunityRepository:
         user_id: UUID,
         post_id: UUID,
     ) -> tuple[bool, int]:
-        """Toggle like em post — retorna (liked, like_count).
+        """Adiciona like em post — retorna (liked, like_count).
 
-        Se já existe like, remove (unlike). Se não existe, cria (like).
+        Não verifica se já existe (verificação feita no use case para retornar 409).
         """
         anonymous_id = await self.get_or_create_anonymous_id(user_id)
 
-        # Verificar se já existe like
+        # Adicionar like
+        await self._session.execute(
+            insert(CommunityLike).values(
+                anonymous_id=anonymous_id,
+                post_id=post_id,
+            )
+        )
+        await self._session.execute(
+            update(CommunityPost)
+            .where(CommunityPost.id == post_id)
+            .values(like_count=CommunityPost.like_count + 1)
+        )
+        await self._session.flush()
+        return True, await self._get_post_like_count(post_id)
+
+    async def remove_like(
+        self,
+        user_id: UUID,
+        post_id: UUID,
+    ) -> tuple[bool, int]:
+        """Remove like em post — retorna (liked, like_count)."""
+        anonymous_id = await self.get_or_create_anonymous_id(user_id)
+
+        # Remover like
+        await self._session.execute(
+            delete(CommunityLike).where(
+                and_(
+                    CommunityLike.anonymous_id == anonymous_id,
+                    CommunityLike.post_id == post_id,
+                )
+            )
+        )
+        await self._session.execute(
+            update(CommunityPost)
+            .where(CommunityPost.id == post_id)
+            .values(like_count=CommunityPost.like_count - 1)
+        )
+        await self._session.flush()
+        return False, await self._get_post_like_count(post_id)
+
+    async def check_like_exists(
+        self,
+        user_id: UUID,
+        post_id: UUID,
+    ) -> bool:
+        """Verifica se o usuário já curtiu o post."""
+        anonymous_id = await self.get_or_create_anonymous_id(user_id)
         stmt = select(CommunityLike).where(
             and_(
                 CommunityLike.anonymous_id == anonymous_id,
@@ -231,40 +277,7 @@ class CommunityRepository:
             )
         )
         result = await self._session.execute(stmt)
-        existing = result.scalar_one_or_none()
-
-        if existing:
-            # Remover like
-            await self._session.execute(
-                delete(CommunityLike).where(
-                    and_(
-                        CommunityLike.anonymous_id == anonymous_id,
-                        CommunityLike.post_id == post_id,
-                    )
-                )
-            )
-            await self._session.execute(
-                update(CommunityPost)
-                .where(CommunityPost.id == post_id)
-                .values(like_count=CommunityPost.like_count - 1)
-            )
-            await self._session.flush()
-            return False, await self._get_post_like_count(post_id)
-        else:
-            # Adicionar like
-            await self._session.execute(
-                insert(CommunityLike).values(
-                    anonymous_id=anonymous_id,
-                    post_id=post_id,
-                )
-            )
-            await self._session.execute(
-                update(CommunityPost)
-                .where(CommunityPost.id == post_id)
-                .values(like_count=CommunityPost.like_count + 1)
-            )
-            await self._session.flush()
-            return True, await self._get_post_like_count(post_id)
+        return result.scalar_one_or_none() is not None
 
     async def _get_post_like_count(self, post_id: UUID) -> int:
         """Retorna contador atual de likes de um post."""

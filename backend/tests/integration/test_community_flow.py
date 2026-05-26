@@ -160,10 +160,12 @@ async def test_patient_can_comment_on_post(create_tables, db_session):
 
 
 @pytest.mark.asyncio
-async def test_toggle_like_creates_and_removes_like(create_tables, db_session):
-    """Toggle like creates like on first call, removes on second."""
+async def test_duplicate_like_returns_409_conflict(create_tables, db_session):
+    """Duplicate like returns 409 Conflict (PEQ-108)."""
+    from pequi.core.exceptions import ConflictError
+
     health_unit = await _create_health_unit(db_session)
-    patient_user = await _create_user(db_session, email="patient5@test.com", role="patient")
+    patient_user = await _create_user(db_session, email="patient12@test.com", role="patient")
     patient = await _create_patient(db_session, user=patient_user, health_unit=health_unit)
 
     community_repo = CommunityRepository(db_session)
@@ -174,16 +176,15 @@ async def test_toggle_like_creates_and_removes_like(create_tables, db_session):
     post_use_case = CreatePostUseCase(community_repo, patient_repo)
     post = await post_use_case.execute(patient_user.id, post_data)
 
-    # Toggle like (should create)
+    # Like post (should succeed)
     like_use_case = ToggleLikeUseCase(community_repo, patient_repo)
     result1 = await like_use_case.execute(patient_user.id, post.id)
     assert result1["liked"] is True
     assert result1["like_count"] == 1
 
-    # Toggle like again (should remove)
-    result2 = await like_use_case.execute(patient_user.id, post.id)
-    assert result2["liked"] is False
-    assert result2["like_count"] == 0
+    # Try to like again (should return 409 Conflict)
+    with pytest.raises(ConflictError):
+        await like_use_case.execute(patient_user.id, post.id)
 
 
 @pytest.mark.asyncio
@@ -267,7 +268,11 @@ async def test_user_cannot_delete_others_post(create_tables, db_session):
 
 @pytest.mark.asyncio
 async def test_admin_can_moderate_post(create_tables, db_session):
-    """Admin can moderate posts (audit logged)."""
+    """Admin can moderate posts (audit logged in audit_logs table)."""
+    from pequi.repositories.audit_repo import AuditRepository
+    from pequi.models.audit_log import AuditLog
+    from sqlalchemy import select
+
     health_unit = await _create_health_unit(db_session)
     patient_user = await _create_user(db_session, email="patient8@test.com", role="patient")
     patient = await _create_patient(db_session, user=patient_user, health_unit=health_unit)
@@ -275,6 +280,7 @@ async def test_admin_can_moderate_post(create_tables, db_session):
 
     community_repo = CommunityRepository(db_session)
     patient_repo = PatientRepository(db_session)
+    audit_repo = AuditRepository(db_session)
 
     # Create post
     post_data = PostCreate(title="Test", content="Test", category="experience")
@@ -284,17 +290,31 @@ async def test_admin_can_moderate_post(create_tables, db_session):
     # Moderate post as admin
     from pequi.schemas.community import PostModerate
 
-    moderate_use_case = ModeratePostUseCase(community_repo)
+    moderate_use_case = ModeratePostUseCase(community_repo, audit_repo)
     moderated_post = await moderate_use_case.execute(
         post.id, PostModerate(is_moderated=True), admin_user.id
     )
 
     assert moderated_post.is_moderated is True
 
+    # Verify audit log was persisted
+    stmt = select(AuditLog).where(
+        AuditLog.entity_type == "community_post",
+        AuditLog.action == "moderate",
+    )
+    result = await db_session.execute(stmt)
+    audit_log = result.scalar_one_or_none()
+    assert audit_log is not None
+    assert audit_log.actor_user_id == admin_user.id
+    assert audit_log.actor_role == "admin"
+    assert audit_log.entity_id == str(post.id)
+
 
 @pytest.mark.asyncio
 async def test_admin_can_deanonymize_with_audit(create_tables, db_session):
-    """Admin can deanonymize (audit logged)."""
+    """Admin can deanonymize (audit logged in audit_logs table)."""
+    from pequi.repositories.audit_repo import AuditRepository
+
     health_unit = await _create_health_unit(db_session)
     patient_user = await _create_user(db_session, email="patient9@test.com", role="patient")
     patient = await _create_patient(db_session, user=patient_user, health_unit=health_unit)
@@ -302,6 +322,7 @@ async def test_admin_can_deanonymize_with_audit(create_tables, db_session):
 
     community_repo = CommunityRepository(db_session)
     patient_repo = PatientRepository(db_session)
+    audit_repo = AuditRepository(db_session)
 
     # Create post
     post_data = PostCreate(title="Test", content="Test", category="experience")
@@ -309,12 +330,27 @@ async def test_admin_can_deanonymize_with_audit(create_tables, db_session):
     post = await post_use_case.execute(patient_user.id, post_data)
 
     # Deanonymize as admin
-    deanonymize_use_case = DeanonymizeUseCase(community_repo)
+    deanonymize_use_case = DeanonymizeUseCase(community_repo, audit_repo)
     mapping = await deanonymize_use_case.execute(post.author_anonymous_id, admin_user.id)
 
     # Verify mapping exposes real user_id
     assert mapping.user_id == patient_user.id
     assert mapping.anonymous_id == post.author_anonymous_id
+
+    # Verify audit log was persisted
+    from pequi.models.audit_log import AuditLog
+    from sqlalchemy import select
+
+    stmt = select(AuditLog).where(
+        AuditLog.entity_type == "community_anonymous_map",
+        AuditLog.action == "deanonymize",
+    )
+    result = await db_session.execute(stmt)
+    audit_log = result.scalar_one_or_none()
+    assert audit_log is not None
+    assert audit_log.actor_user_id == admin_user.id
+    assert audit_log.actor_role == "admin"
+    assert audit_log.entity_id == str(post.author_anonymous_id)
 
 
 @pytest.mark.asyncio
