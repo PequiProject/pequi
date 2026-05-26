@@ -1,0 +1,23 @@
+meta {
+  name: List Body Areas
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/v1/body-areas
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Catálogo fixo de áreas corporais ordenado por system_part e label.
+}

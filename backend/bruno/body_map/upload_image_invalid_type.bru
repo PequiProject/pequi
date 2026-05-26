@@ -1,0 +1,30 @@
+meta {
+  name: Upload Body Map Invalid Type
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/v1/body-map/upload
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "filename": "lesao.txt",
+    "content_type": "text/plain"
+  }
+}
+
+assert {
+  res.status: eq 422
+}

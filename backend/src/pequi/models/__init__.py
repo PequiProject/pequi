@@ -1,4 +1,5 @@
 from pequi.models.alert import Alert
+from pequi.models.body_map import BodyArea, BodyAreaHistory, BodyMapEntry
 from pequi.models.checkin import Checkin
 from pequi.models.consent import Consent
 from pequi.models.dose_log import AdherenceSnapshot, DoseLog
@@ -12,6 +13,9 @@ from pequi.models.user import User
 __all__ = [
     "AdherenceSnapshot",
     "Alert",
+    "BodyArea",
+    "BodyAreaHistory",
+    "BodyMapEntry",
     "Checkin",
     "Consent",
     "DoseLog",
