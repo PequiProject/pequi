@@ -1,0 +1,35 @@
+meta {
+  name: List Posts
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/v1/community/posts
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+assert {
+  res.status: eq 200
+  res.body.items: isDefined
+  res.body.total: isDefined
+}
+
+docs {
+  Lista posts da comunidade anônima (PEQ-106).
+
+  - Qualquer usuário autenticado pode acessar.
+  - Retorna apenas author_anonymous_id (nunca user_id).
+  - Exclui posts moderados por padrão.
+  - Paginado com limit e offset.
+
+  Rate limit: 100/minuto.
+}

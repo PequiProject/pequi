@@ -1,6 +1,12 @@
 from pequi.models.alert import Alert
 from pequi.models.body_map import BodyArea, BodyAreaHistory, BodyMapEntry
 from pequi.models.checkin import Checkin
+from pequi.models.community import (
+    CommunityAnonymousMap,
+    CommunityComment,
+    CommunityLike,
+    CommunityPost,
+)
 from pequi.models.consent import Consent
 from pequi.models.dose_log import AdherenceSnapshot, DoseLog
 from pequi.models.health_professional import HealthProfessional
@@ -17,6 +23,10 @@ __all__ = [
     "BodyAreaHistory",
     "BodyMapEntry",
     "Checkin",
+    "CommunityAnonymousMap",
+    "CommunityComment",
+    "CommunityLike",
+    "CommunityPost",
     "Consent",
     "DoseLog",
     "DoseSchedule",
