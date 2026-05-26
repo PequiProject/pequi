@@ -1,7 +1,7 @@
 from datetime import UTC, date, datetime, time
 from uuid import UUID
 
-from pequi.core.exceptions import ForbiddenError, NotFoundError
+from pequi.core.exceptions import ForbiddenError, NotFoundError, ValidationFailedError
 from pequi.core.logging import get_logger
 from pequi.models.body_map import BodyFindingType
 from pequi.repositories.body_map_repo import BodyMapRepository
@@ -66,7 +66,9 @@ class GetBodyMapHistoryUseCase:
 
         if actor_role == "health_professional":
             if patient_id is None:
-                raise ValidationErrorForProfessional()
+                raise ValidationFailedError(
+                    "Profissional deve informar patient_id para consultar histórico."
+                )
 
             professional = await self._professional_repo.get_by_user_id(actor_user_id)
             if professional is None:
@@ -76,7 +78,11 @@ class GetBodyMapHistoryUseCase:
             if patient is None:
                 raise NotFoundError("PatientProfile", str(patient_id))
 
-            if patient.health_unit_id != professional.health_unit_id:
+            if (
+                not patient.health_unit_id
+                or not professional.health_unit_id
+                or patient.health_unit_id != professional.health_unit_id
+            ):
                 logger.warning(
                     "body_map.forbidden_cross_tenant_access",
                     professional_user_id=str(actor_user_id),
@@ -94,8 +100,3 @@ class GetBodyMapHistoryUseCase:
             return patient.id
 
         raise ForbiddenError("Acesso negado.")
-
-
-class ValidationErrorForProfessional(ForbiddenError):
-    def __init__(self) -> None:
-        super().__init__("Profissional deve informar patient_id para consultar histórico.")

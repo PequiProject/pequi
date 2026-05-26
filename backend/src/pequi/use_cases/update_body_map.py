@@ -15,6 +15,7 @@ from pequi.services.storage_service import StorageService
 
 logger = get_logger(__name__)
 _ALLOWED_UPLOAD_CONTENT_TYPES = {"image/jpeg", "image/jpg", "image/png", "image/webp"}
+_ALLOWED_UPLOAD_EXTENSIONS = {"jpeg", "jpg", "png", "webp"}
 
 
 class GetBodyMapUseCase:
@@ -136,6 +137,8 @@ class GenerateBodyMapUploadUrlUseCase:
         extension = Path(filename).suffix.lower().replace(".", "")
         if not extension:
             raise ValidationFailedError("filename deve conter extensão de arquivo.")
+        if extension not in _ALLOWED_UPLOAD_EXTENSIONS:
+            raise ValidationFailedError("Extensão de arquivo não permitida.")
 
         upload = await self._storage_service.generate_body_map_upload_url(
             patient_id=patient.id,

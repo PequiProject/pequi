@@ -245,6 +245,13 @@ async def test_body_map_history_snapshot_and_upload(
     )
     assert bad_upload.status_code == 422
 
+    bad_extension = await async_client.post(
+        "/v1/body-map/upload",
+        headers=headers,
+        json={"filename": "malicious.exe", "content_type": "image/png"},
+    )
+    assert bad_extension.status_code == 422
+
 
 @pytest.mark.usefixtures("create_tables")
 async def test_professional_history_access_is_tenant_scoped(
@@ -320,7 +327,7 @@ async def test_professional_history_access_is_tenant_scoped(
         "/v1/body-map/history",
         headers=_auth_headers(prof_a_user.id, "health_professional"),
     )
-    assert missing_patient_id.status_code == 403
+    assert missing_patient_id.status_code == 422
 
 
 @pytest.mark.usefixtures("create_tables")

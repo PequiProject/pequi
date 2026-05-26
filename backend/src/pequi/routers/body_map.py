@@ -9,6 +9,7 @@ from pequi.core.dependencies import (
     get_current_patient,
     get_current_user,
     get_db,
+    get_storage_service,
 )
 from pequi.core.rate_limit import user_limiter
 from pequi.models.body_map import BodyFindingType
@@ -23,7 +24,7 @@ from pequi.schemas.body_map import (
     BodyMapUploadRequest,
     UploadUrlResponse,
 )
-from pequi.services.storage_service import FakeStorageService
+from pequi.services.storage_service import StorageService
 from pequi.use_cases.get_body_map_history import GetBodyMapHistoryUseCase
 from pequi.use_cases.update_body_map import (
     GenerateBodyMapUploadUrlUseCase,
@@ -104,11 +105,12 @@ async def create_body_map_upload_url(
     payload: BodyMapUploadRequest,
     patient_user_id: UUID = Depends(get_current_patient),
     session: AsyncSession = Depends(get_db),
+    storage_service: StorageService = Depends(get_storage_service),
 ) -> UploadUrlResponse:
     _, patient_repo, _ = _repos(session)
     use_case = GenerateBodyMapUploadUrlUseCase(
         patient_repo,
-        storage_service=FakeStorageService(),
+        storage_service=storage_service,
     )
     return await use_case.execute(
         patient_user_id,
