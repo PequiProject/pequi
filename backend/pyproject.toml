@@ -83,5 +83,8 @@ ignore = [
     "ARG001", # unused function argument (common in FastAPI route handlers)
 ]
 
+[tool.ruff.lint.per-file-ignores]
+"alembic/versions/*.py" = ["E501"]
+
 [tool.ruff.lint.isort]
 known-first-party = ["pequi"]

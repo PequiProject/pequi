@@ -1,0 +1,23 @@
+meta {
+  name: Get Body Map
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/v1/body-map
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Retorna o mapa corporal atual (somente entradas ativas) do paciente autenticado.
+}

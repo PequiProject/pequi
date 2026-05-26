@@ -1,0 +1,25 @@
+meta {
+  name: Get Body Map History
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/v1/body-map/history?body_area_id={{bodyAreaId}}&finding_type=lesion
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Histórico imutável de snapshots do body map.
+  Para profissionais, informar patient_id no query string.
+  Filtros opcionais de data: from_date e to_date em YYYY-MM-DD (UTC).
+}
