@@ -232,7 +232,7 @@ async def test_user_can_delete_own_post(create_tables, db_session):
 
     # Delete post
     delete_use_case = DeletePostUseCase(community_repo)
-    deleted_post = await delete_use_case.execute(patient_user.id, post.id)
+    await delete_use_case.execute(patient_user.id, post.id)
 
     # Verify post no longer appears in list
     list_use_case = ListPostsUseCase(community_repo)
