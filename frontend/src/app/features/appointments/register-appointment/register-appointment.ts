@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { LucideAngularModule, LucideCalendar, LucideCheck, LucidePill } from 'lucide-angular';
 import {
@@ -13,7 +13,17 @@ import {
 } from '../models/health-appointment.models';
 import { HealthAppointmentService } from '../services/health-appointment.service';
 import { PatientMedicationService } from '../services/patient-medication.service';
-import { SUBSTITUTE_SCHEME_MEDICATION_OPTIONS } from '../../profile/models/patient-profile.models';
+import {
+  INSTITUTED_MEDICATION_FREQUENCY_OPTIONS,
+  INSTITUTED_MEDICATION_NAME_OPTIONS,
+  INSTITUTED_MEDICATION_OTHER_KEY,
+  INSTITUTED_MEDICATION_UNIT_OPTIONS,
+  SUBSTITUTE_SCHEME_MEDICATION_OPTIONS,
+  institutedMedicationSelectValue,
+  isInstitutedMedicationOtherKey,
+  parseInstitutedMedicationRows,
+  type PatientTreatmentData,
+} from '../../profile/models/patient-profile.models';
 import { PatientProfileService } from '../../profile/services/patient-profile.service';
 
 type WizardStepId = 'basics' | 'performed' | 'summary';
@@ -41,6 +51,9 @@ export class RegisterAppointmentComponent {
   readonly LucideCalendar = LucideCalendar;
   readonly LucideCheck = LucideCheck;
   readonly LucidePill = LucidePill;
+  readonly institutedMedicationNameOptions = INSTITUTED_MEDICATION_NAME_OPTIONS;
+  readonly institutedMedicationUnitOptions = INSTITUTED_MEDICATION_UNIT_OPTIONS;
+  readonly institutedMedicationFrequencyOptions = INSTITUTED_MEDICATION_FREQUENCY_OPTIONS;
 
   readonly currentStepIndex = signal(0);
   readonly showValidation = signal(false);
@@ -90,11 +103,38 @@ export class RegisterAppointmentComponent {
     institutedThalidomideMgDay: [''],
     institutedPentoxifyllineMgDay: [''],
     institutedOtherMedication: [''],
+    institutedMedications: this.fb.array([]),
     otherMedicationName: [''],
     supervisedDoseNotes: [''],
     nextAppointmentDate: [''],
     guidanceReceived: [''],
   });
+
+  get institutedMedicationsArray(): FormArray {
+    return this.followUpForm.controls.institutedMedications as FormArray;
+  }
+
+  addInstitutedMedication(name = '', dose = '', unit = 'mg', frequency = 'dia'): void {
+    const medicationKey = institutedMedicationSelectValue(name);
+    this.institutedMedicationsArray.push(
+      this.fb.group({
+        medicationKey: [medicationKey],
+        customName: [medicationKey === INSTITUTED_MEDICATION_OTHER_KEY ? name : ''],
+        dose: [dose],
+        unit: [unit],
+        frequency: [frequency],
+      })
+    );
+  }
+
+  removeInstitutedMedication(index: number): void {
+    this.institutedMedicationsArray.removeAt(index);
+  }
+
+  isInstitutedMedicationOther(index: number): boolean {
+    const key = this.institutedMedicationsArray.at(index)?.get('medicationKey')?.value;
+    return isInstitutedMedicationOtherKey(String(key ?? ''));
+  }
 
   readonly ansForm = this.fb.group({
     assessmentDate: [''],
@@ -123,6 +163,33 @@ export class RegisterAppointmentComponent {
       institutedPentoxifyllineMgDay: treatment.pentoxifyllineMgDay,
       institutedOtherMedication: treatment.otherMedication,
     });
+    this.loadInstitutedMedicationsFromTreatment(treatment);
+  }
+
+  private loadInstitutedMedicationsFromTreatment(treatment: PatientTreatmentData): void {
+    this.institutedMedicationsArray.clear();
+    const stored = treatment.institutedMedications ?? [];
+    if (stored.length > 0) {
+      for (const item of stored) {
+        this.addInstitutedMedication(item.name, item.dose, item.unit || 'mg', item.frequency || 'dia');
+      }
+      return;
+    }
+    if (treatment.prednisoneMgKg.trim()) {
+      this.addInstitutedMedication('Prednisona', treatment.prednisoneMgKg, 'mg/kg', 'dia');
+    }
+    if (treatment.aineMgDay.trim()) {
+      this.addInstitutedMedication('AINE', treatment.aineMgDay, 'mg', 'dia');
+    }
+    if (treatment.thalidomideMgDay.trim()) {
+      this.addInstitutedMedication('Talidomida', treatment.thalidomideMgDay, 'mg', 'dia');
+    }
+    if (treatment.pentoxifyllineMgDay.trim()) {
+      this.addInstitutedMedication('Pentoxifilina', treatment.pentoxifyllineMgDay, 'mg', 'dia');
+    }
+    if (treatment.otherMedication.trim()) {
+      this.addInstitutedMedication(treatment.otherMedication, '', 'mg', 'dia');
+    }
   }
 
   readonly wizardStepCount = WIZARD_STEP_COUNT;
@@ -216,6 +283,18 @@ export class RegisterAppointmentComponent {
 
   private syncFollowUpFromForm(): void {
     const raw = this.followUpForm.getRawValue();
+    const institutedMedications = parseInstitutedMedicationRows(
+      this.institutedMedicationsArray.controls
+    );
+    const byName = (name: string) =>
+      institutedMedications.find((item) => item.name.toLowerCase() === name.toLowerCase())?.dose ?? '';
+    const customMeds = institutedMedications
+      .filter(
+        (item) =>
+          !['prednisona', 'aine', 'talidomida', 'pentoxifilina'].includes(item.name.toLowerCase())
+      )
+      .map((item) => `${item.name} ${item.dose} ${item.unit}/${item.frequency}`.trim())
+      .join(' | ');
     const doseSelected = [
       raw.doseSchemeRifampicina ? 'Rifampicina' : '',
       raw.doseSchemeClofazimina ? 'Clofazimina' : '',
@@ -245,11 +324,12 @@ export class RegisterAppointmentComponent {
         updateInstitutedMedsFromConsultation: raw.updateInstitutedMedsFromConsultation ?? false,
         hadMedicationChange: raw.updateInstitutedMedsFromConsultation ?? false,
         medicationChangeDescription: raw.medicationChangeDescription ?? '',
-        institutedPrednisoneMgKg: raw.institutedPrednisoneMgKg ?? '',
-        institutedAineMgDay: raw.institutedAineMgDay ?? '',
-        institutedThalidomideMgDay: raw.institutedThalidomideMgDay ?? '',
-        institutedPentoxifyllineMgDay: raw.institutedPentoxifyllineMgDay ?? '',
-        institutedOtherMedication: raw.institutedOtherMedication ?? '',
+        institutedPrednisoneMgKg: byName('Prednisona'),
+        institutedAineMgDay: byName('AINE'),
+        institutedThalidomideMgDay: byName('Talidomida'),
+        institutedPentoxifyllineMgDay: byName('Pentoxifilina'),
+        institutedOtherMedication: customMeds,
+        institutedMedications,
         otherMedicationName: doseName || '',
         supervisedDoseNotes: raw.supervisedDoseNotes ?? '',
         nextAppointmentDate: raw.nextAppointmentDate ?? '',
@@ -431,6 +511,7 @@ export class RegisterAppointmentComponent {
       next.thalidomideMgDay = fu.institutedThalidomideMgDay;
       next.pentoxifyllineMgDay = fu.institutedPentoxifyllineMgDay;
       next.otherMedication = fu.institutedOtherMedication;
+      next.institutedMedications = fu.institutedMedications;
     }
     this.profileService.updateTreatment(next);
     this.medicationService.setCurrentDoseMedication(next.currentDoseMedication);

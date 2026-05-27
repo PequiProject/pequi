@@ -107,6 +107,12 @@ export interface AppointmentFollowUpDraft {
   institutedThalidomideMgDay: string;
   institutedPentoxifyllineMgDay: string;
   institutedOtherMedication: string;
+  institutedMedications: {
+    name: string;
+    dose: string;
+    unit: string;
+    frequency: string;
+  }[];
   supervisedDoseNotes: string;
 }
 
@@ -157,6 +163,7 @@ export const EMPTY_FOLLOW_UP_DRAFT: AppointmentFollowUpDraft = {
   institutedThalidomideMgDay: '',
   institutedPentoxifyllineMgDay: '',
   institutedOtherMedication: '',
+  institutedMedications: [],
   supervisedDoseNotes: '',
 };
 

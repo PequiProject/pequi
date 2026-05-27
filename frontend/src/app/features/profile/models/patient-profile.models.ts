@@ -15,6 +15,82 @@ export type SubstituteSchemeMedication =
 
 export type MedicationIntolerance = 'dapsone' | 'rifampicin' | 'clofazimine';
 
+/** Valor do select quando o paciente informa medicamento fora da lista padrão. */
+export const INSTITUTED_MEDICATION_OTHER_KEY = '__outro__';
+
+export const INSTITUTED_MEDICATION_NAME_OPTIONS: readonly { value: string; label: string }[] = [
+  { value: 'Prednisona', label: 'Prednisona' },
+  { value: 'AINE', label: 'AINE' },
+  { value: 'Talidomida', label: 'Talidomida' },
+  { value: 'Pentoxifilina', label: 'Pentoxifilina' },
+  { value: INSTITUTED_MEDICATION_OTHER_KEY, label: 'Outro' },
+] as const;
+
+export const INSTITUTED_MEDICATION_UNIT_OPTIONS = [
+  'mg',
+  'mg/kg',
+  'ml',
+  'g',
+  'comprimido',
+  'gota',
+] as const;
+
+export const INSTITUTED_MEDICATION_FREQUENCY_OPTIONS = [
+  'dia',
+  '12/12h',
+  '8/8h',
+  '6/6h',
+  'semana',
+  'quinzena',
+  'mês',
+] as const;
+
+export type InstitutedMedicationFormRow = {
+  medicationKey?: string;
+  customName?: string;
+  dose?: string;
+  unit?: string;
+  frequency?: string;
+};
+
+export function institutedMedicationSelectValue(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return '';
+  const known = INSTITUTED_MEDICATION_NAME_OPTIONS.find(
+    (option) =>
+      option.value !== INSTITUTED_MEDICATION_OTHER_KEY &&
+      option.value.toLowerCase() === trimmed.toLowerCase()
+  );
+  return known?.value ?? INSTITUTED_MEDICATION_OTHER_KEY;
+}
+
+export function resolveInstitutedMedicationName(medicationKey: string, customName: string): string {
+  if (medicationKey === INSTITUTED_MEDICATION_OTHER_KEY) {
+    return customName.trim();
+  }
+  return medicationKey.trim();
+}
+
+export function isInstitutedMedicationOtherKey(key: string): boolean {
+  return key === INSTITUTED_MEDICATION_OTHER_KEY;
+}
+
+export function parseInstitutedMedicationRows(
+  controls: { getRawValue(): InstitutedMedicationFormRow }[]
+): { name: string; dose: string; unit: string; frequency: string }[] {
+  return controls
+    .map((control) => {
+      const item = control.getRawValue();
+      return {
+        name: resolveInstitutedMedicationName(item.medicationKey ?? '', item.customName ?? ''),
+        dose: (item.dose ?? '').trim(),
+        unit: (item.unit ?? 'mg').trim() || 'mg',
+        frequency: (item.frequency ?? 'dia').trim() || 'dia',
+      };
+    })
+    .filter((item) => item.name || item.dose);
+}
+
 export type ReactionEpisodeType =
   | ''
   | 'tipo_1'
@@ -83,6 +159,12 @@ export interface PatientTreatmentData {
   thalidomideMgDay: string;
   pentoxifyllineMgDay: string;
   otherMedication: string;
+  institutedMedications: {
+    name: string;
+    dose: string;
+    unit: string;
+    frequency: string;
+  }[];
   otherConducts: string;
   substituteSchemeChangeDate: string;
   intoleranceDapsone: boolean;
@@ -293,6 +375,7 @@ export const EMPTY_TREATMENT_DATA: PatientTreatmentData = {
   thalidomideMgDay: '',
   pentoxifyllineMgDay: '',
   otherMedication: '',
+  institutedMedications: [],
   otherConducts: '',
   substituteSchemeChangeDate: '',
   intoleranceDapsone: false,
@@ -379,6 +462,7 @@ export const TREATMENT_FIELD_LABELS: Record<keyof PatientTreatmentData, string> 
   thalidomideMgDay: 'Talidomida (mg/dia)',
   pentoxifyllineMgDay: 'Pentoxifilina (mg/dia)',
   otherMedication: 'Outro medicamento',
+  institutedMedications: 'Medicamentos instituídos',
   otherConducts: 'Outras condutas',
   substituteSchemeChangeDate: 'Esquema substitutivo — data da mudança',
   intoleranceDapsone: 'Intolerância — Dapsona',

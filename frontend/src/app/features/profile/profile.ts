@@ -1,5 +1,5 @@
 import { Component, inject, signal, type WritableSignal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { FormArray, FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import {
   LucideAngularModule,
   LucideDownload,
@@ -17,8 +17,15 @@ import {
   GIF_GRADE_OPTIONS,
   INTOLERANCE_OPTIONS,
   REACTION_EPISODE_TYPE_OPTIONS,
+  INSTITUTED_MEDICATION_FREQUENCY_OPTIONS,
+  INSTITUTED_MEDICATION_NAME_OPTIONS,
+  INSTITUTED_MEDICATION_OTHER_KEY,
+  INSTITUTED_MEDICATION_UNIT_OPTIONS,
   SUBSTITUTE_SCHEME_MEDICATION_OPTIONS,
   YES_NO_OPTIONS,
+  isInstitutedMedicationOtherKey,
+  institutedMedicationSelectValue,
+  parseInstitutedMedicationRows,
   type PatientPersonalData,
   type PatientTreatmentData,
   type YesNoChoice,
@@ -38,6 +45,10 @@ export type ProfileTab = 'overview' | 'treatment';
   templateUrl: './profile.html',
 })
 export class Profile {
+  readonly institutedMedicationNameOptions = INSTITUTED_MEDICATION_NAME_OPTIONS;
+  readonly institutedMedicationUnitOptions = INSTITUTED_MEDICATION_UNIT_OPTIONS;
+  readonly institutedMedicationFrequencyOptions = INSTITUTED_MEDICATION_FREQUENCY_OPTIONS;
+
   private readonly fb = inject(FormBuilder);
   private readonly profileService = inject(PatientProfileService);
   private readonly medicationService = inject(PatientMedicationService);
@@ -96,6 +107,7 @@ export class Profile {
     thalidomideMgDay: [''],
     pentoxifyllineMgDay: [''],
     otherMedication: [''],
+    institutedMedications: this.fb.array([]),
     otherConducts: [''],
     substituteSchemeChangeDate: [''],
     intoleranceDapsone: [false],
@@ -118,6 +130,32 @@ export class Profile {
     dischargeOtherMedication: [''],
     dischargeOtherConducts: [''],
   });
+
+  get institutedMedicationsArray(): FormArray {
+    return this.treatmentForm.controls.institutedMedications as FormArray;
+  }
+
+  addInstitutedMedication(name = '', dose = '', unit = 'mg', frequency = 'dia'): void {
+    const medicationKey = institutedMedicationSelectValue(name);
+    this.institutedMedicationsArray.push(
+      this.fb.group({
+        medicationKey: [medicationKey],
+        customName: [medicationKey === INSTITUTED_MEDICATION_OTHER_KEY ? name : ''],
+        dose: [dose],
+        unit: [unit],
+        frequency: [frequency],
+      })
+    );
+  }
+
+  removeInstitutedMedication(index: number): void {
+    this.institutedMedicationsArray.removeAt(index);
+  }
+
+  isInstitutedMedicationOther(index: number): boolean {
+    const key = this.institutedMedicationsArray.at(index)?.get('medicationKey')?.value;
+    return isInstitutedMedicationOtherKey(String(key ?? ''));
+  }
 
   constructor() {
     this.treatmentForm.controls.reactionEpisodeAtDiagnosis.valueChanges.subscribe((value) => {
@@ -276,6 +314,19 @@ export class Profile {
 
   saveTreatment(): void {
     const raw = this.treatmentForm.getRawValue();
+    const institutedMedications = parseInstitutedMedicationRows(
+      this.institutedMedicationsArray.controls
+    );
+    const byName = (name: string) =>
+      institutedMedications.find((item) => item.name.toLowerCase() === name.toLowerCase())?.dose ?? '';
+    const customMeds = institutedMedications
+      .filter(
+        (item) =>
+          !['prednisona', 'aine', 'talidomida', 'pentoxifilina'].includes(item.name.toLowerCase())
+      )
+      .map((item) => `${item.name} ${item.dose} ${item.unit}/${item.frequency}`.trim())
+      .join(' | ');
+
     const treatment: PatientTreatmentData = {
       currentDoseMedication: raw.currentDoseMedication ?? '',
       diagnosisDate: raw.diagnosisDate ?? '',
@@ -297,11 +348,12 @@ export class Profile {
           : '',
       reactionEpisodeDate:
         raw.reactionEpisodeAtDiagnosis === 'sim' ? (raw.reactionEpisodeDate ?? '') : '',
-      prednisoneMgKg: raw.prednisoneMgKg ?? '',
-      aineMgDay: raw.aineMgDay ?? '',
-      thalidomideMgDay: raw.thalidomideMgDay ?? '',
-      pentoxifyllineMgDay: raw.pentoxifyllineMgDay ?? '',
-      otherMedication: raw.otherMedication ?? '',
+      prednisoneMgKg: byName('Prednisona'),
+      aineMgDay: byName('AINE'),
+      thalidomideMgDay: byName('Talidomida'),
+      pentoxifyllineMgDay: byName('Pentoxifilina'),
+      otherMedication: customMeds,
+      institutedMedications,
       otherConducts: raw.otherConducts ?? '',
       substituteSchemeChangeDate: raw.substituteSchemeChangeDate ?? '',
       intoleranceDapsone: raw.intoleranceDapsone ?? false,
@@ -372,6 +424,29 @@ export class Profile {
       { ...treatment, currentDoseMedication: currentDose },
       { emitEvent: false }
     );
+    this.institutedMedicationsArray.clear();
+    const stored = treatment.institutedMedications ?? [];
+    if (stored.length > 0) {
+      for (const item of stored) {
+        this.addInstitutedMedication(item.name, item.dose, item.unit || 'mg', item.frequency || 'dia');
+      }
+      return;
+    }
+    if (treatment.prednisoneMgKg.trim()) {
+      this.addInstitutedMedication('Prednisona', treatment.prednisoneMgKg, 'mg/kg', 'dia');
+    }
+    if (treatment.aineMgDay.trim()) {
+      this.addInstitutedMedication('AINE', treatment.aineMgDay, 'mg', 'dia');
+    }
+    if (treatment.thalidomideMgDay.trim()) {
+      this.addInstitutedMedication('Talidomida', treatment.thalidomideMgDay, 'mg', 'dia');
+    }
+    if (treatment.pentoxifyllineMgDay.trim()) {
+      this.addInstitutedMedication('Pentoxifilina', treatment.pentoxifyllineMgDay, 'mg', 'dia');
+    }
+    if (treatment.otherMedication.trim()) {
+      this.addInstitutedMedication(treatment.otherMedication, '', 'mg', 'dia');
+    }
     this.hasReactionEpisodeAtDiagnosis.set(treatment.reactionEpisodeAtDiagnosis);
     this.hasReactionEpisodeAtDischarge.set(treatment.reactionEpisodeAtDischarge);
   }
@@ -400,6 +475,9 @@ export class Profile {
       parts.push('Dapsona');
     }
     const value = parts.join(' + ');
+    if (!value) {
+      return;
+    }
     controls.currentDoseMedication.patchValue(value, { emitEvent: false });
   }
 }
