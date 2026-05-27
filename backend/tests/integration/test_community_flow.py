@@ -79,10 +79,10 @@ async def test_anonymous_id_is_stable_for_user(create_tables, db_session):
     patient_repo = PatientRepository(db_session)
     use_case = CreatePostUseCase(community_repo, patient_repo)
 
-    data1 = PostCreate(title="Post 1", content="Content 1", category="experience")
+    data1 = PostCreate(title="Post 1", content="Content 123", category="experience")
     post1 = await use_case.execute(patient_user.id, data1)
 
-    data2 = PostCreate(title="Post 2", content="Content 2", category="question")
+    data2 = PostCreate(title="Post 2", content="Content 456", category="question")
     post2 = await use_case.execute(patient_user.id, data2)
 
     # Same anonymous_id for both posts
@@ -102,7 +102,7 @@ async def test_different_users_have_different_anonymous_ids(create_tables, db_se
     patient_repo = PatientRepository(db_session)
     use_case = CreatePostUseCase(community_repo, patient_repo)
 
-    data = PostCreate(title="Test", content="Test", category="experience")
+    data = PostCreate(title="Test", content="Test content", category="experience")
     post1 = await use_case.execute(user1.id, data)
     post2 = await use_case.execute(user2.id, data)
 
@@ -121,7 +121,7 @@ async def test_user_id_never_appears_in_post_response(create_tables, db_session)
     patient_repo = PatientRepository(db_session)
     use_case = CreatePostUseCase(community_repo, patient_repo)
 
-    data = PostCreate(title="Test", content="Test", category="experience")
+    data = PostCreate(title="Test", content="Test content", category="experience")
     result = await use_case.execute(patient_user.id, data)
 
     # Convert to dict to check all fields
@@ -141,7 +141,7 @@ async def test_patient_can_comment_on_post(create_tables, db_session):
     patient_repo = PatientRepository(db_session)
 
     # Create post
-    post_data = PostCreate(title="Test", content="Test", category="experience")
+    post_data = PostCreate(title="Test", content="Test content", category="experience")
     post_use_case = CreatePostUseCase(community_repo, patient_repo)
     post = await post_use_case.execute(patient_user.id, post_data)
 
@@ -172,7 +172,7 @@ async def test_duplicate_like_returns_409_conflict(create_tables, db_session):
     patient_repo = PatientRepository(db_session)
 
     # Create post
-    post_data = PostCreate(title="Test", content="Test", category="experience")
+    post_data = PostCreate(title="Test", content="Test content", category="experience")
     post_use_case = CreatePostUseCase(community_repo, patient_repo)
     post = await post_use_case.execute(patient_user.id, post_data)
 
@@ -198,7 +198,7 @@ async def test_list_posts_excludes_moderated_content(create_tables, db_session):
     patient_repo = PatientRepository(db_session)
 
     # Create two posts
-    post_data = PostCreate(title="Test", content="Test", category="experience")
+    post_data = PostCreate(title="Test", content="Test content", category="experience")
     post_use_case = CreatePostUseCase(community_repo, patient_repo)
     post1 = await post_use_case.execute(patient_user.id, post_data)
     post2 = await post_use_case.execute(patient_user.id, post_data)
@@ -226,7 +226,7 @@ async def test_user_can_delete_own_post(create_tables, db_session):
     patient_repo = PatientRepository(db_session)
 
     # Create post
-    post_data = PostCreate(title="Test", content="Test", category="experience")
+    post_data = PostCreate(title="Test", content="Test content", category="experience")
     post_use_case = CreatePostUseCase(community_repo, patient_repo)
     post = await post_use_case.execute(patient_user.id, post_data)
 
@@ -256,7 +256,7 @@ async def test_user_cannot_delete_others_post(create_tables, db_session):
     patient_repo = PatientRepository(db_session)
 
     # Create post as user1
-    post_data = PostCreate(title="Test", content="Test", category="experience")
+    post_data = PostCreate(title="Test", content="Test content", category="experience")
     post_use_case = CreatePostUseCase(community_repo, patient_repo)
     post = await post_use_case.execute(user1.id, post_data)
 
@@ -284,7 +284,7 @@ async def test_admin_can_moderate_post(create_tables, db_session):
     audit_repo = AuditRepository(db_session)
 
     # Create post
-    post_data = PostCreate(title="Test", content="Test", category="experience")
+    post_data = PostCreate(title="Test", content="Test content", category="experience")
     post_use_case = CreatePostUseCase(community_repo, patient_repo)
     post = await post_use_case.execute(patient_user.id, post_data)
 
@@ -326,7 +326,7 @@ async def test_admin_can_deanonymize_with_audit(create_tables, db_session):
     audit_repo = AuditRepository(db_session)
 
     # Create post
-    post_data = PostCreate(title="Test", content="Test", category="experience")
+    post_data = PostCreate(title="Test", content="Test content", category="experience")
     post_use_case = CreatePostUseCase(community_repo, patient_repo)
     post = await post_use_case.execute(patient_user.id, post_data)
 
@@ -366,7 +366,7 @@ async def test_soft_deleted_posts_not_visible(create_tables, db_session):
     patient_repo = PatientRepository(db_session)
 
     # Create and delete post
-    post_data = PostCreate(title="Test", content="Test", category="experience")
+    post_data = PostCreate(title="Test", content="Test content", category="experience")
     post_use_case = CreatePostUseCase(community_repo, patient_repo)
     post = await post_use_case.execute(patient_user.id, post_data)
 
@@ -394,7 +394,7 @@ async def test_list_comments_for_post(create_tables, db_session):
     patient_repo = PatientRepository(db_session)
 
     # Create post
-    post_data = PostCreate(title="Test", content="Test", category="experience")
+    post_data = PostCreate(title="Test", content="Test content", category="experience")
     post_use_case = CreatePostUseCase(community_repo, patient_repo)
     post = await post_use_case.execute(patient_user.id, post_data)
 
