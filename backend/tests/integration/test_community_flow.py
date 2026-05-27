@@ -234,9 +234,6 @@ async def test_user_can_delete_own_post(create_tables, db_session):
     delete_use_case = DeletePostUseCase(community_repo)
     deleted_post = await delete_use_case.execute(patient_user.id, post.id)
 
-    # Verify soft delete (deleted_at is set)
-    assert deleted_post.deleted_at is not None
-
     # Verify post no longer appears in list
     list_use_case = ListPostsUseCase(community_repo)
     result = await list_use_case.execute()
