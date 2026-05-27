@@ -1,0 +1,46 @@
+meta {
+  name: Update Body Map
+  type: http
+  seq: 2
+}
+
+put {
+  url: {{baseUrl}}/v1/body-map
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "entries": [
+      {
+        "body_area_id": "{{bodyAreaId}}",
+        "finding_type": "lesion",
+        "intensity": 2,
+        "notes": "Placa hipocrômica"
+      },
+      {
+        "body_area_id": "{{bodyAreaIdToRemove}}",
+        "finding_type": "other",
+        "remove": true
+      }
+    ]
+  }
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Upsert transacional do mapa corporal atual.
+  remove=true aplica soft delete da marcação ativa para a área.
+}

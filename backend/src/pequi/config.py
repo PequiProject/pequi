@@ -76,7 +76,11 @@ class Settings(BaseSettings):
         """
         if self.DATABASE_URL_TEST:
             return self.DATABASE_URL_TEST
-        return str(make_url(self.DATABASE_URL).set(database="pequi_test"))
+        return (
+            make_url(self.DATABASE_URL)
+            .set(database="pequi_test")
+            .render_as_string(hide_password=False)
+        )
 
 
 @lru_cache

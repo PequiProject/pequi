@@ -1,0 +1,35 @@
+meta {
+  name: Update Body Map Invalid Area
+  type: http
+  seq: 6
+}
+
+put {
+  url: {{baseUrl}}/v1/body-map
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "entries": [
+      {
+        "body_area_id": "00000000-0000-0000-0000-000000000000",
+        "finding_type": "lesion",
+        "intensity": 2
+      }
+    ]
+  }
+}
+
+assert {
+  res.status: eq 404
+}

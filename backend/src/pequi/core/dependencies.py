@@ -12,10 +12,12 @@ from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from pequi.config import get_settings
 from pequi.core.auth import TOKEN_TYPE_ACCESS, JWTError, decode_token
 from pequi.core.exceptions import ForbiddenError, UnauthorizedError
 from pequi.database import get_db as _get_db
 from pequi.repositories.patient_repo import PatientRepository
+from pequi.services.storage_service import FakeStorageService, StorageService
 from pequi.use_cases.get_patient_profile import GetPatientProfileUseCase
 from pequi.use_cases.update_patient_profile import UpdatePatientProfileUseCase
 
@@ -92,6 +94,11 @@ async def get_update_patient_profile_use_case(
     return UpdatePatientProfileUseCase(PatientRepository(session))
 
 
+def get_storage_service() -> StorageService:
+    settings = get_settings()
+    return FakeStorageService(base_url=settings.STORAGE_PUBLIC_URL)
+
+
 __all__ = [
     "get_db",
     "get_token_payload",
@@ -102,4 +109,5 @@ __all__ = [
     "get_current_admin",
     "get_patient_profile_use_case",
     "get_update_patient_profile_use_case",
+    "get_storage_service",
 ]

@@ -1,0 +1,34 @@
+meta {
+  name: Delete Post
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{baseUrl}}/v1/community/posts/{{postId}}
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+assert {
+  res.status: eq 200
+  res.body.deleted_at: isDefined
+}
+
+docs {
+  Soft delete de post (PEQ-106).
+
+  - Próprio autor ou admin pode deletar.
+  - Soft delete: define deleted_at (não remove do banco).
+  - Post não aparece mais em listagens.
+  - 403 se usuário não é dono do post.
+
+  Rate limit: 10/hora.
+}

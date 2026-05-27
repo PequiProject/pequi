@@ -1,0 +1,35 @@
+meta {
+  name: List Comments
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/v1/community/posts/{{postId}}/comments
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+assert {
+  res.status: eq 200
+  res.body.items: isDefined
+  res.body.total: isDefined
+}
+
+docs {
+  Lista comentários de um post (PEQ-106).
+
+  - Qualquer usuário autenticado pode acessar.
+  - Retorna apenas author_anonymous_id (nunca user_id).
+  - Paginado com limit e offset.
+  - Ordenado por created_at asc.
+
+  Rate limit: 100/minuto.
+}
