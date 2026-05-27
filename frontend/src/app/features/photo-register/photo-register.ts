@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { LucideAngularModule, User, Plus, History, CircleCheck, Trash2, Camera } from 'lucide-angular';
+import { LucideAngularModule, User, Plus, History, CircleCheck, Trash2, Camera, ChevronDown, ChevronUp } from 'lucide-angular';
 
 export interface BodyMarker {
   id: string;
@@ -31,17 +31,30 @@ export class PhotoRegister implements OnInit {
 
   markers = signal<BodyMarker[]>([]);
 
+  isActivesExpanded = signal(false);
+  isCuredExpanded = signal(false);
+
   readonly UserIcon = User;
   readonly PlusIcon = Plus;
   readonly HistoryIcon = History;
   readonly CircleCheckIcon = CircleCheck;
   readonly TrashIcon = Trash2;
   readonly CameraIcon = Camera;
+  readonly ChevronDownIcon = ChevronDown;
+  readonly ChevronUpIcon = ChevronUp;
 
   ngOnInit() {
     this.form = this.fb.group({
       markers: [this.markers()]
     });
+  }
+
+  toggleAtivos() {
+    this.isActivesExpanded.set(!this.isActivesExpanded());
+  }
+
+  toggleCurados() {
+    this.isCuredExpanded.set(!this.isCuredExpanded());
   }
 
   setView(view: 'front' | 'back'): void {
@@ -90,11 +103,10 @@ export class PhotoRegister implements OnInit {
 
     const bodyPart = this.identifyBodyPart(x, y, this.currentView());
 
-    // Se a função retornar null (clique no fundo azul), não fazemos nada!
     if (!bodyPart) return;
 
     const newMarker: BodyMarker = {
-      id: Date.now().toString(), // ID único para cada marcador
+      id: Date.now().toString(),
       x,
       y,
       view: this.currentView(),
@@ -107,7 +119,7 @@ export class PhotoRegister implements OnInit {
   }
 
   toggleMenu(event: MouseEvent, id: string) {
-    event.stopPropagation(); // Impede que o clique adicione um novo marcador
+    event.stopPropagation();
     this.selectedMarkerId.set(this.selectedMarkerId() === id ? null : id);
   }
 
@@ -176,5 +188,13 @@ export class PhotoRegister implements OnInit {
 
   get curedCount() {
     return this.markers().filter((m) => m.status === 'cured').length;
+  }
+
+  get activeMarkersList() {
+    return this.markers().filter(m => m.status === 'active' || m.status === 'review');
+  }
+
+  get curedMarkersList() {
+    return this.markers().filter(m => m.status === 'cured');
   }
 }
