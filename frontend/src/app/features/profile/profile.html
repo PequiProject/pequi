@@ -1,11 +1,985 @@
-<section class="mx-auto max-w-xl" aria-labelledby="profile-heading">
-  <h1
-    id="profile-heading"
-    class="m-0 text-2xl font-bold text-[var(--title-color)]"
+<section class="mx-auto w-full max-w-xl pb-6" data-testid="profile-page" aria-labelledby="profile-page-title">
+  <h1 id="profile-page-title" class="sr-only">Meu perfil</h1>
+
+  @if (accountSavedToast()) {
+    <p
+      class="mb-4 rounded-xl bg-[#E8F5E9] px-4 py-3 text-sm font-medium text-[#2E7D32]"
+      data-testid="account-saved-toast"
+      role="status"
+    >
+      E-mail e senha atualizados.
+    </p>
+  }
+  @if (avatarRemovedToast()) {
+    <p
+      class="mb-4 rounded-xl bg-[#E8F5E9] px-4 py-3 text-sm font-medium text-[#2E7D32]"
+      data-testid="avatar-removed-toast"
+      role="status"
+    >
+      Foto de perfil removida.
+    </p>
+  }
+  @if (personalSavedToast()) {
+    <p
+      class="mb-4 rounded-xl bg-[#E8F5E9] px-4 py-3 text-sm font-medium text-[#2E7D32]"
+      data-testid="personal-saved-toast"
+      role="status"
+    >
+      Dados pessoais salvos.
+    </p>
+  }
+  @if (treatmentSavedToast()) {
+    <p
+      class="mb-4 rounded-xl bg-[#E8F5E9] px-4 py-3 text-sm font-medium text-[#2E7D32]"
+      data-testid="treatment-saved-toast"
+      role="status"
+    >
+      Dados de tratamento salvos.
+    </p>
+  }
+  @if (exportPdfHint()) {
+    <p
+      class="mb-4 rounded-xl bg-[#EEF2FF] px-4 py-3 text-sm text-[#4338CA]"
+      data-testid="export-pdf-hint"
+      role="status"
+    >
+      A exportação em PDF estará disponível em breve pelo servidor.
+    </p>
+  }
+
+  <div
+    class="mb-6 flex flex-col items-center rounded-2xl bg-white px-6 py-8 text-center shadow-sm ring-1 ring-[#E7E5E4]"
+    data-testid="profile-summary"
   >
-    Perfil
-  </h1>
-  <p class="mt-2 text-[0.9375rem] text-[var(--subtitle-color)]">
-    Em breve você poderá editar seus dados e preferências aqui.
-  </p>
+    <div class="relative mb-4">
+      @if (profile().avatarDataUrl) {
+        <img
+          [src]="profile().avatarDataUrl"
+          alt=""
+          class="h-24 w-24 rounded-full object-cover ring-4 ring-[#EEF2FF]"
+          data-testid="profile-avatar-image"
+        />
+      } @else {
+        <div
+          class="flex h-24 w-24 items-center justify-center rounded-full bg-[#4338CA] text-2xl font-bold text-white ring-4 ring-[#EEF2FF]"
+          data-testid="profile-avatar-initials"
+          aria-hidden="true"
+        >
+          {{ initials() }}
+        </div>
+      }
+
+      <div class="absolute bottom-0 right-0">
+        <button
+          type="button"
+          data-testid="avatar-menu-toggle"
+          (click)="toggleAvatarMenu()"
+          class="flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#4338CA] shadow-md ring-1 ring-[#E7E5E4] transition hover:bg-[#FAFAF9]"
+          [attr.aria-expanded]="showAvatarMenu()"
+          aria-haspopup="menu"
+          aria-label="Editar foto de perfil"
+        >
+          <lucide-icon [name]="LucidePencil" [size]="16" [strokeWidth]="2" />
+        </button>
+
+        @if (showAvatarMenu()) {
+          <div
+            class="absolute bottom-full right-0 z-10 mb-2 min-w-[10.5rem] overflow-hidden rounded-xl bg-white py-1 text-left shadow-lg ring-1 ring-[#E7E5E4]"
+            role="menu"
+            data-testid="avatar-menu"
+          >
+            <button
+              type="button"
+              role="menuitem"
+              data-testid="change-avatar-option"
+              (click)="pickAvatar(avatarFileInput)"
+              class="block w-full px-4 py-2.5 text-left text-sm font-medium text-[#373831] transition hover:bg-[#FAFAF9]"
+            >
+              Trocar foto
+            </button>
+            @if (hasAvatar()) {
+              <button
+                type="button"
+                role="menuitem"
+                data-testid="remove-avatar-option"
+                (click)="removeAvatar()"
+                class="block w-full px-4 py-2.5 text-left text-sm font-medium text-[#B91C1C] transition hover:bg-[#FEF2F2]"
+              >
+                Remover foto
+              </button>
+            }
+          </div>
+        }
+      </div>
+
+      <input
+        #avatarFileInput
+        type="file"
+        accept="image/*"
+        class="sr-only"
+        data-testid="avatar-file-input"
+        (change)="onAvatarSelected($event)"
+      />
+    </div>
+
+    <h2 class="text-xl font-bold text-[#373831]" data-testid="profile-display-name">
+      {{ displayName() }}
+    </h2>
+    <p class="mt-1 max-w-xs text-xs text-[#64655C]" data-testid="display-name-community-hint">
+      Nome exibido nas suas interações caso não use o modo anônimo.
+    </p>
+    @if (profile().personal.fullName && profile().personal.socialName) {
+      <p class="mt-3 text-sm text-[#64655C]" data-testid="profile-legal-name">
+        Nome completo na caderneta: {{ profile().personal.fullName }}
+      </p>
+    }
+  </div>
+
+  <div
+    class="mb-6 flex rounded-xl bg-[#F5F5F4] p-1"
+    role="tablist"
+    aria-label="Seções do perfil"
+  >
+    <button
+      type="button"
+      role="tab"
+      data-testid="tab-overview"
+      [attr.aria-selected]="activeTab() === 'overview'"
+      (click)="setTab('overview')"
+      class="flex-1 rounded-lg px-3 py-2.5 text-sm font-semibold transition"
+      [class.bg-white]="activeTab() === 'overview'"
+      [class.text-[#4338CA]]="activeTab() === 'overview'"
+      [class.shadow-sm]="activeTab() === 'overview'"
+      [class.text-[#64655C]]="activeTab() !== 'overview'"
+    >
+      Meu cadastro
+    </button>
+    <button
+      type="button"
+      role="tab"
+      data-testid="tab-treatment"
+      [attr.aria-selected]="activeTab() === 'treatment'"
+      (click)="setTab('treatment')"
+      class="flex-1 rounded-lg px-3 py-2.5 text-sm font-semibold transition"
+      [class.bg-white]="activeTab() === 'treatment'"
+      [class.text-[#4338CA]]="activeTab() === 'treatment'"
+      [class.shadow-sm]="activeTab() === 'treatment'"
+      [class.text-[#64655C]]="activeTab() !== 'treatment'"
+    >
+      Meu tratamento
+    </button>
+  </div>
+
+  @if (activeTab() === 'overview') {
+    <div role="tabpanel" data-testid="panel-overview" class="space-y-4">
+      <div
+        class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-[#E7E5E4]"
+        data-testid="account-section"
+      >
+        <div class="mb-4 flex items-start justify-between gap-3">
+          <div>
+            <h3 class="text-base font-bold text-[#373831]">Acesso à conta</h3>
+            <p class="mt-1 text-sm text-[#64655C]">
+              E-mail e senha usados para entrar no Pequi.
+            </p>
+          </div>
+          <button
+            type="button"
+            data-testid="edit-account-button"
+            (click)="openEditAccount()"
+            class="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-[#4338CA] px-3 py-2 text-sm font-semibold text-[#4338CA] transition hover:bg-[#EEF2FF]"
+          >
+            <lucide-icon [name]="LucideKeyRound" [size]="16" [strokeWidth]="2" />
+            Alterar
+          </button>
+        </div>
+        <dl class="m-0 space-y-3">
+          <div>
+            <dt class="text-xs font-semibold uppercase tracking-wide text-[#A8A29E]">
+              E-mail de login
+            </dt>
+            <dd class="mt-0.5 text-sm text-[#373831]" data-testid="login-email-display">
+              {{ maskedLoginEmail() }}
+            </dd>
+          </div>
+          <div>
+            <dt class="text-xs font-semibold uppercase tracking-wide text-[#A8A29E]">Senha</dt>
+            <dd class="mt-0.5 text-sm text-[#373831]" data-testid="password-status">
+              @if (hasAccountPassword()) {
+                ••••••••
+              } @else {
+                Ainda não definida
+              }
+            </dd>
+          </div>
+        </dl>
+      </div>
+
+      <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-[#E7E5E4]">
+        <div class="mb-4 flex items-start justify-between gap-3">
+          <div>
+            <h3 class="text-base font-bold text-[#373831]">Dados pessoais</h3>
+            <p class="mt-1 text-sm text-[#64655C]">
+              Informações da sua caderneta de acompanhamento.
+            </p>
+          </div>
+          <button
+            type="button"
+            data-testid="edit-personal-button"
+            (click)="openEditPersonal()"
+            class="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-[#4338CA] px-3 py-2 text-sm font-semibold text-[#4338CA] transition hover:bg-[#EEF2FF]"
+          >
+            <lucide-icon [name]="LucidePencil" [size]="16" [strokeWidth]="2" />
+            Editar
+          </button>
+        </div>
+
+        @if (hasPersonalData()) {
+          <dl class="m-0 space-y-3">
+            @if (profile().personal.phone) {
+              <div>
+                <dt class="text-xs font-semibold uppercase tracking-wide text-[#A8A29E]">
+                  Telefone
+                </dt>
+                <dd class="mt-0.5 text-sm text-[#373831]">{{ profile().personal.phone }}</dd>
+              </div>
+            }
+            @if (profile().personal.email) {
+              <div>
+                <dt class="text-xs font-semibold uppercase tracking-wide text-[#A8A29E]">
+                  E-mail de contato
+                </dt>
+                <dd class="mt-0.5 text-sm text-[#373831]">{{ profile().personal.email }}</dd>
+              </div>
+            }
+            @if (profile().personal.healthUnit) {
+              <div>
+                <dt class="text-xs font-semibold uppercase tracking-wide text-[#A8A29E]">
+                  Unidade de saúde
+                </dt>
+                <dd class="mt-0.5 text-sm text-[#373831]">{{ profile().personal.healthUnit }}</dd>
+              </div>
+            }
+            @if (profile().personal.bloodType) {
+              <div>
+                <dt class="text-xs font-semibold uppercase tracking-wide text-[#A8A29E]">
+                  Tipo sanguíneo
+                </dt>
+                <dd class="mt-0.5 text-sm text-[#373831]">
+                  {{ bloodTypeLabel(profile().personal.bloodType) }}
+                </dd>
+              </div>
+            }
+          </dl>
+          <p class="mt-4 text-xs text-[#64655C]">
+            Toque em Editar para ver e atualizar todos os campos do cadastro.
+          </p>
+        } @else {
+          <div
+            class="flex flex-col items-center rounded-xl bg-[#FAFAF9] px-4 py-8 text-center"
+            data-testid="personal-empty-state"
+          >
+            <lucide-icon
+              [name]="LucideUser"
+              [size]="32"
+              [strokeWidth]="1.75"
+              class="mb-3 text-[#A8A29E]"
+            />
+            <p class="text-sm text-[#64655C]">
+              Você ainda não preencheu seus dados pessoais. Toque em Editar para começar.
+            </p>
+          </div>
+        }
+      </div>
+
+      <button
+        type="button"
+        data-testid="export-pdf-button"
+        (click)="onExportPdf()"
+        class="flex w-full items-center justify-center gap-2 rounded-xl border border-[#D6D3D1] bg-white px-4 py-3.5 text-sm font-semibold text-[#373831] shadow-sm transition hover:bg-[#FAFAF9]"
+      >
+        <lucide-icon [name]="LucideDownload" [size]="18" [strokeWidth]="2" />
+        Exportar cartilha em PDF
+      </button>
+      <p
+        class="mt-2 text-center text-xs leading-relaxed text-[#64655C]"
+        data-testid="export-pdf-disclaimer"
+      >
+        Esta é uma cópia das informações que é possível encontrar na
+        <span class="font-semibold text-[#373831]"
+          >CADERNETA DE SAÚDE DA PESSOA ACOMETIDA PELA HANSENÍASE</span
+        >
+        disponibilizada pelo Ministério da Saúde.
+      </p>
+    </div>
+  }
+
+  @if (activeTab() === 'treatment') {
+    <div role="tabpanel" data-testid="panel-treatment" class="space-y-4">
+      <p class="text-sm leading-relaxed text-[#64655C]" data-testid="treatment-description">
+        Com esses registros você terá acesso à história de seu tratamento sempre que necessário, para
+        acompanhamento do seu estado de saúde.
+      </p>
+
+      <div
+        class="rounded-xl border border-[#FDE68A] bg-[#FFFBEB] px-4 py-3 text-sm text-[#92400E]"
+        data-testid="treatment-disclaimer"
+        role="note"
+      >
+        Preencha conforme orientação ou registro do profissional de saúde.
+      </div>
+
+      <form
+        [formGroup]="treatmentForm"
+        class="space-y-4 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-[#E7E5E4]"
+        data-testid="treatment-form"
+        (ngSubmit)="saveTreatment()"
+      >
+        <fieldset class="space-y-3 rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] p-4">
+          <legend class="px-1 text-sm font-semibold text-[#373831]">Medicamento atual da dose</legend>
+          <p class="text-xs text-[#64655C]" data-testid="current-dose-medication-hint">
+            Marque os medicamentos da dose mensal. Este registro aparece no fluxo de Registrar consulta.
+          </p>
+          <div class="flex flex-wrap gap-2">
+            @for (opt of substituteSchemeMedicationOptions; track opt.key) {
+              <label class="flex items-center gap-2 rounded-full border border-[#E7E5E4] bg-white px-3 py-2 text-sm">
+                <input
+                  type="checkbox"
+                  class="h-4 w-4 accent-[#4338CA]"
+                  [formControlName]="
+                    opt.key === 'clofazimina'
+                      ? 'schemeClofazimina'
+                      : opt.key === 'ofloxacino'
+                        ? 'schemeOfloxacino'
+                        : opt.key === 'rifampicina'
+                          ? 'schemeRifampicina'
+                          : opt.key === 'minociclina'
+                            ? 'schemeMinociclina'
+                            : 'schemeDapsone'
+                  "
+                  [disabled]="
+                    (opt.key === 'dapsone' && !!treatmentForm.controls.intoleranceDapsone.value) ||
+                    (opt.key === 'rifampicina' && !!treatmentForm.controls.intoleranceRifampicin.value) ||
+                    (opt.key === 'clofazimina' && !!treatmentForm.controls.intoleranceClofazimine.value)
+                  "
+                />
+                {{ opt.label }}
+              </label>
+            }
+          </div>
+        </fieldset>
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label for="diagnosis-date" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+              Data do diagnóstico
+            </label>
+            <input
+              id="diagnosis-date"
+              type="date"
+              formControlName="diagnosisDate"
+              data-testid="diagnosis-date"
+              class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+            />
+          </div>
+          <div>
+            <label
+              for="treatment-start"
+              class="mb-1.5 block text-sm font-semibold text-[#373831]"
+            >
+              Início do tratamento
+            </label>
+            <input
+              id="treatment-start"
+              type="date"
+              formControlName="treatmentStartDate"
+              data-testid="treatment-start-date"
+              class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+            />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label for="cns-number" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+              Número do CNS
+            </label>
+            <input
+              id="cns-number"
+              type="text"
+              formControlName="cnsNumber"
+              data-testid="cns-number"
+              class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+            />
+          </div>
+          <div>
+            <label for="sinan-number" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+              Número do Sinan
+            </label>
+            <input
+              id="sinan-number"
+              type="text"
+              formControlName="sinanNumber"
+              data-testid="sinan-number"
+              class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label for="classification" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+            Classificação PB ou MB
+          </label>
+          <select
+            id="classification"
+            formControlName="classification"
+            data-testid="classification"
+            class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+          >
+            @for (opt of classificationOptions; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        </div>
+
+        <div>
+          <label for="clinical-form" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+            Forma clínica
+          </label>
+          <select
+            id="clinical-form"
+            formControlName="clinicalForm"
+            data-testid="clinical-form"
+            class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+          >
+            @for (opt of clinicalFormOptions; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        </div>
+
+        <fieldset class="space-y-4 rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] p-4">
+          <legend class="px-1 text-sm font-semibold text-[#373831]">Baciloscopia</legend>
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label
+                for="baciloscopy-date"
+                class="mb-1.5 block text-sm font-semibold text-[#373831]"
+              >
+                Data
+              </label>
+              <input
+                id="baciloscopy-date"
+                type="date"
+                formControlName="baciloscopyDate"
+                data-testid="baciloscopy-date"
+                class="w-full rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+              />
+            </div>
+            <div>
+              <label for="baciloscopy-ib" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+                IB
+              </label>
+              <input
+                id="baciloscopy-ib"
+                type="text"
+                formControlName="baciloscopyIB"
+                data-testid="baciloscopy-ib"
+                class="w-full rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+              />
+            </div>
+          </div>
+          <div>
+            <label
+              for="diagnostic-support-exam"
+              class="mb-1.5 block text-sm font-semibold text-[#373831]"
+            >
+              Outro exame de apoio diagnóstico
+            </label>
+            <input
+              id="diagnostic-support-exam"
+              type="text"
+              formControlName="diagnosticSupportExam"
+              data-testid="diagnostic-support-exam"
+              class="w-full rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+            />
+          </div>
+        </fieldset>
+
+        <div>
+          <label for="gif-assessment" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+            Avaliação GIF
+          </label>
+          <select
+            id="gif-assessment"
+            formControlName="gifAssessment"
+            data-testid="gif-assessment"
+            class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+          >
+            @for (opt of gifGradeOptions; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        </div>
+
+        <div>
+          <label
+            for="reaction-episode"
+            class="mb-1.5 block text-sm font-semibold text-[#373831]"
+          >
+            Episódio reacional por ocasião do diagnóstico
+          </label>
+          <select
+            id="reaction-episode"
+            formControlName="reactionEpisodeAtDiagnosis"
+            data-testid="reaction-episode"
+            class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+          >
+            @for (opt of yesNoOptions; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        </div>
+
+        @if (hasReactionEpisodeAtDiagnosis() === 'sim') {
+          <div
+            class="space-y-4 rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] p-4"
+            data-testid="reaction-episode-details"
+          >
+            <div>
+              <label
+                for="reaction-episode-type"
+                class="mb-1.5 block text-sm font-semibold text-[#373831]"
+              >
+                Se sim, qual?
+              </label>
+              <select
+                id="reaction-episode-type"
+                formControlName="reactionEpisodeType"
+                data-testid="reaction-episode-type"
+                class="w-full rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+              >
+                @for (opt of reactionEpisodeTypeOptions; track opt.value) {
+                  <option [value]="opt.value">{{ opt.label }}</option>
+                }
+              </select>
+            </div>
+            <div>
+              <label
+                for="reaction-episode-date"
+                class="mb-1.5 block text-sm font-semibold text-[#373831]"
+              >
+                Data
+              </label>
+              <input
+                id="reaction-episode-date"
+                type="date"
+                formControlName="reactionEpisodeDate"
+                data-testid="reaction-episode-date"
+                class="w-full rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+              />
+            </div>
+          </div>
+        }
+
+        <fieldset class="space-y-4 rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] p-4">
+          <legend class="px-1 text-sm font-semibold text-[#373831]">
+            Medicamentos instituídos
+          </legend>
+          <div formArrayName="institutedMedications" class="space-y-3">
+            @if (institutedMedicationsArray.length === 0) {
+              <p class="text-xs text-[#64655C]">Nenhum medicamento instituído. Use o botão abaixo para adicionar.</p>
+            }
+            @for (medControl of institutedMedicationsArray.controls; track $index) {
+              <div [formGroupName]="$index" class="rounded-xl border border-[#E7E5E4] bg-white p-3">
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-4">
+                  <div class="sm:col-span-2">
+                    <label class="mb-1 block text-xs font-semibold text-[#373831]">Medicamento</label>
+                    <select
+                      formControlName="medicationKey"
+                      class="w-full rounded-xl border border-[#E7E5E4] px-3 py-2 text-sm"
+                    >
+                      <option value="">Selecione</option>
+                      @for (opt of institutedMedicationNameOptions; track opt.value) {
+                        <option [value]="opt.value">{{ opt.label }}</option>
+                      }
+                    </select>
+                    @if (isInstitutedMedicationOther($index)) {
+                      <input
+                        type="text"
+                        formControlName="customName"
+                        placeholder="Nome do medicamento"
+                        class="mt-2 w-full rounded-xl border border-[#E7E5E4] px-3 py-2 text-sm"
+                      />
+                    }
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs font-semibold text-[#373831]">Quantidade</label>
+                    <input type="text" formControlName="dose" class="w-full rounded-xl border border-[#E7E5E4] px-3 py-2 text-sm" />
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs font-semibold text-[#373831]">Unidade</label>
+                    <select formControlName="unit" class="w-full rounded-xl border border-[#E7E5E4] px-3 py-2 text-sm">
+                      @for (unit of institutedMedicationUnitOptions; track unit) {
+                        <option [value]="unit">{{ unit }}</option>
+                      }
+                    </select>
+                  </div>
+                </div>
+                <div class="mt-3 flex items-end justify-between gap-3">
+                  <div class="w-full sm:w-48">
+                    <label class="mb-1 block text-xs font-semibold text-[#373831]">Frequência</label>
+                    <select formControlName="frequency" class="w-full rounded-xl border border-[#E7E5E4] px-3 py-2 text-sm">
+                      @for (frequency of institutedMedicationFrequencyOptions; track frequency) {
+                        <option [value]="frequency">{{ frequency }}</option>
+                      }
+                    </select>
+                  </div>
+                  <button type="button" (click)="removeInstitutedMedication($index)" class="rounded-lg border border-[#FECACA] px-3 py-2 text-xs font-semibold text-[#B91C1C]">
+                    Remover
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+          <button
+            type="button"
+            data-testid="add-instituted-medication"
+            (click)="addInstitutedMedication()"
+            class="inline-flex items-center gap-1 rounded-xl border border-[#4338CA] px-3 py-2 text-sm font-semibold text-[#4338CA]"
+          >
+            + Adicionar medicamento
+          </button>
+        </fieldset>
+
+        <div>
+          <label for="other-conducts" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+            Outras condutas
+          </label>
+          <textarea
+            id="other-conducts"
+            formControlName="otherConducts"
+            data-testid="other-conducts"
+            rows="3"
+            class="w-full resize-y rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+          ></textarea>
+        </div>
+
+        <fieldset class="space-y-4 rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] p-4">
+          <legend class="px-1 text-sm font-bold text-[#373831]">Esquema substitutivo</legend>
+
+          <div>
+            <label
+              for="substitute-scheme-change-date"
+              class="mb-1.5 block text-sm font-semibold text-[#373831]"
+            >
+              Data da mudança de esquema
+            </label>
+            <input
+              id="substitute-scheme-change-date"
+              type="date"
+              formControlName="substituteSchemeChangeDate"
+              data-testid="substitute-scheme-change-date"
+              class="w-full rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+            />
+          </div>
+
+          <div>
+            <span class="mb-2 block text-sm font-semibold text-[#373831]">Intolerância</span>
+            <div class="flex flex-wrap gap-3" data-testid="intolerance-options">
+              @for (opt of intoleranceOptions; track opt.key) {
+                <label
+                  class="flex cursor-pointer items-center gap-2 rounded-full border border-[#E7E5E4] bg-white px-3 py-2 text-sm text-[#373831]"
+                >
+                  <input
+                    type="checkbox"
+                    class="h-4 w-4 accent-[#4338CA]"
+                    [attr.data-testid]="'intolerance-' + opt.key"
+                    [formControlName]="
+                      opt.key === 'dapsone'
+                        ? 'intoleranceDapsone'
+                        : opt.key === 'rifampicin'
+                          ? 'intoleranceRifampicin'
+                          : 'intoleranceClofazimine'
+                    "
+                  />
+                  {{ opt.label }}
+                </label>
+              }
+            </div>
+          </div>
+
+          <div>
+            <span class="mb-2 block text-sm font-semibold text-[#373831]">Esquema medicamentoso</span>
+            <div class="flex flex-wrap gap-3" data-testid="substitute-scheme-medication-options">
+              @for (opt of substituteSchemeMedicationOptions; track opt.key) {
+                <label
+                  class="flex cursor-pointer items-center gap-2 rounded-full border border-[#E7E5E4] bg-white px-3 py-2 text-sm text-[#373831]"
+                >
+                  <input
+                    type="checkbox"
+                    class="h-4 w-4 accent-[#4338CA]"
+                    [attr.data-testid]="'scheme-' + opt.key"
+                    [formControlName]="
+                      opt.key === 'clofazimina'
+                        ? 'schemeClofazimina'
+                        : opt.key === 'ofloxacino'
+                          ? 'schemeOfloxacino'
+                          : opt.key === 'rifampicina'
+                            ? 'schemeRifampicina'
+                            : opt.key === 'minociclina'
+                              ? 'schemeMinociclina'
+                              : 'schemeDapsone'
+                    "
+                    [disabled]="
+                      (opt.key === 'dapsone' && !!treatmentForm.controls.intoleranceDapsone.value) ||
+                      (opt.key === 'rifampicina' && !!treatmentForm.controls.intoleranceRifampicin.value) ||
+                      (opt.key === 'clofazimina' && !!treatmentForm.controls.intoleranceClofazimine.value)
+                    "
+                  />
+                  {{ opt.label }}
+                </label>
+              }
+            </div>
+          </div>
+        </fieldset>
+
+        <div class="space-y-4 border-t border-[#E7E5E4] pt-4">
+          <h3 class="text-sm font-bold text-[#373831]">
+            Alta do tratamento da PQT/esquema substitutivo
+          </h3>
+          <fieldset class="space-y-4 rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] p-4">
+            <div>
+              <label
+                for="pqt-discharge-date"
+                class="mb-1.5 block text-sm font-semibold text-[#373831]"
+              >
+                Data
+              </label>
+              <input
+                id="pqt-discharge-date"
+                type="date"
+                formControlName="pqtDischargeDate"
+                data-testid="pqt-discharge-date"
+                class="w-full rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+              />
+            </div>
+            <div>
+              <label
+                for="gif-assessment-at-discharge"
+                class="mb-1.5 block text-sm font-semibold text-[#373831]"
+              >
+                Classificação do GIF na alta do tratamento
+              </label>
+              <select
+                id="gif-assessment-at-discharge"
+                formControlName="gifAssessmentAtDischarge"
+                data-testid="gif-assessment-at-discharge"
+                class="w-full rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+              >
+                @for (opt of gifGradeOptions; track opt.value) {
+                  <option [value]="opt.value">{{ opt.label }}</option>
+                }
+              </select>
+            </div>
+          </fieldset>
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <label
+              for="reaction-episode-at-discharge"
+              class="mb-1.5 block text-sm font-semibold text-[#373831]"
+            >
+              Episódio reacional por ocasião da alta do tratamento/poliquimioterapia
+            </label>
+            <select
+              id="reaction-episode-at-discharge"
+              formControlName="reactionEpisodeAtDischarge"
+              data-testid="reaction-episode-at-discharge"
+              class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+            >
+              @for (opt of yesNoOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+              }
+            </select>
+          </div>
+
+          @if (hasReactionEpisodeAtDischarge() === 'sim') {
+            <div
+              class="space-y-4 rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] p-4"
+              data-testid="reaction-episode-at-discharge-details"
+            >
+              <div>
+                <label
+                  for="reaction-episode-type-at-discharge"
+                  class="mb-1.5 block text-sm font-semibold text-[#373831]"
+                >
+                  Se sim, qual?
+                </label>
+                <select
+                  id="reaction-episode-type-at-discharge"
+                  formControlName="reactionEpisodeTypeAtDischarge"
+                  data-testid="reaction-episode-type-at-discharge"
+                  class="w-full rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+                >
+                  @for (opt of reactionEpisodeTypeOptions; track opt.value) {
+                    <option [value]="opt.value">{{ opt.label }}</option>
+                  }
+                </select>
+              </div>
+              <div>
+                <label
+                  for="reaction-episode-date-at-discharge"
+                  class="mb-1.5 block text-sm font-semibold text-[#373831]"
+                >
+                  Data
+                </label>
+                <input
+                  id="reaction-episode-date-at-discharge"
+                  type="date"
+                  formControlName="reactionEpisodeDateAtDischarge"
+                  data-testid="reaction-episode-date-at-discharge"
+                  class="w-full rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+                />
+              </div>
+
+              <fieldset class="space-y-4 rounded-xl border border-[#E7E5E4] bg-white p-4">
+                <legend class="px-1 text-sm font-semibold text-[#373831]">
+                  Medicamentos instituídos
+                </legend>
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label
+                      for="discharge-prednisone-mg-kg"
+                      class="mb-1.5 block text-sm font-semibold text-[#373831]"
+                    >
+                      Prednisona (mg/kg)
+                    </label>
+                    <input
+                      id="discharge-prednisone-mg-kg"
+                      type="text"
+                      inputmode="decimal"
+                      formControlName="dischargePrednisoneMgKg"
+                      data-testid="discharge-prednisone-mg-kg"
+                      placeholder="Ex.: 0,5"
+                      class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] placeholder:text-[#A8A29E] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      for="discharge-aine-mg-day"
+                      class="mb-1.5 block text-sm font-semibold text-[#373831]"
+                    >
+                      AINE (mg/dia)
+                    </label>
+                    <input
+                      id="discharge-aine-mg-day"
+                      type="text"
+                      inputmode="numeric"
+                      formControlName="dischargeAineMgDay"
+                      data-testid="discharge-aine-mg-day"
+                      placeholder="Ex.: 600"
+                      class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] placeholder:text-[#A8A29E] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      for="discharge-thalidomide-mg-day"
+                      class="mb-1.5 block text-sm font-semibold text-[#373831]"
+                    >
+                      Talidomida (mg/dia)
+                    </label>
+                    <input
+                      id="discharge-thalidomide-mg-day"
+                      type="text"
+                      inputmode="numeric"
+                      formControlName="dischargeThalidomideMgDay"
+                      data-testid="discharge-thalidomide-mg-day"
+                      placeholder="Ex.: 100"
+                      class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] placeholder:text-[#A8A29E] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      for="discharge-pentoxifylline-mg-day"
+                      class="mb-1.5 block text-sm font-semibold text-[#373831]"
+                    >
+                      Pentoxifilina (mg/dia)
+                    </label>
+                    <input
+                      id="discharge-pentoxifylline-mg-day"
+                      type="text"
+                      inputmode="numeric"
+                      formControlName="dischargePentoxifyllineMgDay"
+                      data-testid="discharge-pentoxifylline-mg-day"
+                      placeholder="Ex.: 400"
+                      class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] placeholder:text-[#A8A29E] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label
+                    for="discharge-other-medication"
+                    class="mb-1.5 block text-sm font-semibold text-[#373831]"
+                  >
+                    Outro
+                  </label>
+                  <input
+                    id="discharge-other-medication"
+                    type="text"
+                    formControlName="dischargeOtherMedication"
+                    data-testid="discharge-other-medication"
+                    class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+                  />
+                </div>
+              </fieldset>
+
+              <div>
+                <label
+                  for="discharge-other-conducts"
+                  class="mb-1.5 block text-sm font-semibold text-[#373831]"
+                >
+                  Outras condutas
+                </label>
+                <textarea
+                  id="discharge-other-conducts"
+                  formControlName="dischargeOtherConducts"
+                  data-testid="discharge-other-conducts"
+                  rows="3"
+                  class="w-full resize-y rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+                ></textarea>
+              </div>
+            </div>
+          }
+        </div>
+
+        <button
+          type="submit"
+          data-testid="save-treatment-button"
+          class="w-full rounded-xl bg-[#4338CA] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90"
+        >
+          Salvar tratamento
+        </button>
+      </form>
+    </div>
+  }
 </section>
+
+@if (showEditPersonal()) {
+  <app-profile-edit-personal
+    [initialData]="profile().personal"
+    (saved)="onPersonalSaved($event)"
+    (closed)="closeEditPersonal()"
+  />
+}
+
+@if (showEditAccount()) {
+  <app-profile-edit-account
+    [initialEmail]="profile().account.loginEmail"
+    [hasPassword]="hasAccountPassword()"
+    [passwordError]="accountPasswordError()"
+    (saved)="onAccountSaved($event)"
+    (closed)="closeEditAccount()"
+  />
+}
