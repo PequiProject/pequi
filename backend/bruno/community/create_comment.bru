@@ -1,0 +1,45 @@
+meta {
+  name: Create Comment
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/v1/community/posts/{{postId}}/comments
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "content": "Ótimo post! Obrigado por compartilhar."
+  }
+}
+
+assert {
+  res.status: eq 201
+  res.body.id: isDefined
+  res.body.post_id: isDefined
+  res.body.author_anonymous_id: isDefined
+  res.body.content: isDefined
+  res.body.user_id: isNotDefined
+}
+
+docs {
+  Cria comentário anônimo em um post (PEQ-106).
+
+  - Apenas pacientes podem comentar.
+  - Sistema usa anonymous_id do usuário.
+  - Nunca expõe user_id na resposta.
+  - Incrementa comment_count do post.
+
+  Rate limit: 30/hora.
+}

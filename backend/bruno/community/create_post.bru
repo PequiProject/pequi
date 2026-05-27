@@ -1,0 +1,48 @@
+meta {
+  name: Create Post
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/v1/community/posts
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "title": "Minha experiência com o tratamento",
+    "content": "Estou compartilhando minha jornada de tratamento...",
+    "category": "experience"
+  }
+}
+
+assert {
+  res.status: eq 201
+  res.body.id: isDefined
+  res.body.author_anonymous_id: isDefined
+  res.body.title: isDefined
+  res.body.content: isDefined
+  res.body.category: isDefined
+  res.body.user_id: isNotDefined
+}
+
+docs {
+  Cria post anônimo na comunidade (PEQ-106).
+
+  - Apenas pacientes podem criar posts.
+  - category: experience | question | support | news
+  - Sistema gera anonymous_id automaticamente.
+  - Nunca expõe user_id na resposta.
+
+  Rate limit: 20/hora.
+}
