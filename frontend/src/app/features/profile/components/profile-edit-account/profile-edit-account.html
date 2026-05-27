@@ -1,0 +1,145 @@
+<div
+  class="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="edit-account-title"
+  data-testid="edit-account-dialog"
+  (click)="onBackdropClick($event)"
+>
+  <div
+    class="flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl bg-white shadow-lg ring-1 ring-[#E7E5E4] sm:max-h-[90dvh] sm:rounded-2xl"
+    data-testid="edit-account-panel"
+    (click)="$event.stopPropagation()"
+  >
+    <header class="flex shrink-0 items-center justify-between border-b border-[#E7E5E4] px-5 py-4">
+      <h2 id="edit-account-title" class="text-base font-bold text-[#4338CA] sm:text-lg">
+        E-mail e senha
+      </h2>
+      <button
+        type="button"
+        data-testid="close-edit-account"
+        (click)="onClose()"
+        class="rounded-full p-2 text-[#64655C] transition hover:bg-[#F5F5F4]"
+        aria-label="Fechar"
+      >
+        <lucide-icon [name]="LucideX" [size]="20" [strokeWidth]="2" />
+      </button>
+    </header>
+
+    <form
+      [formGroup]="form"
+      class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 py-4"
+      autocomplete="off"
+      (ngSubmit)="submit()"
+    >
+      <p class="text-sm text-[#64655C]" data-testid="account-hint">
+        Use estes dados para entrar no Pequi. O e-mail de contato na caderneta pode ser diferente
+        e é editado em <strong class="font-semibold text-[#373831]">Dados pessoais</strong>.
+      </p>
+
+      <div>
+        <label for="login-email" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+          E-mail de login
+        </label>
+        <input
+          id="login-email"
+          type="email"
+          formControlName="loginEmail"
+          data-testid="login-email-input"
+          autocomplete="username"
+          class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+        />
+        @if (showValidation() && form.controls.loginEmail.invalid) {
+          <p class="mt-1 text-xs text-[#B91C1C]">Informe um e-mail válido.</p>
+        }
+      </div>
+
+      <div class="rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] p-4">
+        <h3 class="text-sm font-bold text-[#373831]">{{ passwordSectionTitle() }}</h3>
+        <p class="mt-1 text-xs text-[#64655C]">
+          @if (hasPassword()) {
+            Informe a senha atual para definir uma nova.
+          } @else {
+            Você ainda não definiu senha neste dispositivo.
+          }
+        </p>
+
+        @if (passwordErrorMessage()) {
+          <p class="mt-2 text-xs text-[#B91C1C]" data-testid="password-error">
+            {{ passwordErrorMessage() }}
+          </p>
+        }
+
+        <div class="mt-3 space-y-3">
+          @if (hasPassword()) {
+            <div>
+              <label for="current-password" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+                Senha atual
+              </label>
+              <input
+                id="current-password"
+                type="password"
+                formControlName="currentPassword"
+                data-testid="current-password-input"
+                autocomplete="current-password"
+                class="w-full rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+              />
+            </div>
+          }
+          <div>
+            <label for="new-password" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+              Nova senha
+            </label>
+            <input
+              id="new-password"
+              type="password"
+              formControlName="newPassword"
+              data-testid="new-password-input"
+              autocomplete="new-password"
+              placeholder="Mínimo 6 caracteres"
+              class="w-full rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm text-[#373831] placeholder:text-[#A8A29E] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+            />
+          </div>
+          <div>
+            <label
+              for="confirm-password"
+              class="mb-1.5 block text-sm font-semibold text-[#373831]"
+            >
+              Confirmar nova senha
+            </label>
+            <input
+              id="confirm-password"
+              type="password"
+              formControlName="confirmPassword"
+              data-testid="confirm-password-input"
+              autocomplete="new-password"
+              class="w-full rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+            />
+            @if (showValidation() && form.controls.confirmPassword.value !== form.controls.newPassword.value) {
+              <p class="mt-1 text-xs text-[#B91C1C]">As senhas não coincidem.</p>
+            }
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <footer class="flex shrink-0 gap-3 border-t border-[#E7E5E4] px-5 py-4">
+      <button
+        type="button"
+        data-testid="cancel-edit-account"
+        (click)="onClose()"
+        class="flex-1 rounded-xl border border-[#D6D3D1] px-4 py-3 text-sm font-semibold text-[#373831]"
+      >
+        Cancelar
+      </button>
+      <button
+        type="submit"
+        data-testid="save-edit-account"
+        (click)="submit()"
+        class="flex-1 rounded-xl bg-[#4338CA] px-4 py-3 text-sm font-semibold text-white"
+      >
+        Salvar
+      </button>
+    </footer>
+  </div>
+</div>

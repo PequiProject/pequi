@@ -4,6 +4,7 @@ import type {
   AppointmentFollowUpDraft,
   HealthAppointment,
   HealthAppointmentDraft,
+  NeurologicalAssessmentDraft,
 } from '../models/health-appointment.models';
 
 const STORAGE_KEY = 'pequi.health_appointments';
@@ -16,7 +17,7 @@ export class HealthAppointmentService {
 
   saveFromDraft(draft: HealthAppointmentDraft): HealthAppointment {
     const performed = draft.performed === true;
-    const followUp = performed ? this.buildFollowUp(draft.followUp) : undefined;
+    const followUp = performed ? this.buildFollowUpFromDraft(draft) : undefined;
     const record: HealthAppointment = {
       id: crypto.randomUUID(),
       appointmentDate: draft.appointmentDate,
@@ -45,20 +46,36 @@ export class HealthAppointmentService {
       nextAppointmentDate: raw.nextAppointmentDate || undefined,
     };
 
-    if (raw.hadMedicationChange === true) {
+    if (raw.updateInstitutedMedsFromConsultation) {
       result.hadMedicationChange = true;
-      const newName = raw.newMedicationName?.trim();
-      const newDose = raw.newDoseDescription?.trim();
-      if (newName && newDose) {
-        result.medicationChange = {
-          description: raw.medicationChangeDescription?.trim() || undefined,
-          newMedicationName: newName,
-          newDoseDescription: newDose,
-        };
-      }
-    } else if (raw.hadMedicationChange === false && raw.registerSupervisedDose) {
+      const doseSummary = [
+        `Prednisona ${raw.institutedPrednisoneMgKg || '—'} mg/kg`,
+        `AINE ${raw.institutedAineMgDay || '—'} mg/dia`,
+        `Talidomida ${raw.institutedThalidomideMgDay || '—'} mg/dia`,
+        `Pentoxifilina ${raw.institutedPentoxifyllineMgDay || '—'} mg/dia`,
+        raw.institutedOtherMedication
+          ? `Outro: ${raw.institutedOtherMedication}`
+          : undefined,
+      ]
+        .filter(Boolean)
+        .join(' | ');
+      result.medicationChange = {
+        description: raw.medicationChangeDescription?.trim() || undefined,
+        newMedicationName: 'Medicamentos instituídos atualizados',
+        newDoseDescription: doseSummary,
+      };
+    } else if (raw.registerSupervisedDose) {
       result.hadMedicationChange = false;
-      const medName = raw.otherMedicationName?.trim();
+      const selectedDose = [
+        raw.doseSchemeRifampicina ? 'Rifampicina' : '',
+        raw.doseSchemeClofazimina ? 'Clofazimina' : '',
+        raw.doseSchemeMinociclina ? 'Minociclina' : '',
+        raw.doseSchemeOfloxacino ? 'Ofloxacino' : '',
+        raw.doseSchemeDapsone ? 'Dapsona' : '',
+      ]
+        .filter(Boolean)
+        .join(' + ');
+      const medName = selectedDose || raw.otherMedicationName?.trim();
       if (medName) {
         result.supervisedDose = {
           medicationId:
@@ -69,7 +86,7 @@ export class HealthAppointmentService {
           notes: raw.supervisedDoseNotes?.trim() || undefined,
         };
       }
-    } else if (raw.hadMedicationChange === false) {
+    } else if (raw.hadMedicationChange === false || raw.updateInstitutedMedsFromConsultation === false) {
       result.hadMedicationChange = false;
     }
 
@@ -82,6 +99,56 @@ export class HealthAppointmentService {
       result.supervisedDose !== undefined;
 
     return hasValue ? result : undefined;
+  }
+
+  private buildFollowUpFromDraft(draft: HealthAppointmentDraft): AppointmentFollowUp | undefined {
+    const result = this.buildFollowUp(draft.followUp) ?? {};
+
+    if (draft.followUp.registerNeurologicalAssessment) {
+      const neurological = this.buildNeurologicalAssessmentRecord(draft.neurologicalAssessment);
+      if (neurological) {
+        result.neurologicalAssessment = neurological;
+      }
+    }
+
+    const hasValue =
+      result.conduct !== undefined ||
+      result.guidanceReceived !== undefined ||
+      result.nextAppointmentDate !== undefined ||
+      result.hadMedicationChange !== undefined ||
+      result.medicationChange !== undefined ||
+      result.supervisedDose !== undefined ||
+      result.neurologicalAssessment !== undefined;
+
+    return hasValue ? result : undefined;
+  }
+
+  private buildNeurologicalAssessmentRecord(
+    raw: NeurologicalAssessmentDraft
+  ): AppointmentFollowUp['neurologicalAssessment'] | undefined {
+    const hasGif =
+      raw.gifEye !== '' || raw.gifHand !== '' || raw.gifFoot !== '' || raw.highestGif !== '';
+    const hasDetails =
+      raw.assessmentDate !== '' ||
+      hasGif ||
+      raw.ompSum.trim() !== '' ||
+      raw.conduct.trim() !== '' ||
+      raw.ubs.trim() !== '' ||
+      raw.reference.trim() !== '';
+
+    if (!hasDetails) return undefined;
+
+    return {
+      assessmentDate: raw.assessmentDate,
+      gifEye: raw.gifEye,
+      gifHand: raw.gifHand,
+      gifFoot: raw.gifFoot,
+      highestGif: raw.highestGif,
+      ompSum: raw.ompSum,
+      conduct: raw.conduct.trim() || undefined,
+      ubs: raw.ubs.trim() || undefined,
+      reference: raw.reference.trim() || undefined,
+    };
   }
 
   private loadFromStorage(): HealthAppointment[] {

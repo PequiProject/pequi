@@ -1,0 +1,41 @@
+meta {
+  name: Moderate Post
+  type: http
+  seq: 1
+}
+
+patch {
+  url: {{baseUrl}}/v1/admin/community/posts/{{postId}}/moderate
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "is_moderated": true
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.is_moderated: eq true
+}
+
+docs {
+  Modera post (admin only) - PEQ-106.
+
+  - Apenas admin pode acessar.
+  - Marca post como moderado/removido.
+  - Ação auditada em logs.
+  - Posts moderados não aparecem em listagens públicas.
+
+  Rate limit: 20/hora.
+}

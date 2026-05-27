@@ -208,9 +208,10 @@
 
           @if (draft().performed === true) {
             <p class="border-t border-[#E7E5E4] pt-5 text-sm text-[#64655C]">
-              Você pode incluir conduta, medicamentos e orientações (opcional).
+              Você pode incluir conduta, medicamentos, avaliação neurológica e orientações
+              (opcional).
             </p>
-            <form
+            <div
               [formGroup]="followUpForm"
               class="space-y-5"
               data-testid="step-follow-up"
@@ -232,8 +233,10 @@
           }
 
           <section class="space-y-4 rounded-2xl border border-[#E7E5E4] bg-[#FAFAF9] p-4">
-            <h3 class="text-sm font-semibold text-[#373831]">Dose e medicamentos</h3>
-
+            <h3 class="text-sm font-semibold text-[#373831]">Dose mensal</h3>
+            <p class="text-xs text-[#64655C]">
+              Observação: alterações feitas aqui atualizam também o Perfil em Meu tratamento.
+            </p>
             <label
               class="flex cursor-pointer items-start gap-3 rounded-xl border border-[#E7E5E4] bg-white px-4 py-3"
               data-testid="register-dose-label"
@@ -248,213 +251,398 @@
               <span class="text-sm text-[#373831]">
                 <span class="font-semibold">Registrar dose tomada neste atendimento</span>
                 <span class="mt-0.5 block text-[#64655C]">
-                  Marque se você recebeu ou tomou a dose supervisionada hoje.
+                  Usa a dose cadastrada no perfil. Se ainda não tiver, marque atualização abaixo.
                 </span>
               </span>
             </label>
 
+            @if (draft().followUp.registerSupervisedDose) {
+              <fieldset>
+                <legend class="mb-2 text-sm font-semibold text-[#373831]">Mudança de medicamento?</legend>
+                <div class="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    class="rounded-xl border px-4 py-3 text-sm font-semibold transition"
+                    [class.border-[#4338CA]]="followUpForm.controls.doseMedicationChanged.value === true"
+                    [class.bg-[#EEF2FF]]="followUpForm.controls.doseMedicationChanged.value === true"
+                    (click)="onDoseMedicationChanged(true)"
+                  >
+                    Sim
+                  </button>
+                  <button
+                    type="button"
+                    class="rounded-xl border px-4 py-3 text-sm font-semibold transition"
+                    [class.border-[#4338CA]]="followUpForm.controls.doseMedicationChanged.value === false"
+                    [class.bg-[#EEF2FF]]="followUpForm.controls.doseMedicationChanged.value === false"
+                    (click)="onDoseMedicationChanged(false)"
+                  >
+                    Não
+                  </button>
+                </div>
+                @if (showValidation() && followUpForm.controls.doseMedicationChanged.value === null) {
+                  <p class="mt-2 text-xs text-[#B91C1C]">Informe se houve mudança de medicamento da dose.</p>
+                }
+              </fieldset>
+
+              @if (followUpForm.controls.doseMedicationChanged.value === false && !hasProfileDoseMedication()) {
+                <div class="rounded-lg bg-[#FFF7ED] px-3 py-2 text-xs text-[#9A3412]">
+                  Não há dose mensal registrada no perfil. Preencha o esquema abaixo: vamos atualizar
+                  automaticamente o Meu tratamento.
+                </div>
+              }
+              @if (followUpForm.controls.doseMedicationChanged.value === false && hasProfileDoseMedication()) {
+                <div class="rounded-lg bg-[#EEF2FF] px-3 py-2 text-xs text-[#3730A3]">
+                  Usando o medicamento informado em Meu tratamento:
+                  <strong>{{ currentProfileDoseMedication() }}</strong>.
+                </div>
+              }
+
+              @if (shouldShowDoseRegistrationBlock()) {
+                <div class="space-y-3 rounded-xl border border-[#E7E5E4] bg-white p-3">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="text-xs text-[#64655C]">Sem dose registrada no perfil?</span>
+                    <button type="button" (click)="goToProfile()" class="text-xs font-semibold text-[#4338CA]">Ir para Meu tratamento</button>
+                  </div>
+                  <div class="flex flex-wrap gap-2">
+                    @for (opt of substituteSchemeMedicationOptions; track opt.key) {
+                      <label class="flex items-center gap-2 rounded-full border border-[#E7E5E4] px-3 py-2 text-sm">
+                        <input
+                          type="checkbox"
+                          class="h-4 w-4 accent-[#4338CA]"
+                          [formControlName]="
+                            opt.key === 'clofazimina'
+                              ? 'doseSchemeClofazimina'
+                              : opt.key === 'ofloxacino'
+                                ? 'doseSchemeOfloxacino'
+                                : opt.key === 'rifampicina'
+                                  ? 'doseSchemeRifampicina'
+                                  : opt.key === 'minociclina'
+                                    ? 'doseSchemeMinociclina'
+                                    : 'doseSchemeDapsone'
+                          "
+                        />
+                        {{ opt.label }}
+                      </label>
+                    }
+                  </div>
+                  @if (showValidation() && !(
+                    draft().followUp.doseSchemeRifampicina ||
+                    draft().followUp.doseSchemeClofazimina ||
+                    draft().followUp.doseSchemeMinociclina ||
+                    draft().followUp.doseSchemeOfloxacino ||
+                    draft().followUp.doseSchemeDapsone
+                  )) {
+                    <p class="text-xs text-[#B91C1C]">Selecione pelo menos um medicamento da dose.</p>
+                  }
+                </div>
+              }
+            }
+          </section>
+
+          <section class="space-y-4 rounded-2xl border border-[#E7E5E4] bg-[#FAFAF9] p-4">
+            <h3 class="text-sm font-semibold text-[#373831]">Medicamentos instituídos</h3>
+            <p class="text-xs text-[#64655C]">
+              Observação: alterações feitas aqui atualizam também o Perfil em Meu tratamento.
+            </p>
             <fieldset>
-              <legend class="mb-2 text-sm font-semibold text-[#373831]">
-                Houve mudança de medicamento?
-              </legend>
+              <legend class="mb-2 text-sm font-semibold text-[#373831]">Houve mudança?</legend>
               <div class="grid grid-cols-2 gap-3">
                 <button
                   type="button"
-                  data-testid="med-change-yes"
-                  (click)="onHadMedicationChange(true)"
                   class="rounded-xl border px-4 py-3 text-sm font-semibold transition"
-                  [class.border-[#4338CA]]="draft().followUp.hadMedicationChange === true"
-                  [class.bg-[#EEF2FF]]="draft().followUp.hadMedicationChange === true"
-                  [class.text-[#4338CA]]="draft().followUp.hadMedicationChange === true"
-                  [class.border-[#E7E5E4]]="draft().followUp.hadMedicationChange !== true"
+                  [class.border-[#4338CA]]="followUpForm.controls.updateInstitutedMedsFromConsultation.value === true"
+                  [class.bg-[#EEF2FF]]="followUpForm.controls.updateInstitutedMedsFromConsultation.value === true"
+                  (click)="onInstitutedMedicationChanged(true)"
                 >
-                  Sim, mudou
+                  Sim
                 </button>
                 <button
                   type="button"
-                  data-testid="med-change-no"
-                  (click)="onHadMedicationChange(false)"
                   class="rounded-xl border px-4 py-3 text-sm font-semibold transition"
-                  [class.border-[#4338CA]]="draft().followUp.hadMedicationChange === false"
-                  [class.bg-[#EEF2FF]]="draft().followUp.hadMedicationChange === false"
-                  [class.text-[#4338CA]]="draft().followUp.hadMedicationChange === false"
-                  [class.border-[#E7E5E4]]="draft().followUp.hadMedicationChange !== false"
+                  [class.border-[#4338CA]]="followUpForm.controls.updateInstitutedMedsFromConsultation.value === false"
+                  [class.bg-[#EEF2FF]]="followUpForm.controls.updateInstitutedMedsFromConsultation.value === false"
+                  (click)="onInstitutedMedicationChanged(false)"
                 >
-                  Não mudou
+                  Não
                 </button>
               </div>
-              @if (showValidation() && draft().followUp.hadMedicationChange === null) {
-                <p class="mt-2 text-xs text-[#B91C1C]">Informe se houve mudança de medicamento.</p>
-              }
             </fieldset>
 
-            @if (draft().followUp.hadMedicationChange === false && draft().followUp.registerSupervisedDose) {
-              <div class="space-y-3 border-t border-[#E7E5E4] pt-3" data-testid="existing-med-dose">
-                <p class="text-sm text-[#64655C]">
-                  Selecione o medicamento que você está tomando. Em breve você poderá cadastrar
-                  seus remédios no perfil.
-                </p>
-
-                @if (patientMedications().length > 0) {
-                  <div class="flex flex-wrap gap-2" data-testid="medication-options">
-                    @for (med of patientMedications(); track med.id) {
-                      <button
-                        type="button"
-                        (click)="onMedicationSelect(med.id)"
-                        class="rounded-full border px-3 py-2 text-left text-sm font-medium transition"
-                        [class.border-[#4338CA]]="draft().followUp.selectedMedicationId === med.id"
-                        [class.bg-[#EEF2FF]]="draft().followUp.selectedMedicationId === med.id"
-                        [class.text-[#4338CA]]="draft().followUp.selectedMedicationId === med.id"
-                        [class.border-[#E7E5E4]]="draft().followUp.selectedMedicationId !== med.id"
-                      >
-                        {{ med.name }}
-                        @if (med.dosage) {
-                          <span class="block text-xs font-normal opacity-80">{{ med.dosage }}</span>
+            @if (followUpForm.controls.updateInstitutedMedsFromConsultation.value) {
+              <div>
+                <label for="med-change-desc" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+                  O que mudou? <span class="font-normal text-[#A8A29E]">(opcional)</span>
+                </label>
+                <textarea
+                  id="med-change-desc"
+                  rows="2"
+                  formControlName="medicationChangeDescription"
+                  data-testid="medication-change-description"
+                  class="w-full resize-none rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm"
+                ></textarea>
+              </div>
+              <div formArrayName="institutedMedications" class="space-y-3">
+                @if (institutedMedicationsArray.length === 0) {
+                  <p class="text-xs text-[#64655C]">Nenhum medicamento instituído. Use o botão abaixo para adicionar.</p>
+                }
+                @for (medControl of institutedMedicationsArray.controls; track $index) {
+                  <div [formGroupName]="$index" class="rounded-xl border border-[#E7E5E4] bg-white p-3">
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-4">
+                      <div class="sm:col-span-2">
+                        <label class="mb-1 block text-xs font-semibold text-[#373831]">Medicamento</label>
+                        <select
+                          formControlName="medicationKey"
+                          class="w-full rounded-xl border border-[#E7E5E4] px-3 py-2 text-sm"
+                        >
+                          <option value="">Selecione</option>
+                          @for (opt of institutedMedicationNameOptions; track opt.value) {
+                            <option [value]="opt.value">{{ opt.label }}</option>
+                          }
+                        </select>
+                        @if (isInstitutedMedicationOther($index)) {
+                          <input
+                            type="text"
+                            formControlName="customName"
+                            placeholder="Nome do medicamento"
+                            class="mt-2 w-full rounded-xl border border-[#E7E5E4] px-3 py-2 text-sm"
+                          />
                         }
+                      </div>
+                      <div>
+                        <label class="mb-1 block text-xs font-semibold text-[#373831]">Quantidade</label>
+                        <input type="text" formControlName="dose" class="w-full rounded-xl border border-[#E7E5E4] px-3 py-2 text-sm" />
+                      </div>
+                      <div>
+                        <label class="mb-1 block text-xs font-semibold text-[#373831]">Unidade</label>
+                        <select formControlName="unit" class="w-full rounded-xl border border-[#E7E5E4] px-3 py-2 text-sm">
+                          @for (unit of institutedMedicationUnitOptions; track unit) {
+                            <option [value]="unit">{{ unit }}</option>
+                          }
+                        </select>
+                      </div>
+                    </div>
+                    <div class="mt-3 flex items-end justify-between gap-3">
+                      <div class="w-full sm:w-48">
+                        <label class="mb-1 block text-xs font-semibold text-[#373831]">Frequência</label>
+                        <select formControlName="frequency" class="w-full rounded-xl border border-[#E7E5E4] px-3 py-2 text-sm">
+                          @for (frequency of institutedMedicationFrequencyOptions; track frequency) {
+                            <option [value]="frequency">{{ frequency }}</option>
+                          }
+                        </select>
+                      </div>
+                      <button type="button" (click)="removeInstitutedMedication($index)" class="rounded-lg border border-[#FECACA] px-3 py-2 text-xs font-semibold text-[#B91C1C]">
+                        Remover
                       </button>
-                    }
-                    <button
-                      type="button"
-                      data-testid="medication-other"
-                      (click)="onMedicationOtherSelect()"
-                      class="rounded-full border px-3 py-2 text-sm font-medium transition"
-                      [class.border-[#4338CA]]="draft().followUp.selectedMedicationId === 'other'"
-                      [class.bg-[#EEF2FF]]="draft().followUp.selectedMedicationId === 'other'"
-                      [class.text-[#4338CA]]="draft().followUp.selectedMedicationId === 'other'"
-                      [class.border-[#E7E5E4]]="draft().followUp.selectedMedicationId !== 'other'"
-                    >
-                      Outro medicamento
-                    </button>
-                  </div>
-                } @else {
-                  <p
-                    class="rounded-lg bg-white px-3 py-2 text-xs text-[#64655C]"
-                    data-testid="no-profile-meds"
-                  >
-                    Nenhum medicamento no perfil ainda — informe o nome abaixo.
-                  </p>
-                }
-
-                @if (
-                  patientMedications().length === 0 ||
-                  draft().followUp.selectedMedicationId === 'other'
-                ) {
-                  <div>
-                    <label
-                      for="other-medication"
-                      class="mb-1.5 block text-sm font-semibold text-[#373831]"
-                    >
-                      Nome do medicamento
-                    </label>
-                    <input
-                      id="other-medication"
-                      type="text"
-                      formControlName="otherMedicationName"
-                      data-testid="other-medication-name"
-                      (input)="onOtherMedicationInput($event)"
-                      placeholder="Ex.: Rifampicina + Dapsona"
-                      class="w-full rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
-                    />
+                    </div>
                   </div>
                 }
+              </div>
+              <button
+                type="button"
+                data-testid="add-consultation-instituted-medication"
+                (click)="addInstitutedMedication()"
+                class="inline-flex items-center gap-1 rounded-xl border border-[#4338CA] px-3 py-2 text-sm font-semibold text-[#4338CA]"
+              >
+                + Adicionar medicamento
+              </button>
+            }
+          </section>
 
-                <div>
-                  <label
-                    for="supervised-dose-notes"
-                    class="mb-1.5 block text-sm font-semibold text-[#373831]"
-                  >
-                    Observações da dose
-                    <span class="font-normal text-[#A8A29E]">(opcional)</span>
-                  </label>
-                  <input
-                    id="supervised-dose-notes"
-                    type="text"
-                    formControlName="supervisedDoseNotes"
-                    data-testid="supervised-dose-notes"
-                    placeholder="Ex.: Dose mensal aplicada no posto"
-                    class="w-full rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
-                  />
-                </div>
+          <section class="space-y-4 rounded-2xl border border-[#E7E5E4] bg-[#FAFAF9] p-4">
+            <h3 class="text-sm font-semibold text-[#373831]">Avaliação neurológica</h3>
 
-                @if (showValidation() && !draft().followUp.otherMedicationName.trim()) {
-                  <p class="text-xs text-[#B91C1C]">Selecione ou informe o medicamento da dose.</p>
-                }
+            @if (isNeurologicalAssessmentType()) {
+              <div
+                class="rounded-xl bg-[#EEF2FF] px-4 py-3 text-sm text-[#3730A3]"
+                data-testid="neurological-assessment-hint"
+              >
+                <p>
+                  Para consultas de avaliação neurológica, o registro da ANS já vem sugerido. Você
+                  pode desmarcar se não quiser preencher agora.
+                </p>
               </div>
             }
 
-            @if (draft().followUp.hadMedicationChange === true) {
-              <div class="space-y-3 border-t border-[#E7E5E4] pt-3" data-testid="med-change-fields">
-                <p class="text-sm text-[#64655C]">
-                  Descreva a mudança e registre o novo medicamento com a dose indicada pelo
-                  profissional.
-                </p>
+            <label
+              class="flex cursor-pointer items-start gap-3 rounded-xl border border-[#E7E5E4] bg-white px-4 py-3"
+              data-testid="register-neurological-assessment-label"
+            >
+              <input
+                type="checkbox"
+                class="mt-1 h-4 w-4 accent-[#4338CA]"
+                data-testid="register-neurological-assessment"
+                [checked]="draft().followUp.registerNeurologicalAssessment"
+                (change)="onRegisterNeurologicalAssessmentChange($any($event.target).checked)"
+              />
+              <span class="text-sm text-[#373831]">
+                <span class="font-semibold"
+                  >Registrar Avaliação Neurológica Simplificada (ANS)</span
+                >
+                <span class="mt-0.5 block text-[#64655C]">
+                  Marque se houve avaliação neurológica neste atendimento.
+                </span>
+              </span>
+            </label>
 
+            @if (draft().followUp.registerNeurologicalAssessment) {
+              <div
+                class="space-y-4 rounded-xl border border-[#E7E5E4] bg-white p-4"
+                data-testid="step-neurological-assessment"
+                [formGroup]="ansForm"
+              >
                 <div>
                   <label
-                    for="med-change-desc"
+                    for="ans-assessment-date"
                     class="mb-1.5 block text-sm font-semibold text-[#373831]"
                   >
-                    O que mudou?
-                    <span class="font-normal text-[#A8A29E]">(opcional)</span>
+                    Data
+                  </label>
+                  <input
+                    id="ans-assessment-date"
+                    type="date"
+                    formControlName="assessmentDate"
+                    data-testid="ans-assessment-date"
+                    class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+                  />
+                </div>
+
+                <fieldset class="space-y-4 rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] p-4">
+                  <legend class="px-1 text-sm font-semibold text-[#373831]">GIF</legend>
+                  <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    <div>
+                      <label
+                        for="ans-gif-eye"
+                        class="mb-1.5 block text-sm font-semibold text-[#373831]"
+                      >
+                        Olho
+                      </label>
+                      <select
+                        id="ans-gif-eye"
+                        formControlName="gifEye"
+                        data-testid="ans-gif-eye"
+                        class="w-full rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+                      >
+                        @for (opt of ansGifGradeOptions; track opt.value) {
+                          <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                      </select>
+                    </div>
+                    <div>
+                      <label
+                        for="ans-gif-hand"
+                        class="mb-1.5 block text-sm font-semibold text-[#373831]"
+                      >
+                        Mão
+                      </label>
+                      <select
+                        id="ans-gif-hand"
+                        formControlName="gifHand"
+                        data-testid="ans-gif-hand"
+                        class="w-full rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+                      >
+                        @for (opt of ansGifGradeOptions; track opt.value) {
+                          <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                      </select>
+                    </div>
+                    <div>
+                      <label
+                        for="ans-gif-foot"
+                        class="mb-1.5 block text-sm font-semibold text-[#373831]"
+                      >
+                        Pé
+                      </label>
+                      <select
+                        id="ans-gif-foot"
+                        formControlName="gifFoot"
+                        data-testid="ans-gif-foot"
+                        class="w-full rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+                      >
+                        @for (opt of ansGifGradeOptions; track opt.value) {
+                          <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                      </select>
+                    </div>
+                  </div>
+                </fieldset>
+
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label
+                      for="ans-highest-gif"
+                      class="mb-1.5 block text-sm font-semibold text-[#373831]"
+                    >
+                      Maior GIF
+                    </label>
+                    <input
+                      id="ans-highest-gif"
+                      type="text"
+                      formControlName="highestGif"
+                      data-testid="ans-highest-gif"
+                      readonly
+                      class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831]"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      for="ans-omp-sum"
+                      class="mb-1.5 block text-sm font-semibold text-[#373831]"
+                    >
+                      Soma OMP
+                    </label>
+                    <input
+                      id="ans-omp-sum"
+                      type="text"
+                      formControlName="ompSum"
+                      data-testid="ans-omp-sum"
+                      readonly
+                      class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label for="ans-conduct" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+                    Conduta
                   </label>
                   <textarea
-                    id="med-change-desc"
-                    rows="2"
-                    formControlName="medicationChangeDescription"
-                    data-testid="medication-change-description"
-                    placeholder="Ex.: Troca por reação, ajuste do esquema..."
-                    class="w-full resize-none rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+                    id="ans-conduct"
+                    rows="4"
+                    formControlName="conduct"
+                    data-testid="ans-conduct"
+                    class="w-full resize-y rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
                   ></textarea>
                 </div>
 
                 <div>
-                  <label
-                    for="new-medication-name"
-                    class="mb-1.5 block text-sm font-semibold text-[#373831]"
-                  >
-                    Novo medicamento
+                  <label for="ans-ubs" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+                    UBS
                   </label>
                   <input
-                    id="new-medication-name"
+                    id="ans-ubs"
                     type="text"
-                    formControlName="newMedicationName"
-                    data-testid="new-medication-name"
-                    placeholder="Ex.: Clofazimina"
-                    class="w-full rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+                    formControlName="ubs"
+                    data-testid="ans-ubs"
+                    class="w-full rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
                   />
-                  @if (showValidation() && !followUpForm.controls.newMedicationName.value?.trim()) {
-                    <p class="mt-1 text-xs text-[#B91C1C]">Informe o novo medicamento.</p>
-                  }
                 </div>
 
                 <div>
                   <label
-                    for="new-dose-description"
+                    for="ans-reference"
                     class="mb-1.5 block text-sm font-semibold text-[#373831]"
                   >
-                    Nova dose / posologia
+                    Referência
                   </label>
                   <input
-                    id="new-dose-description"
+                    id="ans-reference"
                     type="text"
-                    formControlName="newDoseDescription"
-                    data-testid="new-dose-description"
-                    placeholder="Ex.: 1 cápsula ao dia, dose mensal supervisionada"
-                    class="w-full rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+                    formControlName="reference"
+                    data-testid="ans-reference"
+                    class="w-full rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
                   />
-                  @if (showValidation() && !followUpForm.controls.newDoseDescription.value?.trim()) {
-                    <p class="mt-1 text-xs text-[#B91C1C]">Informe a nova dose ou posologia.</p>
-                  }
                 </div>
               </div>
-            }
-
-            @if (
-              draft().followUp.hadMedicationChange === false && !draft().followUp.registerSupervisedDose
-            ) {
-              <p class="text-xs text-[#64655C]">
-                Você pode marcar o registro da dose acima quando quiser anotar o atendimento mensal.
-              </p>
             }
           </section>
 
@@ -498,7 +686,7 @@
               class="w-full resize-none rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
             ></textarea>
           </div>
-            </form>
+            </div>
           }
         </div>
       }
@@ -540,12 +728,13 @@
                 <dd class="mt-1 font-medium text-[#373831]">{{ draft().notes }}</dd>
               </div>
             }
-            @if (draft().followUp.hadMedicationChange === true) {
+            @if (draft().followUp.updateInstitutedMedsFromConsultation) {
               <div class="border-t border-[#E7E5E4] pt-3">
-                <dt class="text-[#64655C]">Mudança de medicamento</dt>
+                <dt class="text-[#64655C]">Medicamentos instituídos atualizados</dt>
                 <dd class="mt-1 font-medium text-[#373831]">
-                  {{ draft().followUp.newMedicationName }} —
-                  {{ draft().followUp.newDoseDescription }}
+                  @for (med of draft().followUp.institutedMedications; track $index) {
+                    <p>{{ med.name || 'Medicamento' }}: {{ med.dose || '—' }} {{ med.unit }}/{{ med.frequency }}</p>
+                  }
                 </dd>
                 @if (draft().followUp.medicationChangeDescription) {
                   <dd class="mt-1 text-xs text-[#64655C]">
@@ -554,11 +743,55 @@
                 }
               </div>
             }
-            @if (
-              draft().followUp.hadMedicationChange === false &&
-              draft().followUp.registerSupervisedDose &&
-              draft().followUp.otherMedicationName
-            ) {
+            @if (draft().followUp.registerNeurologicalAssessment && draft().performed) {
+              <div class="border-t border-[#E7E5E4] pt-3" data-testid="summary-neurological-assessment">
+                <dt class="text-[#64655C]">Avaliação Neurológica Simplificada (ANS)</dt>
+                <dd class="mt-2 space-y-1 font-medium text-[#373831]">
+                  @if (draft().neurologicalAssessment.assessmentDate) {
+                    <p>
+                      Data:
+                      {{ formatDate(draft().neurologicalAssessment.assessmentDate) }}
+                    </p>
+                  }
+                  @if (
+                    draft().neurologicalAssessment.gifEye ||
+                    draft().neurologicalAssessment.gifHand ||
+                    draft().neurologicalAssessment.gifFoot
+                  ) {
+                    <p>
+                      GIF — Olho:
+                      {{ ansGifGradeLabel(draft().neurologicalAssessment.gifEye) }} · Mão:
+                      {{ ansGifGradeLabel(draft().neurologicalAssessment.gifHand) }} · Pé:
+                      {{ ansGifGradeLabel(draft().neurologicalAssessment.gifFoot) }}
+                    </p>
+                  }
+                  @if (draft().neurologicalAssessment.highestGif) {
+                    <p>
+                      Maior GIF: {{ ansGifGradeLabel(draft().neurologicalAssessment.highestGif) }}
+                    </p>
+                  }
+                  @if (draft().neurologicalAssessment.ompSum) {
+                    <p>Soma OMP: {{ draft().neurologicalAssessment.ompSum }}</p>
+                  }
+                  @if (draft().neurologicalAssessment.conduct) {
+                    <p class="text-sm font-normal text-[#64655C]">
+                      Conduta: {{ draft().neurologicalAssessment.conduct }}
+                    </p>
+                  }
+                  @if (draft().neurologicalAssessment.ubs) {
+                    <p class="text-sm font-normal text-[#64655C]">
+                      UBS: {{ draft().neurologicalAssessment.ubs }}
+                    </p>
+                  }
+                  @if (draft().neurologicalAssessment.reference) {
+                    <p class="text-sm font-normal text-[#64655C]">
+                      Referência: {{ draft().neurologicalAssessment.reference }}
+                    </p>
+                  }
+                </dd>
+              </div>
+            }
+            @if (draft().followUp.registerSupervisedDose && draft().followUp.otherMedicationName) {
               <div class="border-t border-[#E7E5E4] pt-3">
                 <dt class="text-[#64655C]">Dose registrada</dt>
                 <dd class="mt-1 font-medium text-[#373831]">

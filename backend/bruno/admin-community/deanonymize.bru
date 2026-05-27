@@ -1,0 +1,36 @@
+meta {
+  name: Deanonymize
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/v1/admin/community/deanonymize/{{anonymousId}}
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+assert {
+  res.status: eq 200
+  res.body.anonymous_id: isDefined
+  res.body.user_id: isDefined
+  res.body.created_at: isDefined
+}
+
+docs {
+  Deanonymiza anonymous_id (admin only) - PEQ-106.
+
+  - Apenas admin pode acessar.
+  - Expõe user_id real correspondente ao anonymous_id.
+  - Ação CRITICAMENTE auditada em logs (warning level).
+  - Use apenas quando necessário (investigações, denúncias).
+
+  Rate limit: 20/hora.
+}
