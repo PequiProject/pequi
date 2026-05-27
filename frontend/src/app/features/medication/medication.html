@@ -1,63 +1,86 @@
 <section class="mx-auto w-full max-w-5xl">
-    <div>
-    <h2 class="text-2xl font-semibold text-[#373831]">Medicação</h2>
+    <div class="pb-6">
+        <h2 class="text-2xl font-semibold text-[#373831]">Medicação</h2>
         <p class="mt-1 text-sm text-[#373831]">
             Registre as medicações que você já tomou hoje
         </p>
     </div>
 
-  <div class="medication-list" *ngIf="medications.length">
-    <article
-      class="medication-item"
-      *ngFor="let item of medications; trackBy: trackById"
-      [class.medication-item--checked]="item.checked"
-    >
-      <div class="medication-item__left">
-        <div class="medication-item__icon-wrapper">
-          <div
-            class="medication-item__icon"
-            [class.medication-item__icon--checked]="item.checked"
-          >
-            <span *ngIf="item.checked">✓</span>
-            <span *ngIf="!item.checked">💊</span>
-          </div>
+    <h3 id="unsupervised-medication-title" class="medication__section-title">
+        Dose não supervisionada
+    </h3>
+    <section class="medication__section" *ngIf="unsupervisedItems.length"
+        aria-labelledby="unsupervised-medication-title">
+        <div class="medication__list">
+            <article class="medication-card" *ngFor="let item of unsupervisedItems; trackBy: trackById"
+                [class.medication-card--checked]="item.checked">
+                <div class="medication-card__content">
+                    <div class="medication-card__icon" [class.medication-card__icon--checked]="item.checked">
+                        <span *ngIf="item.checked">✓</span>
+                        <span *ngIf="!item.checked">
+                            <div class="icon-wrapper">
+                                <lucide-icon [name]="this.Pill" [size]="28"></lucide-icon>
+                            </div>
+                        </span>
+                    </div>
+
+                    <div class="medication-card__text">
+                        <p class="medication-card__title-text">{{ item.title }}</p>
+
+                        <p class="medication-card__subtitle" *ngIf="item.subtitle">
+                            {{ item.subtitle }}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="medication-card__action">
+                    <label class="medication-switch" aria-label="Marcar medicamento como tomado">
+                        <input type="checkbox" [checked]="item.checked" (change)="toggleUnsupervised(item.id)" />
+                        <span class="medication-switch__slider"></span>
+                    </label>
+                </div>
+            </article>
+
         </div>
-
-        <div class="medication-item__content">
-          <strong class="medication-item__name">{{ item.name }}</strong>
-
-          <span class="medication-item__meta">
-            {{ item.dosageValue }}
-            {{ item.dosageUnit === 'unit' ? 'Unidade' : item.dosageUnit }}
-            <ng-container *ngIf="item.time">
-              • {{ item.time }}
-            </ng-container>
-          </span>
-        </div>
-      </div>
-
-      <div class="medication-item__right">
-        <ng-container *ngIf="item.checked; else toggleTemplate">
-          <span class="medication-item__badge">Feito</span>
-        </ng-container>
-
-        <ng-template #toggleTemplate>
-          <label class="switch" aria-label="Marcar medicamento como tomado">
-            <input
-              type="checkbox"
-              [checked]="!!item.checked"
-              (change)="toggleChecked(item.id)"
-            />
-            <span class="switch__slider"></span>
-          </label>
-        </ng-template>
-      </div>
-    </article>
-  </div>
-
-
-    <div class="medication-empty flex justify-center align-middle p-8 font-medium text-sm" *ngIf="medications.length === 0">
-      <p>Nenhum medicamento cadastrado.</p>
+    </section>
+    <div class="medication-empty flex justify-center align-middle p-8 font-medium text-sm text-center"
+        *ngIf="unsupervisedItems.length === 0">
+        <p>Nenhum medicamento de dose não supervisionada cadastrado.</p>
     </div>
 
+    <h3 id="supervised-medication-title" class="medication__section-title">
+        Dose supervisionada
+    </h3>
+    <section class="medication__section" *ngIf="supervisedItems.length" aria-labelledby="supervised-medication-title">
+        <div class="medication__list">
+            <article class="medication-card" *ngFor="let item of supervisedItems; trackBy: trackById"
+                [class.medication-card--checked]="item.checked">
+                <div class="medication-card__content">
+                    <div class="medication-card__icon" [class.medication-card__icon--checked]="item.checked">
+                        <span *ngIf="item.checked">✓</span>
+                        <span *ngIf="!item.checked">
+                            <div class="icon-wrapper">
+                                <lucide-icon [name]="this.Hospital" [size]="28"></lucide-icon>
+                            </div>
+                        </span>
+                    </div>
+
+                    <div class="medication-card__text">
+                        <p class="medication-card__title-text">{{ item.title }}</p>
+                    </div>
+                </div>
+
+                <div class="medication-card__action">
+                    <label class="medication-switch" aria-label="Marcar dose supervisionada como tomada">
+                        <input type="checkbox" [checked]="item.checked" (change)="toggleSupervised(item.id)" />
+                        <span class="medication-switch__slider"></span>
+                    </label>
+                </div>
+            </article>
+        </div>
+    </section>
+    <div class="medication-empty flex justify-center align-middle p-8 font-medium text-sm text-center"
+        *ngIf="supervisedItems.length === 0">
+        <p>Nenhum medicamento de dose supervisionada cadastrado.</p>
+    </div>
 </section>
