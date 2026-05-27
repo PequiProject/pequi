@@ -42,7 +42,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(
             ["user_id"],
             ["users.id"],
-            name="fk_community_anonymous_map_user_id_users",
+            name="fk_anonymous_map_user_id",
             ondelete="RESTRICT",
         ),
         sa.UniqueConstraint("user_id", name="uq_community_anonymous_map_user_id"),
@@ -131,13 +131,13 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(
             ["post_id"],
             ["community_posts.id"],
-            name="fk_community_comments_post_id_community_posts",
+            name="fk_comments_post_id",
             ondelete="RESTRICT",
         ),
         sa.ForeignKeyConstraint(
             ["author_anonymous_id"],
             ["community_anonymous_map.anonymous_id"],
-            name="fk_community_comments_author_anonymous_id_community_anonymous_map",
+            name="fk_comments_anonymous_id",
             ondelete="RESTRICT",
         ),
     )
@@ -166,13 +166,13 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(
             ["anonymous_id"],
             ["community_anonymous_map.anonymous_id"],
-            name="fk_community_likes_anonymous_id_community_anonymous_map",
+            name="fk_likes_anonymous_id",
             ondelete="CASCADE",
         ),
         sa.ForeignKeyConstraint(
             ["post_id"],
             ["community_posts.id"],
-            name="fk_community_likes_post_id_community_posts",
+            name="fk_likes_post_id",
             ondelete="CASCADE",
         ),
         sa.PrimaryKeyConstraint("anonymous_id", "post_id"),
@@ -182,11 +182,11 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.drop_table("community_likes")
 
-    op.drop_index("ix_community_comments_author_anonymous_id", table_name="community_comments")
+    op.drop_index("ix_community_comments_anonymous_id", table_name="community_comments")
     op.drop_index("ix_community_comments_post_id", table_name="community_comments")
     op.drop_table("community_comments")
 
-    op.drop_index("ix_community_posts_author_anonymous_id", table_name="community_posts")
+    op.drop_index("ix_community_posts_anonymous_id", table_name="community_posts")
     op.drop_table("community_posts")
 
     op.drop_index("ix_community_anonymous_map_anonymous_id", table_name="community_anonymous_map")
