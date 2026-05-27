@@ -33,7 +33,7 @@ class ToggleLikeUseCase:
         # Criar like (atômico - trata IntegrityError para duplicatas)
         try:
             liked, like_count = await self._community_repo.add_like(user_id, post_id)
-        except IntegrityError as err:
+        except IntegrityError:
             raise ConflictError("You already liked this post") from None
 
         return {"liked": liked, "like_count": like_count}
