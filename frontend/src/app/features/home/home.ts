@@ -27,6 +27,13 @@ interface Article {
   actionUrl: string;
 }
 
+interface HomeHighlightCard {
+  value: string;
+  title: string;
+  subtitle?: string;
+  backgroundClass: string;
+}
+
 @Component({
   selector: 'app-home',
   standalone: true,
@@ -45,6 +52,20 @@ export class HomeComponent implements OnInit {
   currentMonthYear: string = '';
   calendarWeek: CalendarWeek[] = [];
   selectedDate: Date = new Date();
+
+  summaryCards: HomeHighlightCard[] = [
+    {
+      value: '2/4',
+      title: 'Medicações tomadas',
+      backgroundClass: 'summary-card--purple',
+    },
+    {
+      value: '27/06/2026',
+      title: '15:30',
+      subtitle: 'Próxima consulta',
+      backgroundClass: 'summary-card--blue',
+    },
+  ];
 
   QuickAction = [
     {
