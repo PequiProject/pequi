@@ -1,0 +1,27 @@
+meta {
+  name: List Articles
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/v1/articles?limit=20&offset=0
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.items: isDefined
+  res.body.total: isDefined
+}
+
+docs {
+  Lista artigos publicados (paciente/profissional) ou todos não deletados (admin).
+
+  Rate limit: 100/minuto.
+}

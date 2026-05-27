@@ -1,6 +1,6 @@
 # M7 — Articles
 
-> **Status:** 🔜 Pendente
+> **Status:** ✅ Implementado
 > **Depende de:** M2
 > **Bloqueado por:** —
 
