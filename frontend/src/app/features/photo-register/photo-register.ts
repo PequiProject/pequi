@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { LucideAngularModule, User, Plus, History, CircleCheck, Trash2 } from 'lucide-angular';
+import { LucideAngularModule, User, Plus, History, CircleCheck, Trash2, Camera } from 'lucide-angular';
 
 export interface BodyMarker {
   id: string;
@@ -10,6 +10,7 @@ export interface BodyMarker {
   view: 'front' | 'back';
   status: 'active' | 'review' | 'cured';
   bodyPart: string;
+  imageUrl?: string;
 }
 
 @Component({
@@ -23,7 +24,11 @@ export class PhotoRegister implements OnInit {
 
   form!: FormGroup;
   currentView = signal<'front' | 'back'>('front');
+
   public selectedMarkerId = signal<string | null>(null);
+  
+  private uploadingMarkerId: string | null = null;
+
   markers = signal<BodyMarker[]>([]);
 
   readonly UserIcon = User;
@@ -31,6 +36,8 @@ export class PhotoRegister implements OnInit {
   readonly HistoryIcon = History;
   readonly CircleCheckIcon = CircleCheck;
   readonly TrashIcon = Trash2;
+  readonly CameraIcon = Camera;
+
   ngOnInit() {
     this.form = this.fb.group({
       markers: [this.markers()]
@@ -124,6 +131,35 @@ export class PhotoRegister implements OnInit {
     this.markers.update(current => current.filter(m => m.id !== id));
     this.selectedMarkerId.set(null);
     this.updateForm();
+  }
+
+  triggerImageUpload(id: string) {
+    this.uploadingMarkerId = id;
+    const fileInput = document.getElementById('marker-photo-upload') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
+    }
+  }
+
+  handleImageUpload(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        const base64Image = e.target?.result as string;
+        if (this.uploadingMarkerId) {
+          this.markers.update(current => 
+            current.map(m => m.id === this.uploadingMarkerId ? { ...m, imageUrl: base64Image } : m)
+          );
+          this.updateForm();
+          this.uploadingMarkerId = null;
+        }
+      };
+      
+      reader.readAsDataURL(file);
+    }
   }
 
   private updateForm() {
