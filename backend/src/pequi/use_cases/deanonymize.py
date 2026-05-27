@@ -31,7 +31,7 @@ class DeanonymizeUseCase:
             entity_type="community_anonymous_map",
             entity_id=str(anonymous_id),
             action="deanonymize",
-            details=f"Revealed real user_id: {mapping.user_id}",
+            details="Deanonymized anonymous_id to real user",
         )
 
         # Log estruturado adicional para observabilidade
@@ -39,7 +39,6 @@ class DeanonymizeUseCase:
             "community.deanonymize",
             admin_user_id=str(admin_user_id),
             anonymous_id=str(anonymous_id),
-            real_user_id=str(mapping.user_id),
         )
 
         return DeanonymizeResponse.model_validate(mapping)

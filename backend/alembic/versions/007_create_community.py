@@ -167,13 +167,13 @@ def upgrade() -> None:
             ["anonymous_id"],
             ["community_anonymous_map.anonymous_id"],
             name="fk_likes_anonymous_id",
-            ondelete="CASCADE",
+            ondelete="RESTRICT",
         ),
         sa.ForeignKeyConstraint(
             ["post_id"],
             ["community_posts.id"],
             name="fk_likes_post_id",
-            ondelete="CASCADE",
+            ondelete="RESTRICT",
         ),
         sa.PrimaryKeyConstraint("anonymous_id", "post_id"),
     )

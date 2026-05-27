@@ -1,5 +1,7 @@
 from uuid import UUID
 
+from sqlalchemy.exc import IntegrityError
+
 from pequi.core.exceptions import ConflictError, NotFoundError
 from pequi.repositories.community_repo import CommunityRepository
 from pequi.repositories.patient_repo import PatientRepository
@@ -28,10 +30,10 @@ class ToggleLikeUseCase:
         if post is None:
             raise NotFoundError("CommunityPost", str(post_id))
 
-        # Verificar se já existe like (PEQ-108: Like duplicado retorna 409)
-        if await self._community_repo.check_like_exists(user_id, post_id):
+        # Criar like (atômico - trata IntegrityError para duplicatas)
+        try:
+            liked, like_count = await self._community_repo.add_like(user_id, post_id)
+        except IntegrityError:
             raise ConflictError("You already liked this post")
 
-        # Criar like
-        liked, like_count = await self._community_repo.toggle_like(user_id, post_id)
         return {"liked": liked, "like_count": like_count}

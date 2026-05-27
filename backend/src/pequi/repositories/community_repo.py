@@ -23,11 +23,21 @@ class CommunityRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
+    async def get_anonymous_id(self, user_id: UUID) -> UUID | None:
+        """Retorna anonymous_id existente ou None (read-only)."""
+        stmt = select(CommunityAnonymousMap.anonymous_id).where(
+            CommunityAnonymousMap.user_id == user_id
+        )
+        result = await self._session.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def get_or_create_anonymous_id(self, user_id: UUID) -> UUID:
-        """Retorna anonymous_id existente ou cria novo mapeamento.
+        """Retorna anonymous_id existente ou cria novo mapeamento (race-safe).
 
         O anonymous_id é estável por usuário — o mesmo em todos os posts.
         """
+        from sqlalchemy.exc import IntegrityError
+
         stmt = select(CommunityAnonymousMap.anonymous_id).where(
             CommunityAnonymousMap.user_id == user_id
         )
@@ -37,12 +47,20 @@ class CommunityRepository:
         if existing:
             return existing
 
-        # Criar novo mapeamento
-        mapping = CommunityAnonymousMap(user_id=user_id)
-        self._session.add(mapping)
-        await self._session.flush()
-        await self._session.refresh(mapping)
-        return mapping.anonymous_id
+        # Criar novo mapeamento (tratar race condition)
+        try:
+            mapping = CommunityAnonymousMap(user_id=user_id)
+            self._session.add(mapping)
+            await self._session.flush()
+            await self._session.refresh(mapping)
+            return mapping.anonymous_id
+        except IntegrityError:
+            # Outra requisição criou o mapeamento, buscar novamente
+            result = await self._session.execute(stmt)
+            existing = result.scalar_one_or_none()
+            if existing:
+                return existing
+            raise
 
     async def deanonymize(self, anonymous_id: UUID) -> CommunityAnonymousMap | None:
         """Retorna o mapeamento completo (user_id real) — acesso restrito a admin.
@@ -80,6 +98,7 @@ class CommunityRepository:
             select(CommunityPost)
             .where(CommunityPost.id == post_id)
             .where(CommunityPost.deleted_at.is_(None))
+            .where(CommunityPost.is_moderated.is_(False))
         )
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
@@ -146,7 +165,9 @@ class CommunityRepository:
         user_id: UUID,
     ) -> bool:
         """Verifica se o usuário é dono do post via anonymous_id."""
-        anonymous_id = await self.get_or_create_anonymous_id(user_id)
+        anonymous_id = await self.get_anonymous_id(user_id)
+        if anonymous_id is None:
+            return False
         stmt = select(CommunityPost.id).where(
             and_(
                 CommunityPost.id == post_id,
@@ -211,14 +232,15 @@ class CommunityRepository:
         result = await self._session.execute(stmt)
         return list(result.scalars().all()), total
 
-    async def toggle_like(
+    async def add_like(
         self,
         user_id: UUID,
         post_id: UUID,
     ) -> tuple[bool, int]:
         """Adiciona like em post — retorna (liked, like_count).
 
-        Não verifica se já existe (verificação feita no use case para retornar 409).
+        Atômico: incrementa like_count apenas se insert for bem-sucedido.
+        Levanta IntegrityError se like já existe.
         """
         anonymous_id = await self.get_or_create_anonymous_id(user_id)
 

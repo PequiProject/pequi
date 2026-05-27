@@ -40,17 +40,14 @@ class CommunityAnonymousMap(Base):
     posts = relationship(
         "CommunityPost",
         back_populates="author_mapping",
-        cascade="all, delete-orphan",
     )
     comments = relationship(
         "CommunityComment",
         back_populates="author_mapping",
-        cascade="all, delete-orphan",
     )
     likes = relationship(
         "CommunityLike",
         back_populates="author_mapping",
-        cascade="all, delete-orphan",
     )
 
 
