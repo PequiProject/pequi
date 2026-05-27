@@ -6,7 +6,6 @@ from pequi.core.exceptions import NotFoundError
 from pequi.models.article import ArticleCategory
 from pequi.repositories.article_repo import ArticleRepository
 from pequi.schemas.article import ArticleCreate, ArticleUpdate
-from pequi.tasks.article_tasks import increment_article_view_count
 from pequi.use_cases.create_article import CreateArticleUseCase
 from pequi.use_cases.delete_article import DeleteArticleUseCase
 from pequi.use_cases.get_article import GetArticleUseCase
@@ -152,14 +151,21 @@ async def test_admin_can_get_unpublished_draft(create_tables, db_session):
 
 @pytest.mark.asyncio
 async def test_increment_view_count_persists(create_tables, db_session):
+    """Incremento atômico no repositório.
+
+    A task em background (``increment_article_view_count``) abre sessão própria e
+    faz commit — invisível a esta transação de teste (rollback). O router usa essa
+    task após responder; a persistência do UPDATE é validada aqui na mesma sessão.
+    """
     repo = _article_repo(db_session)
     created = await CreateArticleUseCase(repo).execute(
         _sample_create(is_published=True, title="Com views")
     )
     assert created.view_count == 0
 
-    await increment_article_view_count(created.id)
-    await increment_article_view_count(created.id)
+    await repo.increment_view_count(created.id)
+    await repo.increment_view_count(created.id)
+    await db_session.flush()
 
     article = await repo.get_by_id(created.id)
     assert article is not None
