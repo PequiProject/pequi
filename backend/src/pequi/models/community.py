@@ -12,6 +12,7 @@ class CommunityAnonymousMap(Base):
 
     Acesso restrito a role admin. Nunca exposto via API pública.
     """
+
     __tablename__ = "community_anonymous_map"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -55,6 +56,7 @@ class CommunityAnonymousMap(Base):
 
 class CommunityPost(Base):
     """Posts da comunidade anônima."""
+
     __tablename__ = "community_posts"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -95,6 +97,7 @@ class CommunityPost(Base):
 
 class CommunityComment(Base):
     """Comentários em posts da comunidade."""
+
     __tablename__ = "community_comments"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -131,6 +134,7 @@ class CommunityComment(Base):
 
 class CommunityLike(Base):
     """Likes em posts da comunidade."""
+
     __tablename__ = "community_likes"
 
     anonymous_id = Column(

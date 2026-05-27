@@ -12,6 +12,7 @@ class AuditLog(Base):
     Registra consultas a dados clínicos (patient_profile) e ações de admin
     em community_anonymous_map (deanonymization).
     """
+
     __tablename__ = "audit_logs"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
