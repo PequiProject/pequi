@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Integer, String, Text, func
+from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Integer, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -36,9 +36,21 @@ class CommunityAnonymousMap(Base):
     )
 
     # Relationships
-    posts = relationship("CommunityPost", back_populates="author_mapping", cascade="all, delete-orphan")
-    comments = relationship("CommunityComment", back_populates="author_mapping", cascade="all, delete-orphan")
-    likes = relationship("CommunityLike", back_populates="author_mapping", cascade="all, delete-orphan")
+    posts = relationship(
+        "CommunityPost",
+        back_populates="author_mapping",
+        cascade="all, delete-orphan",
+    )
+    comments = relationship(
+        "CommunityComment",
+        back_populates="author_mapping",
+        cascade="all, delete-orphan",
+    )
+    likes = relationship(
+        "CommunityLike",
+        back_populates="author_mapping",
+        cascade="all, delete-orphan",
+    )
 
 
 class CommunityPost(Base):

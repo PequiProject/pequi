@@ -82,7 +82,11 @@ def _register_routers(app: FastAPI) -> None:
     app.include_router(body_map_router.router, prefix="/v1/body-map", tags=["body-map"])
     app.include_router(body_map_router.areas_router, prefix="/v1/body-areas", tags=["body-map"])
     app.include_router(community_router.router, prefix="/v1/community", tags=["community"])
-    app.include_router(community_router.admin_router, prefix="/v1/admin/community", tags=["admin-community"])
+    app.include_router(
+        community_router.admin_router,
+        prefix="/v1/admin/community",
+        tags=["admin-community"],
+    )
 
 
 app = create_app()

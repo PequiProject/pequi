@@ -44,7 +44,7 @@ async def test_patient_creates_post_anonymously(create_tables, db_session):
     """Patient creates post — only anonymous_id appears in response."""
     health_unit = await _create_health_unit(db_session)
     patient_user = await _create_user(db_session, email="patient1@test.com", role="patient")
-    patient = await _create_patient(db_session, user=patient_user, health_unit=health_unit)
+    await _create_patient(db_session, user=patient_user, health_unit=health_unit)
 
     data = PostCreate(
         title="Minha experiência com o tratamento",
@@ -73,7 +73,7 @@ async def test_anonymous_id_is_stable_for_user(create_tables, db_session):
     """Anonymous ID remains the same across multiple posts from the same user."""
     health_unit = await _create_health_unit(db_session)
     patient_user = await _create_user(db_session, email="patient2@test.com", role="patient")
-    patient = await _create_patient(db_session, user=patient_user, health_unit=health_unit)
+    await _create_patient(db_session, user=patient_user, health_unit=health_unit)
 
     community_repo = CommunityRepository(db_session)
     patient_repo = PatientRepository(db_session)
@@ -95,8 +95,8 @@ async def test_different_users_have_different_anonymous_ids(create_tables, db_se
     health_unit = await _create_health_unit(db_session)
     user1 = await _create_user(db_session, email="user1@test.com", role="patient")
     user2 = await _create_user(db_session, email="user2@test.com", role="patient")
-    patient1 = await _create_patient(db_session, user=user1, health_unit=health_unit)
-    patient2 = await _create_patient(db_session, user=user2, health_unit=health_unit)
+    await _create_patient(db_session, user=user1, health_unit=health_unit)
+    await _create_patient(db_session, user=user2, health_unit=health_unit)
 
     community_repo = CommunityRepository(db_session)
     patient_repo = PatientRepository(db_session)
@@ -115,7 +115,7 @@ async def test_user_id_never_appears_in_post_response(create_tables, db_session)
     """Critical: user_id must never appear in any response field."""
     health_unit = await _create_health_unit(db_session)
     patient_user = await _create_user(db_session, email="patient3@test.com", role="patient")
-    patient = await _create_patient(db_session, user=patient_user, health_unit=health_unit)
+    await _create_patient(db_session, user=patient_user, health_unit=health_unit)
 
     community_repo = CommunityRepository(db_session)
     patient_repo = PatientRepository(db_session)
@@ -135,7 +135,7 @@ async def test_patient_can_comment_on_post(create_tables, db_session):
     """Patient can comment on a post anonymously."""
     health_unit = await _create_health_unit(db_session)
     patient_user = await _create_user(db_session, email="patient4@test.com", role="patient")
-    patient = await _create_patient(db_session, user=patient_user, health_unit=health_unit)
+    await _create_patient(db_session, user=patient_user, health_unit=health_unit)
 
     community_repo = CommunityRepository(db_session)
     patient_repo = PatientRepository(db_session)
@@ -166,7 +166,7 @@ async def test_duplicate_like_returns_409_conflict(create_tables, db_session):
 
     health_unit = await _create_health_unit(db_session)
     patient_user = await _create_user(db_session, email="patient12@test.com", role="patient")
-    patient = await _create_patient(db_session, user=patient_user, health_unit=health_unit)
+    await _create_patient(db_session, user=patient_user, health_unit=health_unit)
 
     community_repo = CommunityRepository(db_session)
     patient_repo = PatientRepository(db_session)
@@ -192,7 +192,7 @@ async def test_list_posts_excludes_moderated_content(create_tables, db_session):
     """List posts should exclude moderated posts by default."""
     health_unit = await _create_health_unit(db_session)
     patient_user = await _create_user(db_session, email="patient6@test.com", role="patient")
-    patient = await _create_patient(db_session, user=patient_user, health_unit=health_unit)
+    await _create_patient(db_session, user=patient_user, health_unit=health_unit)
 
     community_repo = CommunityRepository(db_session)
     patient_repo = PatientRepository(db_session)
@@ -220,7 +220,7 @@ async def test_user_can_delete_own_post(create_tables, db_session):
     """User can delete their own post (soft delete)."""
     health_unit = await _create_health_unit(db_session)
     patient_user = await _create_user(db_session, email="patient7@test.com", role="patient")
-    patient = await _create_patient(db_session, user=patient_user, health_unit=health_unit)
+    await _create_patient(db_session, user=patient_user, health_unit=health_unit)
 
     community_repo = CommunityRepository(db_session)
     patient_repo = PatientRepository(db_session)
@@ -249,8 +249,8 @@ async def test_user_cannot_delete_others_post(create_tables, db_session):
     health_unit = await _create_health_unit(db_session)
     user1 = await _create_user(db_session, email="user1@test.com", role="patient")
     user2 = await _create_user(db_session, email="user2@test.com", role="patient")
-    patient1 = await _create_patient(db_session, user=user1, health_unit=health_unit)
-    patient2 = await _create_patient(db_session, user=user2, health_unit=health_unit)
+    await _create_patient(db_session, user=user1, health_unit=health_unit)
+    await _create_patient(db_session, user=user2, health_unit=health_unit)
 
     community_repo = CommunityRepository(db_session)
     patient_repo = PatientRepository(db_session)
@@ -269,13 +269,14 @@ async def test_user_cannot_delete_others_post(create_tables, db_session):
 @pytest.mark.asyncio
 async def test_admin_can_moderate_post(create_tables, db_session):
     """Admin can moderate posts (audit logged in audit_logs table)."""
-    from pequi.repositories.audit_repo import AuditRepository
-    from pequi.models.audit_log import AuditLog
     from sqlalchemy import select
+
+    from pequi.models.audit_log import AuditLog
+    from pequi.repositories.audit_repo import AuditRepository
 
     health_unit = await _create_health_unit(db_session)
     patient_user = await _create_user(db_session, email="patient8@test.com", role="patient")
-    patient = await _create_patient(db_session, user=patient_user, health_unit=health_unit)
+    await _create_patient(db_session, user=patient_user, health_unit=health_unit)
     admin_user = await _create_admin_user(db_session)
 
     community_repo = CommunityRepository(db_session)
@@ -317,7 +318,7 @@ async def test_admin_can_deanonymize_with_audit(create_tables, db_session):
 
     health_unit = await _create_health_unit(db_session)
     patient_user = await _create_user(db_session, email="patient9@test.com", role="patient")
-    patient = await _create_patient(db_session, user=patient_user, health_unit=health_unit)
+    await _create_patient(db_session, user=patient_user, health_unit=health_unit)
     admin_user = await _create_admin_user(db_session)
 
     community_repo = CommunityRepository(db_session)
@@ -338,8 +339,9 @@ async def test_admin_can_deanonymize_with_audit(create_tables, db_session):
     assert mapping.anonymous_id == post.author_anonymous_id
 
     # Verify audit log was persisted
-    from pequi.models.audit_log import AuditLog
     from sqlalchemy import select
+
+    from pequi.models.audit_log import AuditLog
 
     stmt = select(AuditLog).where(
         AuditLog.entity_type == "community_anonymous_map",
@@ -358,7 +360,7 @@ async def test_soft_deleted_posts_not_visible(create_tables, db_session):
     """Soft deleted posts should not be visible in lists or get by ID."""
     health_unit = await _create_health_unit(db_session)
     patient_user = await _create_user(db_session, email="patient10@test.com", role="patient")
-    patient = await _create_patient(db_session, user=patient_user, health_unit=health_unit)
+    await _create_patient(db_session, user=patient_user, health_unit=health_unit)
 
     community_repo = CommunityRepository(db_session)
     patient_repo = PatientRepository(db_session)
@@ -386,7 +388,7 @@ async def test_list_comments_for_post(create_tables, db_session):
     """List comments for a specific post."""
     health_unit = await _create_health_unit(db_session)
     patient_user = await _create_user(db_session, email="patient11@test.com", role="patient")
-    patient = await _create_patient(db_session, user=patient_user, health_unit=health_unit)
+    await _create_patient(db_session, user=patient_user, health_unit=health_unit)
 
     community_repo = CommunityRepository(db_session)
     patient_repo = PatientRepository(db_session)

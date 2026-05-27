@@ -52,8 +52,9 @@ def test_comment_create_content_max_length():
 
 def test_post_response_never_exposes_user_id():
     """PostResponse must never have user_id field — only author_anonymous_id."""
-    from pequi.schemas.community import PostResponse
     from uuid import uuid4
+
+    from pequi.schemas.community import PostResponse
 
     # Verify that user_id is not in the response model fields
     response_fields = PostResponse.model_fields
@@ -80,8 +81,9 @@ def test_post_response_never_exposes_user_id():
 
 def test_comment_response_never_exposes_user_id():
     """CommentResponse must never have user_id field — only author_anonymous_id."""
-    from pequi.schemas.community import CommentResponse
     from uuid import uuid4
+
+    from pequi.schemas.community import CommentResponse
 
     # Verify that user_id is not in the response model fields
     response_fields = CommentResponse.model_fields

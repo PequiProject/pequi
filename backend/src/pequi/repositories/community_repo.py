@@ -3,7 +3,6 @@ from uuid import UUID
 
 from sqlalchemy import and_, delete, func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from pequi.models.community import (
     CommunityAnonymousMap,
