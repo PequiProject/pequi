@@ -1,0 +1,38 @@
+meta {
+  name: Upload Body Map Image
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/v1/body-map/upload
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "filename": "lesao-mao.png",
+    "content_type": "image/png"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.upload_url: isDefined
+  res.body.file_key: isDefined
+  res.body.public_url: isDefined
+}
+
+docs {
+  Gera URL pré-assinada para upload de imagem do body map.
+  Backend não recebe bytes nem salva blob em PostgreSQL.
+}

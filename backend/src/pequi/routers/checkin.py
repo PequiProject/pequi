@@ -11,6 +11,7 @@ from pequi.core.dependencies import (
 )
 from pequi.core.rate_limit import user_limiter
 from pequi.repositories.alert_repo import AlertRepository
+from pequi.repositories.body_map_repo import BodyMapRepository
 from pequi.repositories.checkin_repo import CheckinRepository
 from pequi.repositories.dose_repo import DoseRepository
 from pequi.repositories.health_professional_repo import HealthProfessionalRepository
@@ -39,6 +40,7 @@ def _checkin_repos(
     AlertRepository,
     DoseRepository,
     HealthProfessionalRepository,
+    BodyMapRepository,
 ]:
     return (
         CheckinRepository(session),
@@ -47,6 +49,7 @@ def _checkin_repos(
         AlertRepository(session),
         DoseRepository(session),
         HealthProfessionalRepository(session),
+        BodyMapRepository(session),
     )
 
 
@@ -59,9 +62,23 @@ async def submit_checkin(
     user_id: UUID = Depends(get_current_patient),
     session: AsyncSession = Depends(get_db),
 ) -> CheckinResponse:
-    checkin_repo, patient_repo, symptom_repo, alert_repo, dose_repo, _ = _checkin_repos(session)
+    (
+        checkin_repo,
+        patient_repo,
+        symptom_repo,
+        alert_repo,
+        dose_repo,
+        _,
+        body_map_repo,
+    ) = _checkin_repos(session)
     alert_service = AlertService(alert_repo, checkin_repo, dose_repo)
-    use_case = SubmitCheckinUseCase(checkin_repo, patient_repo, symptom_repo, alert_service)
+    use_case = SubmitCheckinUseCase(
+        checkin_repo,
+        patient_repo,
+        symptom_repo,
+        alert_service,
+        body_map_repo,
+    )
     result = await use_case.execute(user_id, body)
 
     # Enqueue AI feedback after transaction commit (runs after response is sent)
@@ -91,7 +108,7 @@ async def get_checkin_history(
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
 ) -> CheckinListResponse:
-    checkin_repo, patient_repo, _, _, _, _ = _checkin_repos(session)
+    checkin_repo, patient_repo, _, _, _, _, _ = _checkin_repos(session)
     use_case = GetCheckinHistoryUseCase(checkin_repo, patient_repo)
     return await use_case.execute(user_id, limit=limit, offset=offset)
 
@@ -105,7 +122,7 @@ async def get_checkin(
     session: AsyncSession = Depends(get_db),
 ) -> CheckinResponse:
     actor_user_id, actor_role = actor
-    checkin_repo, patient_repo, _, _, _, professional_repo = _checkin_repos(session)
+    checkin_repo, patient_repo, _, _, _, professional_repo, _ = _checkin_repos(session)
     use_case = GetCheckinUseCase(checkin_repo, patient_repo, professional_repo)
     return await use_case.execute(actor_user_id, actor_role, checkin_id)
 
@@ -122,7 +139,7 @@ async def list_alerts(
     offset: int = Query(default=0, ge=0),
 ) -> AlertListResponse:
     actor_user_id, actor_role = actor
-    _, patient_repo, _, alert_repo, _, professional_repo = _checkin_repos(session)
+    _, patient_repo, _, alert_repo, _, professional_repo, _ = _checkin_repos(session)
     use_case = ListAlertsUseCase(alert_repo, patient_repo, professional_repo)
     return await use_case.execute(
         actor_user_id,
@@ -143,6 +160,6 @@ async def resolve_alert(
     professional_user_id: UUID = Depends(get_current_professional),
     session: AsyncSession = Depends(get_db),
 ) -> AlertResponse:
-    _, patient_repo, _, alert_repo, _, professional_repo = _checkin_repos(session)
+    _, patient_repo, _, alert_repo, _, professional_repo, _ = _checkin_repos(session)
     use_case = ResolveAlertUseCase(alert_repo, patient_repo, professional_repo)
     return await use_case.execute(professional_user_id, alert_id, body)
