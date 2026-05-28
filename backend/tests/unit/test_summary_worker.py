@@ -8,6 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pequi.models.checkin import Checkin
+from pequi.models.health_unit import HealthUnit
 from pequi.models.patient import PatientProfile
 from pequi.models.user import User
 from pequi.models.weekly_summary import WeeklySymptomSummary
@@ -23,6 +24,7 @@ async def test_summary_job_processes_active_patients(db_session: AsyncSession, m
 
     patient_id = uuid4()
     user_id = uuid4()
+    health_unit_id = uuid4()
 
     # Criar user necessário para FK
     user = User(
@@ -35,10 +37,21 @@ async def test_summary_job_processes_active_patients(db_session: AsyncSession, m
     db_session.add(user)
     await db_session.flush()
 
+    # Criar health_unit necessário para FK
+    health_unit = HealthUnit(
+        id=health_unit_id,
+        name="Test Health Unit",
+        city="Test City",
+        state="SP",
+    )
+    db_session.add(health_unit)
+    await db_session.flush()
+
     # Criar patient_profile necessário para FK
     patient = PatientProfile(
         id=patient_id,
         user_id=user_id,
+        health_unit_id=health_unit_id,
         date_of_birth=datetime(1990, 1, 1).date(),
     )
     db_session.add(patient)
@@ -85,10 +98,10 @@ async def test_summary_job_handles_errors_gracefully(db_session: AsyncSession, m
     mocker.patch("pequi.workers.summary_worker.logger", mock_logger)
 
     # Mock do repo para lançar erro
-    async def mock_list_active_patients():
+    async def mock_list_active_patients(self):
         return [uuid4()]
 
-    async def mock_get_weekly_stats(*args, **kwargs):
+    async def mock_get_weekly_stats(self, *args, **kwargs):
         raise Exception("Test error")
 
     mocker.patch.object(
