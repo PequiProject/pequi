@@ -54,8 +54,9 @@ async def notification_job(
             return
 
         try:
-            # Check if patient has notifications enabled (only for dose reminders)
-            if notification_type == "dose_reminder" and not patient.notifications_enabled:
+            # Check if patient has notifications enabled (for patient-facing notifications)
+            PATIENT_FACING_TYPES = {"dose_reminder", "ai_feedback"}
+            if notification_type in PATIENT_FACING_TYPES and not patient.notifications_enabled:
                 logger.info(
                     "notification_job.skipped_notifications_disabled",
                     patient_id=str(patient_uuid),

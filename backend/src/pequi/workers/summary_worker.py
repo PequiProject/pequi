@@ -31,9 +31,9 @@ async def summary_job(ctx: dict) -> None:
         # Calculate week boundaries (Sunday to Saturday)
         today = datetime.now(UTC).date()
         # weekday(): Monday=0, Sunday=6
-        # Calculate days since most recent Sunday (0 if today is Sunday)
-        days_since_sunday = (today.weekday() + 1) % 7  # Sunday=0, Monday=1, ..., Saturday=6
-        week_end = today - timedelta(days=days_since_sunday)
+        # Calculate days since most recent Saturday (0 if today is Saturday)
+        days_since_saturday = (today.weekday() + 2) % 7  # Saturday=0, Sunday=1, ..., Friday=6
+        week_end = today - timedelta(days=days_since_saturday)
         week_start = week_end - timedelta(days=6)
         # Use DATE boundaries with < instead of <= to avoid edge cases
         week_start_dt = datetime.combine(week_start, datetime.min.time()).replace(tzinfo=UTC)

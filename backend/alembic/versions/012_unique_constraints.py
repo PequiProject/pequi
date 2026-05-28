@@ -1,7 +1,7 @@
 """add unique constraints for upsert operations
 
-Revision ID: 009_add_unique_constraints
-Revises: 008_add_notifications_enabled_to_patient
+Revision ID: 012_unique_constraints
+Revises: 011_notifications_enabled
 Create Date: 2026-05-28 00:00:00.000000
 
 """
@@ -11,8 +11,8 @@ from collections.abc import Sequence
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "009_add_unique_constraints"
-down_revision: str | None = "008_add_notifications_enabled_to_patient"
+revision: str = "012_unique_constraints"
+down_revision: str | None = "011_notifications_enabled"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

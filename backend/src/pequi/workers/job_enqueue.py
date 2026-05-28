@@ -25,7 +25,9 @@ class JobEnqueuer:
     async def enqueue_ai_feedback(self, checkin_id: UUID) -> None:
         raise NotImplementedError
 
-    async def enqueue_notification(self, patient_id: UUID, notification_type: str) -> None:
+    async def enqueue_notification(
+        self, patient_id: UUID, notification_type: str, feedback_content: str = ""
+    ) -> None:
         raise NotImplementedError
 
 
@@ -39,12 +41,15 @@ class ArqJobEnqueuer(JobEnqueuer):
         )
         logger.info("ai_feedback.enqueued", checkin_id=str(checkin_id))
 
-    async def enqueue_notification(self, patient_id: UUID, notification_type: str) -> None:
+    async def enqueue_notification(
+        self, patient_id: UUID, notification_type: str, feedback_content: str = ""
+    ) -> None:
         pool = await _get_pool()
         await pool.enqueue_job(
             "notification_job",
             str(patient_id),
             notification_type,
+            feedback_content,
             _queue_name=WorkerSettings.queue_name,
         )
         logger.info(
@@ -57,10 +62,12 @@ class ArqJobEnqueuer(JobEnqueuer):
 class NoOpJobEnqueuer(JobEnqueuer):
     def __init__(self) -> None:
         self.enqueued_ai_feedback: list[UUID] = []
-        self.enqueued_notifications: list[tuple[UUID, str]] = []
+        self.enqueued_notifications: list[tuple[UUID, str, str]] = []
 
     async def enqueue_ai_feedback(self, checkin_id: UUID) -> None:
         self.enqueued_ai_feedback.append(checkin_id)
 
-    async def enqueue_notification(self, patient_id: UUID, notification_type: str) -> None:
-        self.enqueued_notifications.append((patient_id, notification_type))
+    async def enqueue_notification(
+        self, patient_id: UUID, notification_type: str, feedback_content: str = ""
+    ) -> None:
+        self.enqueued_notifications.append((patient_id, notification_type, feedback_content))

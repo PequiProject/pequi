@@ -1,8 +1,8 @@
-"""Testes unitários do adherence_worker."""
+"""Testes de integração do adherence_worker."""
 
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,40 +18,20 @@ from pequi.services.adherence_service import AdherenceService
 from pequi.workers.adherence_worker import adherence_job
 
 
-@pytest.mark.asyncio
-async def test_adherence_service_calculates_correctly():
-    """Testa o cálculo de adesão do serviço."""
-    service = AdherenceService()
+async def _create_patient_with_treatment(
+    db_session: AsyncSession,
+) -> tuple[UUID, UUID]:
+    """Helper para criar paciente com tratamento ativo.
 
-    # 3 de 10 doses tomadas = 30%
-    result = service.calculate_pct(10, 3)
-    assert result == Decimal("30.00")
-
-    # 0 doses = 0%
-    result = service.calculate_pct(10, 0)
-    assert result == Decimal("0.00")
-
-    # 10 de 10 doses = 100%
-    result = service.calculate_pct(10, 10)
-    assert result == Decimal("100.00")
-
-    # 0 total doses = 0% (evita divisão por zero)
-    result = service.calculate_pct(0, 0)
-    assert result == Decimal("0.00")
-
-
-@pytest.mark.asyncio
-async def test_adherence_repo_upsert_is_idempotent(db_session: AsyncSession):
-    """Testa que upsert de snapshot é idempotente."""
-    repo = AdherenceRepository(db_session)
+    Returns:
+        (patient_id, treatment_id)
+    """
     patient_id = uuid4()
     treatment_id = uuid4()
     user_id = uuid4()
     health_unit_id = uuid4()
     professional_user_id = uuid4()
     professional_id = uuid4()
-    period_start = date(2026, 1, 1)
-    period_end = date(2026, 1, 7)
 
     # Criar user necessário para FK
     user = User(
@@ -116,6 +96,39 @@ async def test_adherence_repo_upsert_is_idempotent(db_session: AsyncSession):
     )
     db_session.add(treatment)
     await db_session.flush()
+
+    return patient_id, treatment_id
+
+
+@pytest.mark.asyncio
+async def test_adherence_service_calculates_correctly():
+    """Testa o cálculo de adesão do serviço."""
+    service = AdherenceService()
+
+    # 3 de 10 doses tomadas = 30%
+    result = service.calculate_pct(10, 3)
+    assert result == Decimal("30.00")
+
+    # 0 doses = 0%
+    result = service.calculate_pct(10, 0)
+    assert result == Decimal("0.00")
+
+    # 10 de 10 doses = 100%
+    result = service.calculate_pct(10, 10)
+    assert result == Decimal("100.00")
+
+    # 0 total doses = 0% (evita divisão por zero)
+    result = service.calculate_pct(0, 0)
+    assert result == Decimal("0.00")
+
+
+@pytest.mark.asyncio
+async def test_adherence_repo_upsert_is_idempotent(db_session: AsyncSession):
+    """Testa que upsert de snapshot é idempotente."""
+    repo = AdherenceRepository(db_session)
+    patient_id, treatment_id = await _create_patient_with_treatment(db_session)
+    period_start = date(2026, 1, 1)
+    period_end = date(2026, 1, 7)
 
     # Primeiro upsert
     snapshot1 = await repo.upsert_snapshot(
@@ -159,76 +172,7 @@ async def test_adherence_repo_upsert_is_idempotent(db_session: AsyncSession):
 async def test_adherence_repo_counts_doses_in_period(db_session: AsyncSession):
     """Testa contagem de doses em um período."""
     repo = AdherenceRepository(db_session)
-    patient_id = uuid4()
-    treatment_id = uuid4()
-    user_id = uuid4()
-    health_unit_id = uuid4()
-    professional_user_id = uuid4()
-    professional_id = uuid4()
-
-    # Criar user necessário para FK
-    user = User(
-        id=user_id,
-        email=f"test{user_id}@example.com",
-        hashed_password="hashed",
-        full_name="Test User",
-        role="patient",
-    )
-    db_session.add(user)
-    await db_session.flush()
-
-    # Criar health_unit necessário para FK
-    health_unit = HealthUnit(
-        id=health_unit_id,
-        name="Test Health Unit",
-        city="Test City",
-        state="SP",
-    )
-    db_session.add(health_unit)
-    await db_session.flush()
-
-    # Criar patient_profile necessário para FK
-    patient = PatientProfile(
-        id=patient_id,
-        user_id=user_id,
-        health_unit_id=health_unit_id,
-        date_of_birth=date(1990, 1, 1),
-    )
-    db_session.add(patient)
-    await db_session.flush()
-
-    # Criar user para health professional
-    professional_user = User(
-        id=professional_user_id,
-        email=f"prof{professional_user_id}@example.com",
-        hashed_password="hashed",
-        full_name="Test Professional",
-        role="health_professional",
-    )
-    db_session.add(professional_user)
-    await db_session.flush()
-
-    # Criar health professional necessário para FK
-    health_professional = HealthProfessional(
-        id=professional_id,
-        user_id=professional_user_id,
-        health_unit_id=health_unit_id,
-    )
-    db_session.add(health_professional)
-    await db_session.flush()
-
-    # Criar treatment necessário para FK
-    treatment = Treatment(
-        id=treatment_id,
-        patient_id=patient_id,
-        prescribed_by=professional_id,
-        regimen="MB",
-        start_date=date(2026, 1, 1),
-        expected_end=date(2026, 12, 31),
-        status=TreatmentStatus.active,
-    )
-    db_session.add(treatment)
-    await db_session.flush()
+    patient_id, treatment_id = await _create_patient_with_treatment(db_session)
 
     # Criar doses no período
     now = datetime.now(UTC)
@@ -266,67 +210,13 @@ async def test_adherence_repo_counts_doses_in_period(db_session: AsyncSession):
 async def test_adherence_repo_lists_active_treatments(db_session: AsyncSession):
     """Testa listagem de tratamentos ativos."""
     repo = AdherenceRepository(db_session)
-    patient_id = uuid4()
-    user_id = uuid4()
-    health_unit_id = uuid4()
-    professional_user_id = uuid4()
-    professional_id = uuid4()
-
-    # Criar user necessário para FK
-    user = User(
-        id=user_id,
-        email=f"test{user_id}@example.com",
-        hashed_password="hashed",
-        full_name="Test User",
-        role="patient",
-    )
-    db_session.add(user)
-    await db_session.flush()
-
-    # Criar health_unit necessário para FK
-    health_unit = HealthUnit(
-        id=health_unit_id,
-        name="Test Health Unit",
-        city="Test City",
-        state="SP",
-    )
-    db_session.add(health_unit)
-    await db_session.flush()
-
-    # Criar patient_profile necessário para FK
-    patient = PatientProfile(
-        id=patient_id,
-        user_id=user_id,
-        health_unit_id=health_unit_id,
-        date_of_birth=date(1990, 1, 1),
-    )
-    db_session.add(patient)
-    await db_session.flush()
-
-    # Criar user para health professional
-    professional_user = User(
-        id=professional_user_id,
-        email=f"prof{professional_user_id}@example.com",
-        hashed_password="hashed",
-        full_name="Test Professional",
-        role="health_professional",
-    )
-    db_session.add(professional_user)
-    await db_session.flush()
-
-    # Criar health professional necessário para FK
-    health_professional = HealthProfessional(
-        id=professional_id,
-        user_id=professional_user_id,
-        health_unit_id=health_unit_id,
-    )
-    db_session.add(health_professional)
-    await db_session.flush()
+    patient_id, treatment_id = await _create_patient_with_treatment(db_session)
 
     # Criar tratamento ativo
     active_treatment = Treatment(
+        id=treatment_id,
         patient_id=patient_id,
-        prescribed_by=professional_id,
+        prescribed_by=uuid4(),
         regimen="MB",
         start_date=date(2026, 1, 1),
         expected_end=date(2026, 12, 31),
@@ -336,7 +226,7 @@ async def test_adherence_repo_lists_active_treatments(db_session: AsyncSession):
     # Criar tratamento completado
     completed_treatment = Treatment(
         patient_id=patient_id,
-        prescribed_by=professional_id,
+        prescribed_by=uuid4(),
         regimen="PB",
         start_date=date(2025, 1, 1),
         expected_end=date(2025, 6, 30),
@@ -363,75 +253,7 @@ async def test_adherence_job_processes_active_treatments(db_session: AsyncSessio
     ctx = {"redis": mock_redis, "db_session": db_session}
 
     # Criar tratamento ativo com doses
-    patient_id = uuid4()
-    treatment_id = uuid4()
-    user_id = uuid4()
-    health_unit_id = uuid4()
-    professional_user_id = uuid4()
-    professional_id = uuid4()
-
-    # Criar user necessário para FK
-    user = User(
-        id=user_id,
-        email=f"test{user_id}@example.com",
-        hashed_password="hashed",
-        full_name="Test User",
-        role="patient",
-    )
-    db_session.add(user)
-    await db_session.flush()
-
-    # Criar health_unit necessário para FK
-    health_unit = HealthUnit(
-        id=health_unit_id,
-        name="Test Health Unit",
-        city="Test City",
-        state="SP",
-    )
-    db_session.add(health_unit)
-    await db_session.flush()
-
-    # Criar patient_profile necessário para FK
-    patient = PatientProfile(
-        id=patient_id,
-        user_id=user_id,
-        health_unit_id=health_unit_id,
-        date_of_birth=date(1990, 1, 1),
-    )
-    db_session.add(patient)
-    await db_session.flush()
-
-    # Criar user para health professional
-    professional_user = User(
-        id=professional_user_id,
-        email=f"prof{professional_user_id}@example.com",
-        hashed_password="hashed",
-        full_name="Test Professional",
-        role="health_professional",
-    )
-    db_session.add(professional_user)
-    await db_session.flush()
-
-    # Criar health professional necessário para FK
-    health_professional = HealthProfessional(
-        id=professional_id,
-        user_id=professional_user_id,
-        health_unit_id=health_unit_id,
-    )
-    db_session.add(health_professional)
-    await db_session.flush()
-
-    treatment = Treatment(
-        id=treatment_id,
-        patient_id=patient_id,
-        prescribed_by=professional_id,
-        regimen="MB",
-        start_date=date(2026, 1, 1),
-        expected_end=date(2026, 12, 31),
-        status=TreatmentStatus.active,
-    )
-    db_session.add(treatment)
-    await db_session.flush()
+    patient_id, treatment_id = await _create_patient_with_treatment(db_session)
 
     now = datetime.now(UTC)
     week_ago = now - timedelta(days=7)

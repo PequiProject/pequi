@@ -134,12 +134,12 @@ jobs:
           psql -h localhost -U pequi -d pequi_test -c "SELECT PostGIS_Version();" || true
 
       - name: Run Alembic migrations
-        run: uv run alembic upgrade heads
+        run: uv run alembic upgrade head
 
       - name: Validate migration head
         run: |
           uv run alembic current
-          uv run alembic history -r-1:heads
+          uv run alembic history -r-1:head
 
       - name: Run tests with coverage
         run: |

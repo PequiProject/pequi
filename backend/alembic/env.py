@@ -52,45 +52,9 @@ async def run_async_migrations() -> None:
         poolclass=pool.NullPool,
     )
     async with connectable.connect() as connection:
-        # Criar tabela alembic_version com tamanho correto se não existir
-        await connection.run_sync(_ensure_alembic_version_table)
         await connection.run_sync(do_run_migrations)
 
     await connectable.dispose()
-
-
-def _ensure_alembic_version_table(connection: Connection) -> None:
-    """Garante que a tabela alembic_version exista com version_num VARCHAR(255).
-
-    Nota: Este projeto usa revision IDs longos (ex: 007_create_weekly_symptom_summaries)
-    que excedem o limite padrão de VARCHAR(32) do Alembic. Esta função garante que
-    a tabela tenha tamanho suficiente para acomodar esses IDs.
-    """
-    from sqlalchemy import inspect, text
-
-    inspector = inspect(connection)
-    tables = inspector.get_table_names()
-
-    if "alembic_version" not in tables:
-        # Criar tabela com tamanho correto
-        connection.execute(
-            text(
-                """
-                CREATE TABLE alembic_version (
-                    version_num VARCHAR(255) NOT NULL,
-                    CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num)
-                )
-            """
-            )
-        )
-    else:
-        # Verificar e corrigir tamanho do campo se necessário
-        columns = inspector.get_columns("alembic_version")
-        version_num_col = next((c for c in columns if c["name"] == "version_num"), None)
-        if version_num_col and str(version_num_col.get("type")).upper() == "VARCHAR(32)":
-            connection.execute(
-                text("ALTER TABLE alembic_version ALTER COLUMN version_num TYPE VARCHAR(255)")
-            )
 
 
 def run_migrations_online() -> None:

@@ -97,10 +97,10 @@ async def test_summary_job_processes_active_patients(db_session: AsyncSession, m
 
     # Criar checkins na semana atual (usar datetime.now() real)
     now = datetime.now(UTC)
-    # Calcular a semana da mesma forma que o worker faz
+    # Calcular a semana da mesma forma que o worker faz (Sunday-Saturday)
     today = now.date()
-    days_since_sunday = (today.weekday() + 1) % 7
-    week_end = today - timedelta(days=days_since_sunday)
+    days_since_saturday = (today.weekday() + 2) % 7  # Saturday=0, Sunday=1, ..., Friday=6
+    week_end = today - timedelta(days=days_since_saturday)
     week_start = week_end - timedelta(days=6)
     # Criar checkins dentro da semana calculada
     checkin1_day = week_start + timedelta(days=1)

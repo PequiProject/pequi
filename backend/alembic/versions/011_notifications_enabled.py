@@ -1,7 +1,7 @@
 """add notifications_enabled to patient profiles
 
-Revision ID: 008_add_notifications_enabled_to_patient
-Revises: 007_create_weekly_symptom_summaries
+Revision ID: 011_notifications_enabled
+Revises: 010_weekly_summaries
 Create Date: 2026-05-28 00:00:00.000000
 
 """
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "008_add_notifications_enabled_to_patient"
-down_revision: str | None = "007_create_weekly_symptom_summaries"
+revision: str = "011_notifications_enabled"
+down_revision: str | None = "010_weekly_summaries"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
