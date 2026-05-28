@@ -5,6 +5,7 @@ from decimal import Decimal
 from uuid import UUID, uuid4
 
 import pytest
+from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pequi.models.dose_log import AdherenceSnapshot, DoseLog
@@ -216,10 +217,11 @@ async def test_adherence_repo_lists_active_treatments(db_session: AsyncSession):
     patient_id, _, professional_id = await _create_patient_with_treatment(db_session)
 
     # Marcar tratamento existente como completed para não interferir
-    from sqlalchemy import update
-    from pequi.models.treatment import Treatment
-
-    stmt = update(Treatment).where(Treatment.patient_id == patient_id).values(status=TreatmentStatus.completed)
+    stmt = (
+        update(Treatment)
+        .where(Treatment.patient_id == patient_id)
+        .values(status=TreatmentStatus.completed)
+    )
     await db_session.execute(stmt)
     await db_session.flush()
 
