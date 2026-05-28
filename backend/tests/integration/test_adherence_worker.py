@@ -20,11 +20,11 @@ from pequi.workers.adherence_worker import adherence_job
 
 async def _create_patient_with_treatment(
     db_session: AsyncSession,
-) -> tuple[UUID, UUID]:
+) -> tuple[UUID, UUID, UUID]:
     """Helper para criar paciente com tratamento ativo.
 
     Returns:
-        (patient_id, treatment_id)
+        (patient_id, treatment_id, professional_id)
     """
     patient_id = uuid4()
     treatment_id = uuid4()
@@ -97,7 +97,7 @@ async def _create_patient_with_treatment(
     db_session.add(treatment)
     await db_session.flush()
 
-    return patient_id, treatment_id
+    return patient_id, treatment_id, professional_id
 
 
 @pytest.mark.asyncio
@@ -126,7 +126,7 @@ async def test_adherence_service_calculates_correctly():
 async def test_adherence_repo_upsert_is_idempotent(db_session: AsyncSession):
     """Testa que upsert de snapshot é idempotente."""
     repo = AdherenceRepository(db_session)
-    patient_id, treatment_id = await _create_patient_with_treatment(db_session)
+    patient_id, treatment_id, _ = await _create_patient_with_treatment(db_session)
     period_start = date(2026, 1, 1)
     period_end = date(2026, 1, 7)
 
@@ -172,7 +172,7 @@ async def test_adherence_repo_upsert_is_idempotent(db_session: AsyncSession):
 async def test_adherence_repo_counts_doses_in_period(db_session: AsyncSession):
     """Testa contagem de doses em um período."""
     repo = AdherenceRepository(db_session)
-    patient_id, treatment_id = await _create_patient_with_treatment(db_session)
+    patient_id, treatment_id, _ = await _create_patient_with_treatment(db_session)
 
     # Criar doses no período
     now = datetime.now(UTC)
@@ -210,12 +210,12 @@ async def test_adherence_repo_counts_doses_in_period(db_session: AsyncSession):
 async def test_adherence_repo_lists_active_treatments(db_session: AsyncSession):
     """Testa listagem de tratamentos ativos."""
     repo = AdherenceRepository(db_session)
-    patient_id, _ = await _create_patient_with_treatment(db_session)
+    patient_id, _, professional_id = await _create_patient_with_treatment(db_session)
 
     # Criar tratamento ativo
     active_treatment = Treatment(
         patient_id=patient_id,
-        prescribed_by=uuid4(),
+        prescribed_by=professional_id,
         regimen="MB",
         start_date=date(2026, 1, 1),
         expected_end=date(2026, 12, 31),
@@ -225,7 +225,7 @@ async def test_adherence_repo_lists_active_treatments(db_session: AsyncSession):
     # Criar tratamento completado
     completed_treatment = Treatment(
         patient_id=patient_id,
-        prescribed_by=uuid4(),
+        prescribed_by=professional_id,
         regimen="PB",
         start_date=date(2025, 1, 1),
         expected_end=date(2025, 6, 30),
@@ -252,7 +252,7 @@ async def test_adherence_job_processes_active_treatments(db_session: AsyncSessio
     ctx = {"redis": mock_redis, "db_session": db_session}
 
     # Criar tratamento ativo com doses
-    patient_id, treatment_id = await _create_patient_with_treatment(db_session)
+    patient_id, treatment_id, _ = await _create_patient_with_treatment(db_session)
 
     now = datetime.now(UTC)
     week_ago = now - timedelta(days=7)

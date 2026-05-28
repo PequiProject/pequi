@@ -38,11 +38,11 @@ class AdherenceRepository:
                 calculated_at=datetime.now(UTC),
             )
             .on_conflict_do_update(
-                constraint="uq_adherence_snapshots_period",
+                index_elements=["treatment_id", "period_start", "period_end"],
                 set_={
-                    "total_doses": total_doses,
-                    "taken_doses": taken_doses,
-                    "adherence_pct": adherence_pct,
+                    "total_doses": insert(AdherenceSnapshot).excluded.total_doses,
+                    "taken_doses": insert(AdherenceSnapshot).excluded.taken_doses,
+                    "adherence_pct": insert(AdherenceSnapshot).excluded.adherence_pct,
                     "calculated_at": datetime.now(UTC),
                 },
             )
