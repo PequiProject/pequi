@@ -1,5 +1,4 @@
 import uuid
-from enum import StrEnum
 
 from sqlalchemy import (
     Column,
@@ -15,14 +14,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 
 from pequi.database import Base
-
-
-class CheckinMood(StrEnum):
-    terrible = "terrible"
-    bad = "bad"
-    ok = "ok"
-    good = "good"
-    great = "great"
+from pequi.models.checkin import CheckinMood
 
 
 class WeeklySymptomSummary(Base):

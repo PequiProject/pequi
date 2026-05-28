@@ -35,8 +35,9 @@ async def summary_job(ctx: dict) -> None:
         days_since_sunday = (today.weekday() + 1) % 7  # Sunday=0, Monday=1, ..., Saturday=6
         week_end = today - timedelta(days=days_since_sunday)
         week_start = week_end - timedelta(days=6)
+        # Use DATE boundaries with < instead of <= to avoid edge cases
         week_start_dt = datetime.combine(week_start, datetime.min.time()).replace(tzinfo=UTC)
-        week_end_dt = datetime.combine(week_end, datetime.max.time()).replace(tzinfo=UTC)
+        week_end_dt = datetime.combine(week_end + timedelta(days=1), datetime.min.time()).replace(tzinfo=UTC)
 
         for patient_id in patient_ids:
             try:

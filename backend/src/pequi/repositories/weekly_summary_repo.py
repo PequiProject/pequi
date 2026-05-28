@@ -5,7 +5,9 @@ from sqlalchemy import and_, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from pequi.models.alert import Alert
 from pequi.models.checkin import Checkin
+from pequi.models.treatment import Treatment, TreatmentStatus
 from pequi.models.weekly_summary import WeeklySymptomSummary
 
 
@@ -70,7 +72,7 @@ class WeeklySummaryRepository:
             and_(
                 Checkin.patient_id == patient_id,
                 Checkin.checked_in_at >= week_start,
-                Checkin.checked_in_at <= week_end,
+                Checkin.checked_in_at < week_end,
             )
         )
         result = await self._session.execute(stmt)
@@ -81,13 +83,11 @@ class WeeklySummaryRepository:
         checkin_count = int(row.checkin_count)
 
         # Get alert count from alerts table
-        from pequi.models.alert import Alert
-
         alert_stmt = select(func.count(Alert.id)).where(
             and_(
                 Alert.patient_id == patient_id,
                 Alert.created_at >= week_start,
-                Alert.created_at <= week_end,
+                Alert.created_at < week_end,
             )
         )
         alert_result = await self._session.execute(alert_stmt)
@@ -97,8 +97,6 @@ class WeeklySummaryRepository:
 
     async def list_active_patients(self) -> list[UUID]:
         """Returns all patient IDs with active treatments."""
-        from pequi.models.treatment import Treatment, TreatmentStatus
-
         stmt = (
             select(Treatment.patient_id)
             .where(Treatment.status == TreatmentStatus.active)
