@@ -50,7 +50,11 @@ class AdherenceRepository:
         )
         result = await self._session.execute(stmt)
         await self._session.flush()
-        return result.scalar_one()
+        snapshot = result.scalar_one()
+        # Refresh to bypass the session identity map which may hold stale values
+        # when the same PK was previously loaded within this session.
+        await self._session.refresh(snapshot)
+        return snapshot
 
     async def get_dose_counts_in_period(
         self,
