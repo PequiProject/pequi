@@ -85,7 +85,7 @@ jobs:
           echo "Aguardando API inicializar..."
           sleep 15
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            --max-time 30 --retry 5 --retry-delay 10 \
+            --max-time 60 --retry 5 --retry-delay 15 \ \
             "http://${{ secrets.EC2_HOST }}:8080/docs")
           echo "HTTP status: $STATUS"
           if [ "$STATUS" != "200" ]; then
@@ -181,7 +181,7 @@ jobs:
           echo "Aguardando API inicializar..."
           sleep 15
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            --max-time 30 --retry 5 --retry-delay 10 \
+            --max-time 60 --retry 5 --retry-delay 15 \
             "http://${{ secrets.EC2_HOST }}/docs")
           echo "HTTP status: $STATUS"
           if [ "$STATUS" != "200" ]; then
