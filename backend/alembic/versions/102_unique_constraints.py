@@ -1,7 +1,7 @@
 """add unique constraints for upsert operations
 
-Revision ID: 012_unique_constraints
-Revises: 011_notifications_enabled
+Revision ID: 102_unique_constraints
+Revises: 101_notifications_enabled
 Create Date: 2026-05-28 00:00:00.000000
 
 """
@@ -11,8 +11,8 @@ from collections.abc import Sequence
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "012_unique_constraints"
-down_revision: str | None = "011_notifications_enabled"
+revision: str = "102_unique_constraints"
+down_revision: str | None = "101_notifications_enabled"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

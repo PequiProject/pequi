@@ -1,6 +1,6 @@
 """create weekly symptom summaries
 
-Revision ID: 010_weekly_summaries
+Revision ID: 100_weekly_summaries
 Revises: 006_create_body_map
 Create Date: 2026-05-28 00:00:00.000000
 
@@ -13,7 +13,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = "010_weekly_summaries"
+revision: str = "100_weekly_summaries"
 down_revision: str | None = "006_create_body_map"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
