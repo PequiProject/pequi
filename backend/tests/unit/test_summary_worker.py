@@ -1,6 +1,6 @@
 """Testes unitários do summary_worker."""
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
@@ -23,11 +23,6 @@ async def test_summary_job_processes_active_patients(db_session: AsyncSession, m
     """Testa que o job de resumo processa pacientes ativos."""
     # Mock do logger para evitar logs reais
     mocker.patch("pequi.workers.summary_worker.logger")
-
-    # Fixar datetime para garantir que checkins estejam na semana calculada
-    # Usar uma quarta-feira (weekday=2) para teste
-    fixed_now = datetime(2026, 5, 27, 12, 0, 0, tzinfo=UTC)  # Wednesday
-    mocker.patch("pequi.workers.summary_worker.datetime.now", return_value=fixed_now)
 
     patient_id = uuid4()
     user_id = uuid4()
@@ -100,23 +95,22 @@ async def test_summary_job_processes_active_patients(db_session: AsyncSession, m
     db_session.add(treatment)
     await db_session.flush()
 
-    # Criar checkins na semana (Sunday 2026-05-24 to Saturday 2026-05-30)
-    # Wednesday 2026-05-27 é o "today" no mock
-    # week_start = Sunday 2026-05-24 00:00:00 UTC
-    # week_end = Saturday 2026-05-30 23:59:59.999999 UTC
+    # Criar checkins na semana atual (usar datetime.now() real)
+    now = datetime.now(UTC)
+    # Criar checkins nos últimos 3 dias para garantir que estejam na semana
     checkin1 = Checkin(
         id=uuid4(),
         patient_id=patient_id,
         symptom_intensity=5,
         mood="good",
-        checked_in_at=datetime(2026, 5, 25, 12, 0, 0, tzinfo=UTC),  # Monday
+        checked_in_at=now - timedelta(days=1),
     )
     checkin2 = Checkin(
         id=uuid4(),
         patient_id=patient_id,
         symptom_intensity=7,
         mood="ok",
-        checked_in_at=datetime(2026, 5, 26, 12, 0, 0, tzinfo=UTC),  # Tuesday
+        checked_in_at=now - timedelta(days=2),
     )
     db_session.add_all([checkin1, checkin2])
     await db_session.flush()
