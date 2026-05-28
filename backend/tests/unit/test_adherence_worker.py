@@ -8,6 +8,7 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pequi.models.dose_log import AdherenceSnapshot, DoseLog
+from pequi.models.patient import PatientProfile
 from pequi.models.treatment import Treatment, TreatmentStatus
 from pequi.repositories.adherence_repo import AdherenceRepository
 from pequi.services.adherence_service import AdherenceService
@@ -44,6 +45,29 @@ async def test_adherence_repo_upsert_is_idempotent(db_session: AsyncSession):
     treatment_id = uuid4()
     period_start = date(2026, 1, 1)
     period_end = date(2026, 1, 7)
+
+    # Criar patient_profile necessário para FK
+    patient = PatientProfile(
+        id=patient_id,
+        user_id=uuid4(),
+        health_unit_id=uuid4(),
+        date_of_birth=date(1990, 1, 1),
+    )
+    db_session.add(patient)
+    await db_session.flush()
+
+    # Criar treatment necessário para FK
+    treatment = Treatment(
+        id=treatment_id,
+        patient_id=patient_id,
+        prescribed_by=uuid4(),
+        regimen="MB",
+        start_date=date(2026, 1, 1),
+        expected_end=date(2026, 12, 31),
+        status=TreatmentStatus.active,
+    )
+    db_session.add(treatment)
+    await db_session.flush()
 
     # Primeiro upsert
     snapshot1 = await repo.upsert_snapshot(
@@ -87,7 +111,31 @@ async def test_adherence_repo_upsert_is_idempotent(db_session: AsyncSession):
 async def test_adherence_repo_counts_doses_in_period(db_session: AsyncSession):
     """Testa contagem de doses em um período."""
     repo = AdherenceRepository(db_session)
+    patient_id = uuid4()
     treatment_id = uuid4()
+
+    # Criar patient_profile necessário para FK
+    patient = PatientProfile(
+        id=patient_id,
+        user_id=uuid4(),
+        health_unit_id=uuid4(),
+        date_of_birth=date(1990, 1, 1),
+    )
+    db_session.add(patient)
+    await db_session.flush()
+
+    # Criar treatment necessário para FK
+    treatment = Treatment(
+        id=treatment_id,
+        patient_id=patient_id,
+        prescribed_by=uuid4(),
+        regimen="MB",
+        start_date=date(2026, 1, 1),
+        expected_end=date(2026, 12, 31),
+        status=TreatmentStatus.active,
+    )
+    db_session.add(treatment)
+    await db_session.flush()
 
     # Criar doses no período
     now = datetime.now(UTC)
@@ -126,6 +174,16 @@ async def test_adherence_repo_lists_active_treatments(db_session: AsyncSession):
     """Testa listagem de tratamentos ativos."""
     repo = AdherenceRepository(db_session)
     patient_id = uuid4()
+
+    # Criar patient_profile necessário para FK
+    patient = PatientProfile(
+        id=patient_id,
+        user_id=uuid4(),
+        health_unit_id=uuid4(),
+        date_of_birth=date(1990, 1, 1),
+    )
+    db_session.add(patient)
+    await db_session.flush()
 
     # Criar tratamento ativo
     active_treatment = Treatment(
@@ -169,7 +227,19 @@ async def test_adherence_job_processes_active_treatments(db_session: AsyncSessio
     # Criar tratamento ativo com doses
     patient_id = uuid4()
     treatment_id = uuid4()
+
+    # Criar patient_profile necessário para FK
+    patient = PatientProfile(
+        id=patient_id,
+        user_id=uuid4(),
+        health_unit_id=uuid4(),
+        date_of_birth=date(1990, 1, 1),
+    )
+    db_session.add(patient)
+    await db_session.flush()
+
     treatment = Treatment(
+        id=treatment_id,
         patient_id=patient_id,
         prescribed_by=uuid4(),
         regimen="MB",
