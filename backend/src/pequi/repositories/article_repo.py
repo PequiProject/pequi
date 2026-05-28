@@ -104,15 +104,17 @@ class ArticleRepository:
         article.tags = tags
         self._session.add(article)
         await self._session.flush()
-        await self._session.refresh(article, attribute_names=["tags"])
-        return article
+        reloaded = await self.get_by_id(article.id)
+        assert reloaded is not None
+        return reloaded
 
     async def update(self, article: Article, tag_names: list[str] | None) -> Article:
         if tag_names is not None:
             article.tags = await self.get_or_create_tags(tag_names)
         await self._session.flush()
-        await self._session.refresh(article, attribute_names=["tags"])
-        return article
+        reloaded = await self.get_by_id(article.id)
+        assert reloaded is not None
+        return reloaded
 
     async def soft_delete(self, article_id: UUID) -> None:
         article = await self.get_by_id_or_raise(article_id)
