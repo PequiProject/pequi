@@ -32,11 +32,12 @@ async def summary_job(ctx: dict) -> None:
 
         for patient_id in patient_ids:
             try:
-                avg_intensity, dominant_mood, checkin_count, alert_count = (
-                    await summary_repo.get_weekly_stats(
-                        patient_id, week_start_dt, week_end_dt
-                    )
-                )
+                (
+                    avg_intensity,
+                    dominant_mood,
+                    checkin_count,
+                    alert_count,
+                ) = await summary_repo.get_weekly_stats(patient_id, week_start_dt, week_end_dt)
 
                 await summary_repo.upsert_summary(
                     patient_id=patient_id,

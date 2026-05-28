@@ -209,9 +209,7 @@ async def test_adherence_job_processes_active_treatments(db_session: AsyncSessio
     # Verificar que snapshot foi criado
     from sqlalchemy import select
 
-    stmt = select(AdherenceSnapshot).where(
-        AdherenceSnapshot.treatment_id == treatment_id
-    )
+    stmt = select(AdherenceSnapshot).where(AdherenceSnapshot.treatment_id == treatment_id)
     result = await db_session.execute(stmt)
     snapshot = result.scalar_one_or_none()
 

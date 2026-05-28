@@ -99,8 +99,10 @@ class WeeklySummaryRepository:
         """Returns all patient IDs with active treatments."""
         from pequi.models.treatment import Treatment, TreatmentStatus
 
-        stmt = select(Treatment.patient_id).where(
-            Treatment.status == TreatmentStatus.active
-        ).distinct()
+        stmt = (
+            select(Treatment.patient_id)
+            .where(Treatment.status == TreatmentStatus.active)
+            .distinct()
+        )
         result = await self._session.execute(stmt)
         return [row[0] for row in result.all()]
