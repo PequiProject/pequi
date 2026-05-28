@@ -10,7 +10,12 @@ from pequi.services.notification_service import NotificationService
 logger = get_logger(__name__)
 
 
-async def notification_job(ctx: dict, patient_id: str, notification_type: str, feedback_content: str = "") -> None:
+async def notification_job(
+    ctx: dict,
+    patient_id: str,
+    notification_type: str,
+    feedback_content: str = "",
+) -> None:
     """Envia notificação ao paciente via WhatsApp.
 
     Tipos suportados:
@@ -20,7 +25,7 @@ async def notification_job(ctx: dict, patient_id: str, notification_type: str, f
     - 'alert_generated': novo alerta para profissional
     """
     VALID_NOTIFICATION_TYPES = {"dose_reminder", "ai_feedback", "low_adherence", "alert_generated"}
-    
+
     if notification_type not in VALID_NOTIFICATION_TYPES:
         logger.error(
             "notification_job.invalid_type",
@@ -28,7 +33,7 @@ async def notification_job(ctx: dict, patient_id: str, notification_type: str, f
             notification_type=notification_type,
         )
         raise ValueError(f"Invalid notification_type: {notification_type}")
-    
+
     patient_uuid = UUID(patient_id)
     logger.info(
         "notification_job.started",

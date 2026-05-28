@@ -1,13 +1,11 @@
 """Worker ARQ: cálculo de adesão periódico (cron diário)."""
 
-from datetime import UTC, date, datetime, timedelta
-from uuid import UUID
+from datetime import UTC, datetime, timedelta
 
 from pequi.core.logging import get_logger
 from pequi.database import AsyncSessionLocal
 from pequi.repositories.adherence_repo import AdherenceRepository
 from pequi.services.adherence_service import AdherenceService
-from pequi.workers.notification_worker import notification_job
 
 logger = get_logger(__name__)
 

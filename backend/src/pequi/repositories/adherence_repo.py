@@ -1,10 +1,10 @@
-from datetime import date, UTC, datetime, timedelta
-from uuid import UUID
+from datetime import UTC, date, datetime
 from decimal import Decimal
+from uuid import UUID
 
 from sqlalchemy import and_, func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from pequi.models.dose_log import AdherenceSnapshot, DoseLog
 from pequi.models.treatment import Treatment, TreatmentStatus
@@ -39,12 +39,12 @@ class AdherenceRepository:
             )
             .on_conflict_do_update(
                 index_elements=["treatment_id", "period_start", "period_end"],
-                set_=dict(
-                    total_doses=total_doses,
-                    taken_doses=taken_doses,
-                    adherence_pct=adherence_pct,
-                    calculated_at=datetime.now(UTC),
-                ),
+                set_={
+                    "total_doses": total_doses,
+                    "taken_doses": taken_doses,
+                    "adherence_pct": adherence_pct,
+                    "calculated_at": datetime.now(UTC),
+                },
             )
             .returning(AdherenceSnapshot)
         )

@@ -61,7 +61,7 @@ async def run_async_migrations() -> None:
 
 def _ensure_alembic_version_table(connection: Connection) -> None:
     """Garante que a tabela alembic_version exista com version_num VARCHAR(255).
-    
+
     Nota: Este projeto usa revision IDs longos (ex: 007_create_weekly_symptom_summaries)
     que excedem o limite padrão de VARCHAR(32) do Alembic. Esta função garante que
     a tabela tenha tamanho suficiente para acomodar esses IDs.
@@ -70,7 +70,7 @@ def _ensure_alembic_version_table(connection: Connection) -> None:
 
     inspector = inspect(connection)
     tables = inspector.get_table_names()
-    
+
     if "alembic_version" not in tables:
         # Criar tabela com tamanho correto
         connection.execute(
@@ -87,7 +87,7 @@ def _ensure_alembic_version_table(connection: Connection) -> None:
         # Verificar e corrigir tamanho do campo se necessário
         columns = inspector.get_columns("alembic_version")
         version_num_col = next((c for c in columns if c["name"] == "version_num"), None)
-        if version_num_col and version_num_col.get("type").upper() == "VARCHAR(32)":
+        if version_num_col and str(version_num_col.get("type")).upper() == "VARCHAR(32)":
             connection.execute(
                 text("ALTER TABLE alembic_version ALTER COLUMN version_num TYPE VARCHAR(255)")
             )

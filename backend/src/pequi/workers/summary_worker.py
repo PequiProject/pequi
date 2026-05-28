@@ -1,7 +1,6 @@
 """Worker ARQ: resumo semanal de sintomas (cron semanal)."""
 
-from datetime import UTC, date, datetime, timedelta
-from uuid import UUID
+from datetime import UTC, datetime, timedelta
 
 from pequi.core.logging import get_logger
 from pequi.database import AsyncSessionLocal

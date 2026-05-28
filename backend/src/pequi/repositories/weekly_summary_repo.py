@@ -1,12 +1,11 @@
-from datetime import date, UTC, datetime, timedelta
+from datetime import UTC, date, datetime
 from uuid import UUID
-from enum import StrEnum
 
 from sqlalchemy import and_, func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from pequi.models.checkin import Checkin, CheckinMood
+from pequi.models.checkin import Checkin
 from pequi.models.weekly_summary import WeeklySymptomSummary
 
 
@@ -39,13 +38,13 @@ class WeeklySummaryRepository:
             )
             .on_conflict_do_update(
                 index_elements=["patient_id", "week_start"],
-                set_=dict(
-                    avg_intensity=avg_intensity,
-                    dominant_mood=dominant_mood,
-                    checkin_count=checkin_count,
-                    alert_count=alert_count,
-                    calculated_at=datetime.now(UTC),
-                ),
+                set_={
+                    "avg_intensity": avg_intensity,
+                    "dominant_mood": dominant_mood,
+                    "checkin_count": checkin_count,
+                    "alert_count": alert_count,
+                    "calculated_at": datetime.now(UTC),
+                },
             )
             .returning(WeeklySymptomSummary)
         )
@@ -59,7 +58,9 @@ class WeeklySummaryRepository:
         week_start: datetime,
         week_end: datetime,
     ) -> tuple[int | None, str | None, int, int]:
-        """Returns (avg_intensity, dominant_mood, checkin_count, alert_count) for a patient in a week."""
+        """Returns (avg_intensity, dominant_mood, checkin_count, alert_count)
+        for a patient in a week.
+        """
         # Get checkin stats
         stmt = select(
             func.avg(Checkin.symptom_intensity).label("avg_intensity"),
@@ -74,14 +75,14 @@ class WeeklySummaryRepository:
         )
         result = await self._session.execute(stmt)
         row = result.one()
-        
+
         avg_intensity = int(row.avg_intensity) if row.avg_intensity else None
         dominant_mood = row.dominant_mood if row.dominant_mood else None
         checkin_count = int(row.checkin_count)
 
         # Get alert count from alerts table
         from pequi.models.alert import Alert
-        
+
         alert_stmt = select(func.count(Alert.id)).where(
             and_(
                 Alert.patient_id == patient_id,
