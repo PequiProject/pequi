@@ -83,15 +83,18 @@ jobs:
         id: healthcheck
         run: |
           echo "Aguardando API inicializar..."
-          sleep 15
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            --max-time 60 --retry 5 --retry-delay 15 \
-            "http://${{ secrets.EC2_HOST }}:8080/docs")
-          echo "HTTP status: $STATUS"
-          if [ "$STATUS" != "200" ]; then
-            echo "::error::Health check falhou — HTTP $STATUS"
-            exit 1
-          fi
+          sleep 30
+          for i in 1 2 3 4 5; do
+            STATUS=$(curl -s -w "\n%{http_code}" "http://${{ secrets.EC2_HOST }}:8080/docs" | tail -1)
+            echo "Tentativa $i — HTTP status: $STATUS"
+            if [ "$STATUS" = "200" ]; then
+              echo "Health check OK!"
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "::error::Health check falhou após 5 tentativas"
+          exit 1
 
       - name: Exibir logs do container api (apenas em falha)
         if: failure() && steps.healthcheck.outcome == 'failure'
