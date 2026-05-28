@@ -1,7 +1,7 @@
 """create audit_logs table — LGPD compliance and admin actions audit
 
-Revision ID: 008_create_audit_logs
-Revises: 007_create_community
+Revision ID: 009_create_audit_logs
+Revises: 008_create_articles
 Create Date: 2026-05-26
 """
 
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
 
-revision: str = "008_create_audit_logs"
-down_revision: str | None = "007_create_community"
+revision: str = "009_create_audit_logs"
+down_revision: str | None = "008_create_articles"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

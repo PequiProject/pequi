@@ -1,0 +1,25 @@
+meta {
+  name: List Article Tags
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/v1/articles/tags
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Tags cadastradas, ordenadas alfabeticamente.
+
+  Rate limit: 200/minuto.
+}

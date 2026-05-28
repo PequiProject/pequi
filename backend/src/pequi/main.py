@@ -66,6 +66,7 @@ def _register_routers(app: FastAPI) -> None:
 
     app.include_router(health_router)
 
+    from pequi.routers import article as article_router
     from pequi.routers import auth as auth_router
     from pequi.routers import body_map as body_map_router
     from pequi.routers import checkin as checkin_router
@@ -81,6 +82,7 @@ def _register_routers(app: FastAPI) -> None:
     app.include_router(checkin_router.alerts_router, prefix="/v1/alerts", tags=["alerts"])
     app.include_router(body_map_router.router, prefix="/v1/body-map", tags=["body-map"])
     app.include_router(body_map_router.areas_router, prefix="/v1/body-areas", tags=["body-map"])
+    app.include_router(article_router.router, prefix="/v1/articles", tags=["articles"])
     app.include_router(community_router.router, prefix="/v1/community", tags=["community"])
     app.include_router(
         community_router.admin_router,

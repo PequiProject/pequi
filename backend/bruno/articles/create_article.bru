@@ -1,0 +1,39 @@
+meta {
+  name: Create Article
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/v1/articles
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "title": "Tratamento da Hanseníase",
+    "summary": "Visão geral do tratamento multidroga e adesão.",
+    "content": "Conteúdo educativo em markdown sobre o tratamento.",
+    "category": "education",
+    "author_name": "Equipe Pequi",
+    "is_published": true,
+    "tags": ["tratamento", "adesao"]
+  }
+}
+
+assert {
+  res.status: eq 201
+  res.body.id: isDefined
+  res.body.slug: isDefined
+}
+
+docs {
+  Cria artigo (admin). Slug gerado automaticamente.
+
+  Rate limit: 10/hora.
+}

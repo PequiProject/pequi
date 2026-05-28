@@ -1,0 +1,25 @@
+meta {
+  name: Delete Article
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{baseUrl}}/v1/articles/{{articleId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 204
+}
+
+docs {
+  Soft delete do artigo (admin).
+
+  Rate limit: 10/hora.
+}
