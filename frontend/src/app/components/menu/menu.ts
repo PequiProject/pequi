@@ -1,22 +1,19 @@
-// menu.component.ts
 import { Component, EventEmitter, Output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import {
-  LucideDynamicIcon,
-  LucideHouse,
-  LucideMap,
-  LucideMapPinned,
-  LucideGraduationCap,
-  LucideUsers,
-  LucideIcon,
-} from '@lucide/angular';
+  LucideAngularModule,
+  House,
+  Map,
+  MapPinned,
+  GraduationCap,
+  Users,
+} from 'lucide-angular';
 
 type NavItem = {
   label: string;
   route: string;
-  icon: LucideIcon;
-  /** When false, child routes (e.g. /comunity/feed) also mark the item active. */
+  icon: any;
   exactLink?: boolean;
 };
 
@@ -27,32 +24,28 @@ type NavItem = {
     CommonModule,
     RouterLink,
     RouterLinkActive,
-    LucideDynamicIcon,
+    LucideAngularModule,
   ],
   templateUrl: './menu.html',
   styleUrl: './menu.css',
 })
 export class Menu {
-  @Output() collapsedChange = new EventEmitter<boolean>();
+  @Output() menuCollapsedChange  = new EventEmitter<boolean>();
 
   isCollapsed = signal(false);
 
   navItems: NavItem[] = [
-    { label: 'Início', route: '/home', icon: LucideHouse },
-    { label: 'Jornada', route: '/journey', icon: LucideMap },
-    { label: 'Check In', route: '/checkin', icon: LucideMapPinned },
-    { label: 'Educação', route: '/education', icon: LucideGraduationCap },
-    { label: 'Comunidade', route: '/comunity', icon: LucideUsers, exactLink: false },
+    { label: 'Início', route: '/home', icon: House },
+    { label: 'Jornada', route: '/journey', icon: Map },
+    { label: 'Check In', route: '/checkin', icon: MapPinned },
+    { label: 'Educação', route: '/education', icon: GraduationCap },
+    { label: 'Comunidade', route: '/comunity', icon: Users, exactLink: false },
   ];
-
-  linkActiveOptions(item: NavItem): { exact: boolean } {
-    return { exact: item.exactLink !== false };
-  }
 
   toggleSidebar(): void {
     const next = !this.isCollapsed();
     this.isCollapsed.set(next);
-    this.collapsedChange.emit(next);
+    this.menuCollapsedChange .emit(next);
   }
 
   trackByRoute = (_: number, item: NavItem) => item.route;

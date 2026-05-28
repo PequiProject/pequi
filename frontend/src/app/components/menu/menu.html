@@ -1,118 +1,121 @@
 <!-- menu.component.html -->
 <div class="contents">
-    <aside
+   <aside
         class="hidden h-screen border-r border-slate-200 bg-white transition-all duration-300 lg:fixed lg:inset-y-0 lg:left-0 lg:flex lg:flex-col"
         [class.w-72]="!isCollapsed()" 
         [class.w-20]="isCollapsed()" 
         aria-label="Menu principal"
         >
-        <div 
-            class="flex h-16 items-center border-b border-slate-200" 
-            [class.px-6]="!isCollapsed()"
-            [class.px-3]="isCollapsed()"
-            >
-            <div class="flex w-full items-center justify-between gap-2">
-                <span 
-                    class="overflow-hidden whitespace-nowrap text-lg font-semibold transition-all duration-200"
-                    [class.w-auto]="!isCollapsed()" 
-                    [class.w-0]="isCollapsed()" 
-                    [class.opacity-100]="!isCollapsed()"
-                    [class.opacity-0]="isCollapsed()"
-                    >
-                    Pequi
-                </span>
-
-                <button 
-                    type="button" 
-                    (click)="toggleSidebar()"
-                    class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-[#64655C] transition"
-                    [attr.aria-label]="isCollapsed() ? 'Expandir menu lateral' : 'Recolher menu lateral'"
-                    [attr.aria-expanded]="!isCollapsed()"
-                    >
-                    <svg 
-                        class="h-5 w-5 transition-transform duration-300" 
-                        [class.rotate-180]="isCollapsed()"
-                        viewBox="0 0 24 24" 
-                        fill="none" stroke="currentColor" 
-                        stroke-width="1.8" 
-                        aria-hidden="true"
-                        >
-                        <path 
-                            stroke-linecap="round" 
-                            stroke-linejoin="round" 
-                            d="M15 19l-7-7 7-7" 
-                        />
-                    </svg>
-                </button>
-            </div>
-        </div>
-
-        <nav 
-            class="flex-1" 
-            [class.p-4]="!isCollapsed()" 
-            [class.p-3]="isCollapsed()" 
-            aria-label="Navegação lateral"
-            >
-            <ul class="space-y-2">
-                <li *ngFor="let item of navItems; trackBy: trackByRoute">
-                    <a 
-                        [routerLink]="item.route" 
-                        routerLinkActive #rla="routerLinkActive"
-                        [routerLinkActiveOptions]="linkActiveOptions(item)"
-                        ariaCurrentWhenActive="page"
-                        [attr.aria-label]="item.label"
-                        class="flex min-h-11 items-center rounded-xl text-sm font-medium transition"
-                        [class.justify-center]="isCollapsed()" 
-                        [class.gap-3]="!isCollapsed()"
-                        [class.px-4]="!isCollapsed()" 
-                        [class.py-3]="!isCollapsed()" 
-                        [class.px-3]="isCollapsed()"
-                        [class.py-3]="isCollapsed()" 
-                        [ngClass]="rla.isActive ? 'bg-[#E0E7FF] text-[#4338CA]' : 'bg-transparent text-[#78716C]'"
-                        >
-                        <svg
-                        [lucideIcon]="item.icon"
-                        class="h-5 w-5 shrink-0"
-                        aria-hidden="true"
-                        ></svg>
-                        <span 
-                            class="overflow-hidden whitespace-nowrap transition-all duration-200"
-                            [class.w-auto]="!isCollapsed()" 
-                            [class.w-0]="isCollapsed()"
-                            [class.opacity-100]="!isCollapsed()" 
-                            [class.opacity-0]="isCollapsed()"
-                            [class.sr-only]="isCollapsed()">
-                            {{ item.label }}
-                        </span>
-                    </a>
-                </li>
-            </ul>
-        </nav>
-    </aside>
-
-    <nav 
-        class="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white lg:hidden"
-        aria-label="Menu principal mobile"
+    <div
+      class="flex h-16 items-center border-b border-slate-200"
+      [class.px-6]="!isCollapsed()"
+      [class.px-3]="isCollapsed()"
+    >
+      <div class="flex w-full items-center justify-between gap-2">
+        <span
+          class="overflow-hidden whitespace-nowrap text-lg font-semibold transition-all duration-200"
+          [class.w-auto]="!isCollapsed()"
+          [class.w-0]="isCollapsed()"
+          [class.opacity-100]="!isCollapsed()"
+          [class.opacity-0]="isCollapsed()"
         >
-        <ul class="grid h-16 grid-cols-5">
-            <li *ngFor="let item of navItems; trackBy: trackByRoute">
-                <a 
-                    [routerLink]="item.route" 
-                    routerLinkActive 
-                    #rla="routerLinkActive"
-                    [routerLinkActiveOptions]="linkActiveOptions(item)"
-                    ariaCurrentWhenActive="page"
-                    class="flex h-full min-h-11 flex-col items-center justify-center gap-1 rounded-xl px-2 text-xs font-medium transition"
-                    [ngClass]="rla.isActive ? 'bg-[#E0E7FF] text-[#4338CA]' : 'bg-transparent text-[#78716C]'"
-                    >
-                    <svg
-                    [lucideIcon]="item.icon"
-                    class="h-5 w-5"
-                    aria-hidden="true"
-                    ></svg>
-                    <span>{{ item.label }}</span>
-                </a>
-            </li>
-        </ul>
+          Pequi
+        </span>
+
+        <button
+          type="button"
+          (click)="toggleSidebar()"
+          class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-[#64655C] transition"
+          [attr.aria-label]="isCollapsed() ? 'Expandir menu lateral' : 'Recolher menu lateral'"
+          [attr.aria-expanded]="!isCollapsed()"
+        >
+          <svg
+            class="h-5 w-5 transition-transform duration-300"
+            [class.rotate-180]="isCollapsed()"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <nav
+      class="flex-1"
+      [class.p-4]="!isCollapsed()"
+      [class.p-3]="isCollapsed()"
+      aria-label="Navegação lateral"
+    >
+      <ul class="space-y-2">
+        <li *ngFor="let item of navItems; trackBy: trackByRoute">
+          <a
+            [routerLink]="item.route"
+            [routerLinkActiveOptions]="{ exact: item.exactLink !== false }"
+            routerLinkActive="bg-[#E0E7FF] text-[#4338CA]"
+            ariaCurrentWhenActive="page"
+            [attr.aria-label]="item.label"
+            class="flex min-h-11 items-center rounded-xl text-sm font-medium transition bg-transparent text-[#78716C]"
+            [class.justify-center]="isCollapsed()"
+            [class.gap-3]="!isCollapsed()"
+            [class.px-4]="!isCollapsed()"
+            [class.py-3]="!isCollapsed()"
+            [class.px-3]="isCollapsed()"
+            [class.py-3]="isCollapsed()"
+          >
+            <lucide-icon
+              [name]="item.icon"
+              class="h-5 w-5 shrink-0"
+              aria-hidden="true"
+            >
+            </lucide-icon>
+
+            <span
+              class="overflow-hidden whitespace-nowrap transition-all duration-200"
+              [class.w-auto]="!isCollapsed()"
+              [class.w-0]="isCollapsed()"
+              [class.opacity-100]="!isCollapsed()"
+              [class.opacity-0]="isCollapsed()"
+              [class.sr-only]="isCollapsed()"
+            >
+              {{ item.label }}
+            </span>
+          </a>
+        </li>
+      </ul>
     </nav>
+  </aside>
+
+  <nav
+    class="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white lg:hidden"
+    aria-label="Menu principal mobile"
+  >
+    <ul class="grid h-16 grid-cols-5">
+      <li *ngFor="let item of navItems; trackBy: trackByRoute">
+        <a
+          [routerLink]="item.route"
+          [routerLinkActiveOptions]="{ exact: item.exactLink !== false }"
+          routerLinkActive="bg-[#E0E7FF] text-[#4338CA]"
+          ariaCurrentWhenActive="page"
+          class="flex h-full min-h-11 flex-col items-center justify-center gap-1 rounded-xl px-2 text-xs font-medium transition bg-transparent text-[#78716C]"
+        >
+          <lucide-icon
+            [name]="item.icon"
+            class="h-5 w-5 shrink-0"
+            aria-hidden="true"
+          >
+          </lucide-icon>
+
+          <span>{{ item.label }}</span>
+        </a>
+      </li>
+    </ul>
+  </nav>
 </div>
