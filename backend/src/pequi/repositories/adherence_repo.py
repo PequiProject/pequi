@@ -3,7 +3,6 @@ from decimal import Decimal
 from uuid import UUID
 
 from sqlalchemy import and_, func, select
-from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pequi.models.dose_log import AdherenceSnapshot, DoseLog
