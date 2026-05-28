@@ -14,7 +14,15 @@ async def adherence_job(ctx: dict) -> None:
     """Calcula adesão para todos os tratamentos ativos (cron diário 00:05 UTC)."""
     logger.info("adherence_job.started")
 
-    async with AsyncSessionLocal() as session:
+    # Use session from context if provided (for tests), otherwise create new one
+    session = ctx.get("db_session")
+    if session is None:
+        session = AsyncSessionLocal()
+        should_close = True
+    else:
+        should_close = False
+
+    try:
         adherence_repo = AdherenceRepository(session)
         adherence_service = AdherenceService()
 
@@ -78,5 +86,9 @@ async def adherence_job(ctx: dict) -> None:
                 continue  # Continue to next treatment
 
         await session.commit()
+
+    finally:
+        if should_close:
+            await session.close()
 
     logger.info("adherence_job.completed")

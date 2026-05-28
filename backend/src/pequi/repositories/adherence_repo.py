@@ -40,10 +40,10 @@ class AdherenceRepository:
             .on_conflict_do_update(
                 constraint="uq_adherence_snapshots_period",
                 set_={
-                    "total_doses": total_doses,
-                    "taken_doses": taken_doses,
-                    "adherence_pct": adherence_pct,
-                    "calculated_at": datetime.now(UTC),
+                    "total_doses": insert(AdherenceSnapshot).excluded.total_doses,
+                    "taken_doses": insert(AdherenceSnapshot).excluded.taken_doses,
+                    "adherence_pct": insert(AdherenceSnapshot).excluded.adherence_pct,
+                    "calculated_at": insert(AdherenceSnapshot).excluded.calculated_at,
                 },
             )
             .returning(AdherenceSnapshot)

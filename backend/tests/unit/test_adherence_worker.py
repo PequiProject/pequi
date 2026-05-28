@@ -360,7 +360,7 @@ async def test_adherence_job_processes_active_treatments(db_session: AsyncSessio
     mock_redis = mocker.AsyncMock()
     mock_redis.enqueue_job = mocker.AsyncMock()
 
-    ctx = {"redis": mock_redis}
+    ctx = {"redis": mock_redis, "db_session": db_session}
 
     # Criar tratamento ativo com doses
     patient_id = uuid4()
