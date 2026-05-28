@@ -1,6 +1,6 @@
 """create articles tables — M7 Articles
 
-Revision ID: 007_create_articles
+Revision ID: 008_create_articles
 Revises: 007_create_community
 Create Date: 2026-05-27
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
 
-revision: str = "007_create_articles"
+revision: str = "008_create_articles"
 down_revision: str | None = "007_create_community"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None

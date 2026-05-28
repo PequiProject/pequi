@@ -12,6 +12,7 @@ from pequi.core.dependencies import (
 from pequi.core.rate_limit import user_limiter
 from pequi.models.article import ArticleCategory
 from pequi.repositories.article_repo import ArticleRepository
+from pequi.repositories.audit_repo import AuditRepository
 from pequi.schemas.article import (
     ArticleCreate,
     ArticleListResponse,
@@ -32,6 +33,12 @@ router = APIRouter()
 
 def _article_repo(session: AsyncSession = Depends(get_db)) -> ArticleRepository:
     return ArticleRepository(session)
+
+
+def _article_repos(
+    session: AsyncSession = Depends(get_db),
+) -> tuple[ArticleRepository, AuditRepository]:
+    return ArticleRepository(session), AuditRepository(session)
 
 
 @router.get("/tags", response_model=list[ArticleTagResponse])
@@ -90,11 +97,12 @@ async def get_article(
 async def create_article(
     request: Request,
     body: ArticleCreate,
-    _admin_id: UUID = Depends(get_current_admin),
-    repo: ArticleRepository = Depends(_article_repo),
+    admin_id: UUID = Depends(get_current_admin),
+    repos: tuple[ArticleRepository, AuditRepository] = Depends(_article_repos),
 ) -> ArticleResponse:
-    use_case = CreateArticleUseCase(repo)
-    return await use_case.execute(body)
+    article_repo, audit_repo = repos
+    use_case = CreateArticleUseCase(article_repo, audit_repo)
+    return await use_case.execute(admin_id, body)
 
 
 @router.patch("/{article_id}", response_model=ArticleResponse)
@@ -103,11 +111,12 @@ async def update_article(
     request: Request,
     article_id: UUID,
     body: ArticleUpdate,
-    _admin_id: UUID = Depends(get_current_admin),
-    repo: ArticleRepository = Depends(_article_repo),
+    admin_id: UUID = Depends(get_current_admin),
+    repos: tuple[ArticleRepository, AuditRepository] = Depends(_article_repos),
 ) -> ArticleResponse:
-    use_case = UpdateArticleUseCase(repo)
-    return await use_case.execute(article_id, body)
+    article_repo, audit_repo = repos
+    use_case = UpdateArticleUseCase(article_repo, audit_repo)
+    return await use_case.execute(admin_id, article_id, body)
 
 
 @router.delete("/{article_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -115,8 +124,9 @@ async def update_article(
 async def delete_article(
     request: Request,
     article_id: UUID,
-    _admin_id: UUID = Depends(get_current_admin),
-    repo: ArticleRepository = Depends(_article_repo),
+    admin_id: UUID = Depends(get_current_admin),
+    repos: tuple[ArticleRepository, AuditRepository] = Depends(_article_repos),
 ) -> None:
-    use_case = DeleteArticleUseCase(repo)
-    await use_case.execute(article_id)
+    article_repo, audit_repo = repos
+    use_case = DeleteArticleUseCase(article_repo, audit_repo)
+    await use_case.execute(admin_id, article_id)

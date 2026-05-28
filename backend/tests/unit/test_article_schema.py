@@ -6,7 +6,7 @@ from pydantic import ValidationError
 from pequi.models.article import ArticleCategory
 from pequi.schemas.article import ArticleCreate, ArticleUpdate
 from pequi.services.article_service import ArticleService
-from pequi.utils.slug import slugify_title, unique_slug
+from pequi.utils.slug import slug_base_from_title, slugify_title, unique_slug
 
 
 def test_article_create_requires_title_and_content():
@@ -61,6 +61,12 @@ def test_article_update_allows_partial():
 def test_slugify_title_removes_accents_and_special_chars():
     assert slugify_title("Tratamento da Hanseníase") == "tratamento-da-hanseniase"
     assert slugify_title("  Olá Mundo!  ") == "ola-mundo"
+
+
+def test_slug_base_from_title_uses_uuid_when_only_non_latin():
+    base = slug_base_from_title("你好")
+    assert base.startswith("artigo-")
+    assert len(base) > len("artigo-")
 
 
 def test_unique_slug_adds_numeric_suffix():

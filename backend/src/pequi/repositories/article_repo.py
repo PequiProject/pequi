@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import func, or_, select, update
+from sqlalchemy import func, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -120,12 +120,14 @@ class ArticleRepository:
         await self._session.flush()
 
     async def increment_view_count(self, article_id: UUID) -> None:
-        stmt = (
-            update(Article)
-            .where(Article.id == article_id, Article.deleted_at.is_(None))
-            .values(view_count=Article.view_count + 1)
+        # UPDATE atômico no PostgreSQL: view_count = view_count + 1
+        await self._session.execute(
+            text(
+                "UPDATE articles SET view_count = view_count + 1 "
+                "WHERE id = :article_id AND deleted_at IS NULL"
+            ),
+            {"article_id": article_id},
         )
-        await self._session.execute(stmt)
 
     async def get_or_create_tags(self, names: list[str]) -> list[ArticleTag]:
         if not names:

@@ -1,5 +1,6 @@
 import re
 import unicodedata
+from uuid import uuid4
 
 
 def slugify_title(title: str) -> str:
@@ -9,6 +10,14 @@ def slugify_title(title: str) -> str:
     lowered = ascii_text.lower()
     slug = re.sub(r"[^a-z0-9]+", "-", lowered)
     return slug.strip("-")
+
+
+def slug_base_from_title(title: str) -> str:
+    """Retorna base de slug; se título não gera caracteres latinos, usa sufixo único."""
+    base = slugify_title(title)
+    if base:
+        return base
+    return f"artigo-{uuid4().hex[:8]}"
 
 
 def unique_slug(base_slug: str, existing_slugs: list[str]) -> str:
