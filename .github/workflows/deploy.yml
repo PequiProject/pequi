@@ -1,0 +1,204 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - development
+      - main
+
+concurrency:
+  group: deploy-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  # ─────────────────────────────────────────────
+  # Staging — dispara apenas em push na development
+  # ─────────────────────────────────────────────
+  staging:
+    name: Deploy → Staging
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/development'
+    environment: staging
+
+    permissions:
+      contents: read
+      id-token: write
+
+    env:
+      IMAGE_TAG: ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:staging-${{ github.sha }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push image to ECR (staging)
+        working-directory: backend
+        run: |
+          docker build -t "$IMAGE_TAG" .
+          docker push "$IMAGE_TAG"
+
+      - name: Deploy to EC2 via SSH (staging)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          envs: IMAGE_TAG,ECR_REGISTRY,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY
+          script: |
+            set -euo pipefail
+
+            cd ~/pequi
+
+            git pull origin development
+
+            aws ecr get-login-password --region us-east-2 \
+              | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+
+            docker pull "$IMAGE_TAG"
+
+            IMAGE_TAG="$IMAGE_TAG" \
+              docker compose -f docker-compose.staging.yml up -d --no-build
+
+            docker compose -f docker-compose.staging.yml exec -T migrate \
+              alembic upgrade head
+
+            docker image prune -f
+        env:
+          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Health check — Staging
+        id: healthcheck
+        run: |
+          echo "Aguardando API inicializar..."
+          sleep 15
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            --max-time 30 --retry 5 --retry-delay 10 \
+            "http://${{ secrets.EC2_HOST }}:8080/docs")
+          echo "HTTP status: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::Health check falhou — HTTP $STATUS"
+            exit 1
+          fi
+
+      - name: Exibir logs do container api (apenas em falha)
+        if: failure() && steps.healthcheck.outcome == 'failure'
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/pequi
+            echo "=== Logs do container api (últimas 100 linhas) ==="
+            docker compose -f docker-compose.staging.yml logs --tail=100 api
+
+  # ─────────────────────────────────────────────
+  # Production — dispara apenas em push na main
+  # ─────────────────────────────────────────────
+  production:
+    name: Deploy → Production
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: production
+
+    permissions:
+      contents: read
+      id-token: write
+
+    env:
+      IMAGE_TAG: ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
+      IMAGE_TAG_LATEST: ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push image to ECR (production)
+        working-directory: backend
+        run: |
+          docker build -t "$IMAGE_TAG" -t "$IMAGE_TAG_LATEST" .
+          docker push "$IMAGE_TAG"
+          docker push "$IMAGE_TAG_LATEST"
+
+      - name: Deploy to EC2 via SSH (production)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          envs: IMAGE_TAG,ECR_REGISTRY,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY
+          script: |
+            set -euo pipefail
+
+            cd ~/pequi
+
+            git pull origin main
+
+            aws ecr get-login-password --region us-east-2 \
+              | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+
+            docker pull "$IMAGE_TAG"
+
+            IMAGE_TAG="$IMAGE_TAG" \
+              docker compose -f docker-compose.prod.yml up -d --no-build
+
+            docker compose -f docker-compose.prod.yml exec -T migrate \
+              alembic upgrade head
+
+            docker image prune -f
+        env:
+          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Health check — Production
+        id: healthcheck
+        run: |
+          echo "Aguardando API inicializar..."
+          sleep 15
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            --max-time 30 --retry 5 --retry-delay 10 \
+            "http://${{ secrets.EC2_HOST }}/docs")
+          echo "HTTP status: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::Health check falhou — HTTP $STATUS"
+            exit 1
+          fi
+
+      - name: Exibir logs do container api (apenas em falha)
+        if: failure() && steps.healthcheck.outcome == 'failure'
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/pequi
+            echo "=== Logs do container api (últimas 100 linhas) ==="
+            docker compose -f docker-compose.prod.yml logs --tail=100 api

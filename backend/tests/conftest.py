@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.pool import NullPool
 
 import pequi.models  # noqa: F401 — registra todas as tabelas no metadata antes do create_all
+import pequi.models.article  # noqa: F401 — ensure article models are registered
 import pequi.models.community  # noqa: F401 — ensure community models are registered
 from pequi.config import get_settings
 from pequi.core.dependencies import get_db
