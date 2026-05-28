@@ -58,7 +58,6 @@ export class AuthService {
   private readonly sessionKey = 'auth_session';
 
   register(payload: RegisterRequest): Observable<RegisterResponse> {
-    console.log('payload final: ', payload)
     return this.http.post<RegisterResponse>(`${this.baseUrl}/register`, payload);
   }
 

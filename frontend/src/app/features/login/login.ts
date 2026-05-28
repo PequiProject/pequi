@@ -29,16 +29,11 @@ export class Login {
 submit(): void {
   this.errorMessage = '';
   this.form.markAllAsTouched();
-  console.log('clique1');
-
   if (this.form.invalid) {
-    console.log('clique2');
     return;
   }
 
   this.isSubmitting = true;
-  console.log('antes do login');
-
   this.authService
     .login({
       email: this.form.value.email ?? '',
@@ -46,29 +41,16 @@ submit(): void {
     })
     .subscribe({
       next: (response) => {
-        console.log('login response:', response);
-        console.log('auth_session:', localStorage.getItem('auth_session'));
-
         const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/home';
-        console.log('returnUrl:', returnUrl);
-
-        void this.router.navigateByUrl(returnUrl).then(result => {
-          console.log('navigate result:', result);
-        });
-
-        console.log('clique3');
+        void this.router.navigateByUrl(returnUrl);
       },
       error: (error) => {
-        console.error('erro login:', error);
         this.errorMessage = error?.error?.message ?? 'E-mail ou senha inválidos.';
         this.isSubmitting = false;
       },
       complete: () => {
-        console.log('complete login');
         this.isSubmitting = false;
       },
     });
-
-  console.log('AQUIII: ', this.isSubmitting);
 }
 }

@@ -187,8 +187,6 @@ export class CheckinComponent {
         selectedSymptoms: rawValue.symptoms.selectedSymptoms,
       },
     };
-
-    console.log('Payload final do check-in:', payload);
     this.router.navigate(['home']);
   }
 

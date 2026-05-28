@@ -9,7 +9,6 @@ import { AuthService } from '../services/auth-service';
 import { catchError, switchMap, throwError } from 'rxjs';
 
 const isAuthRoute = (url: string): boolean => {
-    console.log('bateu no interceptor: ', url)
   return url.includes('/v1/auth/login') || url.includes('/v1/auth/register') || url.includes('/v1/auth/refresh');
 };
 
