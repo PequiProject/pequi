@@ -210,11 +210,10 @@ async def test_adherence_repo_counts_doses_in_period(db_session: AsyncSession):
 async def test_adherence_repo_lists_active_treatments(db_session: AsyncSession):
     """Testa listagem de tratamentos ativos."""
     repo = AdherenceRepository(db_session)
-    patient_id, treatment_id = await _create_patient_with_treatment(db_session)
+    patient_id, _ = await _create_patient_with_treatment(db_session)
 
     # Criar tratamento ativo
     active_treatment = Treatment(
-        id=treatment_id,
         patient_id=patient_id,
         prescribed_by=uuid4(),
         regimen="MB",

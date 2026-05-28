@@ -38,7 +38,7 @@ class AdherenceRepository:
                 calculated_at=datetime.now(UTC),
             )
             .on_conflict_do_update(
-                index_elements=["treatment_id", "period_start", "period_end"],
+                constraint="uq_adherence_snapshots_period",
                 set_={
                     "total_doses": total_doses,
                     "taken_doses": taken_doses,
