@@ -46,10 +46,19 @@ class AdherenceRepository:
                     "calculated_at": datetime.now(UTC),
                 },
             )
-            .returning(AdherenceSnapshot)
+        )
+        await self._session.execute(stmt)
+        await self._session.flush()
+
+        # Select the snapshot to return the updated value
+        from sqlalchemy import select
+
+        stmt = select(AdherenceSnapshot).where(
+            AdherenceSnapshot.treatment_id == treatment_id,
+            AdherenceSnapshot.period_start == period_start,
+            AdherenceSnapshot.period_end == period_end,
         )
         result = await self._session.execute(stmt)
-        await self._session.flush()
         return result.scalar_one()
 
     async def get_dose_counts_in_period(

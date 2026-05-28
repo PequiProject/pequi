@@ -146,6 +146,18 @@ async def test_adherence_repo_upsert_is_idempotent(db_session: AsyncSession):
     # Commit para garantir que o snapshot foi persistido
     await db_session.commit()
 
+    # Recarregar o snapshot do banco
+    from sqlalchemy import select
+
+    stmt = select(AdherenceSnapshot).where(
+        AdherenceSnapshot.treatment_id == treatment_id,
+        AdherenceSnapshot.period_start == period_start,
+        AdherenceSnapshot.period_end == period_end,
+    )
+    result = await db_session.execute(stmt)
+    snapshot_reloaded = result.scalar_one()
+    assert snapshot_reloaded.adherence_pct == Decimal("70.00")
+
     # Segundo upsert (deve atualizar, não duplicar)
     snapshot2 = await repo.upsert_snapshot(
         patient_id=patient_id,
@@ -160,8 +172,6 @@ async def test_adherence_repo_upsert_is_idempotent(db_session: AsyncSession):
     assert snapshot2.adherence_pct == Decimal("80.00")  # Valores atualizados
 
     # Verificar que não há duplicatas
-    from sqlalchemy import select
-
     stmt = select(AdherenceSnapshot).where(
         AdherenceSnapshot.treatment_id == treatment_id,
         AdherenceSnapshot.period_start == period_start,
