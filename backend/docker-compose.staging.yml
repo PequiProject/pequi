@@ -3,13 +3,14 @@ services:
   migrate:
     image: ${IMAGE_TAG}
     container_name: migrate_staging
-    restart: always
+    restart: "no"          # ← corrigido
     env_file:
       - .env.staging
     command: alembic upgrade head
     depends_on:
       db:
         condition: service_healthy
+
 
   api:
     image: ${IMAGE_TAG}
@@ -45,15 +46,12 @@ services:
     restart: always
     env_file:
       - .env.staging
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+    # remover bloco environment daqui
     volumes:
       - pgdata_staging:/var/lib/postgresql/data
       - ./db-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      test: ["CMD-SHELL", "pg_isready -U pequi"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -78,10 +76,8 @@ services:
     restart: always
     env_file:
       - .env.staging
+    # remover bloco environment daqui
     command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     ports:
       - "9000:9000"
       - "9002:9001"
