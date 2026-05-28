@@ -13,7 +13,15 @@ async def summary_job(ctx: dict) -> None:
     """Gera resumos semanais de sintomas para todos os pacientes ativos (cron domingo 01:00 UTC)."""
     logger.info("summary_job.started")
 
-    async with AsyncSessionLocal() as session:
+    # Use session from context if provided (for tests), otherwise create new one
+    session = ctx.get("db_session")
+    if session is None:
+        session = AsyncSessionLocal()
+        should_close = True
+    else:
+        should_close = False
+
+    try:
         summary_repo = WeeklySummaryRepository(session)
 
         # Get all active patients
@@ -66,5 +74,9 @@ async def summary_job(ctx: dict) -> None:
                 )
 
         await session.commit()
+
+    finally:
+        if should_close:
+            await session.close()
 
     logger.info("summary_job.completed")
