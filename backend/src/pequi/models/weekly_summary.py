@@ -14,7 +14,6 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 
 from pequi.database import Base
-from pequi.models.checkin import CheckinMood
 
 
 class WeeklySymptomSummary(Base):
