@@ -58,7 +58,7 @@ jobs:
           script: |
             set -euo pipefail
 
-            cd ~/pequi
+            cd ~/pequi/backend
 
             git pull origin development
 
@@ -155,7 +155,7 @@ jobs:
           script: |
             set -euo pipefail
 
-            cd ~/pequi
+            cd ~/pequi/backend
 
             git pull origin main
 
