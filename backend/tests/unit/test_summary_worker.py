@@ -103,14 +103,14 @@ async def test_summary_job_processes_active_patients(db_session: AsyncSession, m
         patient_id=patient_id,
         symptom_intensity=5,
         mood="good",
-        created_at=now - timedelta(days=1),
+        checked_in_at=now - timedelta(days=1),
     )
     checkin2 = Checkin(
         id=uuid4(),
         patient_id=patient_id,
         symptom_intensity=7,
         mood="ok",
-        created_at=now - timedelta(days=3),
+        checked_in_at=now - timedelta(days=3),
     )
     db_session.add_all([checkin1, checkin2])
     await db_session.flush()
