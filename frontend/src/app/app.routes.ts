@@ -12,7 +12,7 @@ import { Notification } from './components/notification/notification';
 import { RegisterAppointmentComponent } from './features/appointments/register-appointment/register-appointment';
 import { Login } from './features/login/login';
 import { Register } from './features/register/register';
-import { authGuard } from './guards/auth-guard';
+import { authGuard } from './features/auth/guards/auth-guard';
 
 export const routes: Routes = [
     { path: 'login', component: Login },

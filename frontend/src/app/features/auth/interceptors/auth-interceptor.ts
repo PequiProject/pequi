@@ -5,7 +5,7 @@ import {
   HttpInterceptorFn,
   HttpRequest,
 } from '@angular/common/http';
-import { AuthService } from './../services/auth/auth-service';
+import { AuthService } from '../services/auth-service';
 import { catchError, switchMap, throwError } from 'rxjs';
 
 const isAuthRoute = (url: string): boolean => {
