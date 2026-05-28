@@ -101,7 +101,7 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd ~/pequi
+            cd ~/pequi/backend
             echo "=== Logs do container api (últimas 100 linhas) ==="
             docker compose -f docker-compose.staging.yml logs --tail=100 api
 
@@ -197,6 +197,6 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd ~/pequi
+            cd ~/pequi/backend
             echo "=== Logs do container api (últimas 100 linhas) ==="
             docker compose -f docker-compose.prod.yml logs --tail=100 api
