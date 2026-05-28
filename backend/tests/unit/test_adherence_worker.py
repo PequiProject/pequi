@@ -49,7 +49,13 @@ async def test_adherence_repo_upsert_is_idempotent(db_session: AsyncSession):
     period_end = date(2026, 1, 7)
 
     # Criar user necessário para FK
-    user = User(id=user_id)
+    user = User(
+        id=user_id,
+        email=f"test{user_id}@example.com",
+        hashed_password="hashed",
+        full_name="Test User",
+        role="patient",
+    )
     db_session.add(user)
     await db_session.flush()
 
@@ -123,7 +129,13 @@ async def test_adherence_repo_counts_doses_in_period(db_session: AsyncSession):
     user_id = uuid4()
 
     # Criar user necessário para FK
-    user = User(id=user_id)
+    user = User(
+        id=user_id,
+        email=f"test{user_id}@example.com",
+        hashed_password="hashed",
+        full_name="Test User",
+        role="patient",
+    )
     db_session.add(user)
     await db_session.flush()
 
@@ -190,7 +202,13 @@ async def test_adherence_repo_lists_active_treatments(db_session: AsyncSession):
     user_id = uuid4()
 
     # Criar user necessário para FK
-    user = User(id=user_id)
+    user = User(
+        id=user_id,
+        email=f"test{user_id}@example.com",
+        hashed_password="hashed",
+        full_name="Test User",
+        role="patient",
+    )
     db_session.add(user)
     await db_session.flush()
 
@@ -249,7 +267,13 @@ async def test_adherence_job_processes_active_treatments(db_session: AsyncSessio
     user_id = uuid4()
 
     # Criar user necessário para FK
-    user = User(id=user_id)
+    user = User(
+        id=user_id,
+        email=f"test{user_id}@example.com",
+        hashed_password="hashed",
+        full_name="Test User",
+        role="patient",
+    )
     db_session.add(user)
     await db_session.flush()
 
