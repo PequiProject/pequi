@@ -8,6 +8,7 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pequi.models.dose_log import AdherenceSnapshot, DoseLog
+from pequi.models.health_professional import HealthProfessional
 from pequi.models.health_unit import HealthUnit
 from pequi.models.patient import PatientProfile
 from pequi.models.treatment import Treatment, TreatmentStatus
@@ -47,6 +48,8 @@ async def test_adherence_repo_upsert_is_idempotent(db_session: AsyncSession):
     treatment_id = uuid4()
     user_id = uuid4()
     health_unit_id = uuid4()
+    professional_user_id = uuid4()
+    professional_id = uuid4()
     period_start = date(2026, 1, 1)
     period_end = date(2026, 1, 7)
 
@@ -81,11 +84,31 @@ async def test_adherence_repo_upsert_is_idempotent(db_session: AsyncSession):
     db_session.add(patient)
     await db_session.flush()
 
+    # Criar user para health professional
+    professional_user = User(
+        id=professional_user_id,
+        email=f"prof{professional_user_id}@example.com",
+        hashed_password="hashed",
+        full_name="Test Professional",
+        role="health_professional",
+    )
+    db_session.add(professional_user)
+    await db_session.flush()
+
+    # Criar health professional necessário para FK
+    health_professional = HealthProfessional(
+        id=professional_id,
+        user_id=professional_user_id,
+        health_unit_id=health_unit_id,
+    )
+    db_session.add(health_professional)
+    await db_session.flush()
+
     # Criar treatment necessário para FK
     treatment = Treatment(
         id=treatment_id,
         patient_id=patient_id,
-        prescribed_by=uuid4(),
+        prescribed_by=professional_id,
         regimen="MB",
         start_date=date(2026, 1, 1),
         expected_end=date(2026, 12, 31),
@@ -140,6 +163,8 @@ async def test_adherence_repo_counts_doses_in_period(db_session: AsyncSession):
     treatment_id = uuid4()
     user_id = uuid4()
     health_unit_id = uuid4()
+    professional_user_id = uuid4()
+    professional_id = uuid4()
 
     # Criar user necessário para FK
     user = User(
@@ -172,11 +197,31 @@ async def test_adherence_repo_counts_doses_in_period(db_session: AsyncSession):
     db_session.add(patient)
     await db_session.flush()
 
+    # Criar user para health professional
+    professional_user = User(
+        id=professional_user_id,
+        email=f"prof{professional_user_id}@example.com",
+        hashed_password="hashed",
+        full_name="Test Professional",
+        role="health_professional",
+    )
+    db_session.add(professional_user)
+    await db_session.flush()
+
+    # Criar health professional necessário para FK
+    health_professional = HealthProfessional(
+        id=professional_id,
+        user_id=professional_user_id,
+        health_unit_id=health_unit_id,
+    )
+    db_session.add(health_professional)
+    await db_session.flush()
+
     # Criar treatment necessário para FK
     treatment = Treatment(
         id=treatment_id,
         patient_id=patient_id,
-        prescribed_by=uuid4(),
+        prescribed_by=professional_id,
         regimen="MB",
         start_date=date(2026, 1, 1),
         expected_end=date(2026, 12, 31),
@@ -224,6 +269,8 @@ async def test_adherence_repo_lists_active_treatments(db_session: AsyncSession):
     patient_id = uuid4()
     user_id = uuid4()
     health_unit_id = uuid4()
+    professional_user_id = uuid4()
+    professional_id = uuid4()
 
     # Criar user necessário para FK
     user = User(
@@ -256,10 +303,30 @@ async def test_adherence_repo_lists_active_treatments(db_session: AsyncSession):
     db_session.add(patient)
     await db_session.flush()
 
+    # Criar user para health professional
+    professional_user = User(
+        id=professional_user_id,
+        email=f"prof{professional_user_id}@example.com",
+        hashed_password="hashed",
+        full_name="Test Professional",
+        role="health_professional",
+    )
+    db_session.add(professional_user)
+    await db_session.flush()
+
+    # Criar health professional necessário para FK
+    health_professional = HealthProfessional(
+        id=professional_id,
+        user_id=professional_user_id,
+        health_unit_id=health_unit_id,
+    )
+    db_session.add(health_professional)
+    await db_session.flush()
+
     # Criar tratamento ativo
     active_treatment = Treatment(
         patient_id=patient_id,
-        prescribed_by=uuid4(),
+        prescribed_by=professional_id,
         regimen="MB",
         start_date=date(2026, 1, 1),
         expected_end=date(2026, 12, 31),
@@ -269,7 +336,7 @@ async def test_adherence_repo_lists_active_treatments(db_session: AsyncSession):
     # Criar tratamento completado
     completed_treatment = Treatment(
         patient_id=patient_id,
-        prescribed_by=uuid4(),
+        prescribed_by=professional_id,
         regimen="PB",
         start_date=date(2025, 1, 1),
         expected_end=date(2025, 6, 30),
@@ -300,6 +367,8 @@ async def test_adherence_job_processes_active_treatments(db_session: AsyncSessio
     treatment_id = uuid4()
     user_id = uuid4()
     health_unit_id = uuid4()
+    professional_user_id = uuid4()
+    professional_id = uuid4()
 
     # Criar user necessário para FK
     user = User(
@@ -332,10 +401,30 @@ async def test_adherence_job_processes_active_treatments(db_session: AsyncSessio
     db_session.add(patient)
     await db_session.flush()
 
+    # Criar user para health professional
+    professional_user = User(
+        id=professional_user_id,
+        email=f"prof{professional_user_id}@example.com",
+        hashed_password="hashed",
+        full_name="Test Professional",
+        role="health_professional",
+    )
+    db_session.add(professional_user)
+    await db_session.flush()
+
+    # Criar health professional necessário para FK
+    health_professional = HealthProfessional(
+        id=professional_id,
+        user_id=professional_user_id,
+        health_unit_id=health_unit_id,
+    )
+    db_session.add(health_professional)
+    await db_session.flush()
+
     treatment = Treatment(
         id=treatment_id,
         patient_id=patient_id,
-        prescribed_by=uuid4(),
+        prescribed_by=professional_id,
         regimen="MB",
         start_date=date(2026, 1, 1),
         expected_end=date(2026, 12, 31),
