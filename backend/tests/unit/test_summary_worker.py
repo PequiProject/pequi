@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from pequi.models.checkin import Checkin
 from pequi.models.patient import PatientProfile
 from pequi.models.user import User
-from pequi.models.weekly_summary import WeeklySummary
+from pequi.models.weekly_summary import WeeklySymptomSummary
 from pequi.repositories.weekly_summary_repo import WeeklySummaryRepository
 from pequi.workers.summary_worker import summary_job
 
@@ -69,7 +69,7 @@ async def test_summary_job_processes_active_patients(db_session: AsyncSession, m
     await summary_job(ctx)
 
     # Verificar que summary foi criado
-    stmt = select(WeeklySummary).where(WeeklySummary.patient_id == patient_id)
+    stmt = select(WeeklySymptomSummary).where(WeeklySymptomSummary.patient_id == patient_id)
     result = await db_session.execute(stmt)
     summary = result.scalar_one_or_none()
 
