@@ -3,6 +3,7 @@ from decimal import Decimal
 from uuid import UUID
 
 from sqlalchemy import and_, func, select
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pequi.models.dose_log import AdherenceSnapshot, DoseLog
@@ -23,29 +24,10 @@ class AdherenceRepository:
         taken_doses: int,
         adherence_pct: Decimal,
     ) -> AdherenceSnapshot:
-        """Upsert adherence snapshot (idempotent) using INSERT ON CONFLICT."""
-        # First try to select existing snapshot
-        from sqlalchemy import select
-
-        stmt = select(AdherenceSnapshot).where(
-            AdherenceSnapshot.treatment_id == treatment_id,
-            AdherenceSnapshot.period_start == period_start,
-            AdherenceSnapshot.period_end == period_end,
-        )
-        result = await self._session.execute(stmt)
-        existing = result.scalar_one_or_none()
-
-        if existing:
-            # Update existing snapshot
-            existing.total_doses = total_doses
-            existing.taken_doses = taken_doses
-            existing.adherence_pct = adherence_pct
-            existing.calculated_at = datetime.now(UTC)
-            await self._session.flush()
-            return existing
-        else:
-            # Insert new snapshot
-            snapshot = AdherenceSnapshot(
+        """Upsert adherence snapshot (idempotent) via INSERT ON CONFLICT DO UPDATE."""
+        stmt = (
+            insert(AdherenceSnapshot)
+            .values(
                 patient_id=patient_id,
                 treatment_id=treatment_id,
                 period_start=period_start,
@@ -55,9 +37,20 @@ class AdherenceRepository:
                 adherence_pct=adherence_pct,
                 calculated_at=datetime.now(UTC),
             )
-            self._session.add(snapshot)
-            await self._session.flush()
-            return snapshot
+            .on_conflict_do_update(
+                index_elements=["treatment_id", "period_start", "period_end"],
+                set_={
+                    "total_doses": total_doses,
+                    "taken_doses": taken_doses,
+                    "adherence_pct": adherence_pct,
+                    "calculated_at": datetime.now(UTC),
+                },
+            )
+            .returning(AdherenceSnapshot)
+        )
+        result = await self._session.execute(stmt)
+        await self._session.flush()
+        return result.scalar_one()
 
     async def get_dose_counts_in_period(
         self,
