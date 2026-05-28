@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from pequi.models.dose_log import AdherenceSnapshot, DoseLog
 from pequi.models.patient import PatientProfile
 from pequi.models.treatment import Treatment, TreatmentStatus
+from pequi.models.user import User
 from pequi.repositories.adherence_repo import AdherenceRepository
 from pequi.services.adherence_service import AdherenceService
 from pequi.workers.adherence_worker import adherence_job
@@ -43,13 +44,19 @@ async def test_adherence_repo_upsert_is_idempotent(db_session: AsyncSession):
     repo = AdherenceRepository(db_session)
     patient_id = uuid4()
     treatment_id = uuid4()
+    user_id = uuid4()
     period_start = date(2026, 1, 1)
     period_end = date(2026, 1, 7)
+
+    # Criar user necessário para FK
+    user = User(id=user_id)
+    db_session.add(user)
+    await db_session.flush()
 
     # Criar patient_profile necessário para FK
     patient = PatientProfile(
         id=patient_id,
-        user_id=uuid4(),
+        user_id=user_id,
         health_unit_id=uuid4(),
         date_of_birth=date(1990, 1, 1),
     )
@@ -113,11 +120,17 @@ async def test_adherence_repo_counts_doses_in_period(db_session: AsyncSession):
     repo = AdherenceRepository(db_session)
     patient_id = uuid4()
     treatment_id = uuid4()
+    user_id = uuid4()
+
+    # Criar user necessário para FK
+    user = User(id=user_id)
+    db_session.add(user)
+    await db_session.flush()
 
     # Criar patient_profile necessário para FK
     patient = PatientProfile(
         id=patient_id,
-        user_id=uuid4(),
+        user_id=user_id,
         health_unit_id=uuid4(),
         date_of_birth=date(1990, 1, 1),
     )
@@ -174,11 +187,17 @@ async def test_adherence_repo_lists_active_treatments(db_session: AsyncSession):
     """Testa listagem de tratamentos ativos."""
     repo = AdherenceRepository(db_session)
     patient_id = uuid4()
+    user_id = uuid4()
+
+    # Criar user necessário para FK
+    user = User(id=user_id)
+    db_session.add(user)
+    await db_session.flush()
 
     # Criar patient_profile necessário para FK
     patient = PatientProfile(
         id=patient_id,
-        user_id=uuid4(),
+        user_id=user_id,
         health_unit_id=uuid4(),
         date_of_birth=date(1990, 1, 1),
     )
@@ -227,11 +246,17 @@ async def test_adherence_job_processes_active_treatments(db_session: AsyncSessio
     # Criar tratamento ativo com doses
     patient_id = uuid4()
     treatment_id = uuid4()
+    user_id = uuid4()
+
+    # Criar user necessário para FK
+    user = User(id=user_id)
+    db_session.add(user)
+    await db_session.flush()
 
     # Criar patient_profile necessário para FK
     patient = PatientProfile(
         id=patient_id,
-        user_id=uuid4(),
+        user_id=user_id,
         health_unit_id=uuid4(),
         date_of_birth=date(1990, 1, 1),
     )
