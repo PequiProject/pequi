@@ -430,6 +430,8 @@ async def test_adherence_job_processes_active_treatments(db_session: AsyncSessio
         expected_end=date(2026, 12, 31),
         status=TreatmentStatus.active,
     )
+    db_session.add(treatment)
+    await db_session.flush()
 
     now = datetime.now(UTC)
     week_ago = now - timedelta(days=7)
@@ -453,7 +455,7 @@ async def test_adherence_job_processes_active_treatments(db_session: AsyncSessio
         taken_at=None,
     )
 
-    db_session.add_all([treatment, dose1, dose2, dose3])
+    db_session.add_all([dose1, dose2, dose3])
     await db_session.flush()
 
     # Executar o job
