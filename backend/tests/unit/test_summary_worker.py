@@ -103,8 +103,10 @@ async def test_summary_job_processes_active_patients(db_session: AsyncSession, m
     week_end = today - timedelta(days=days_since_sunday)
     week_start = week_end - timedelta(days=6)
     # Criar checkins dentro da semana calculada
-    checkin1_date = datetime.combine(week_start + timedelta(days=1), datetime.min.time()).replace(tzinfo=UTC)
-    checkin2_date = datetime.combine(week_start + timedelta(days=2), datetime.min.time()).replace(tzinfo=UTC)
+    checkin1_day = week_start + timedelta(days=1)
+    checkin2_day = week_start + timedelta(days=2)
+    checkin1_date = datetime.combine(checkin1_day, datetime.min.time()).replace(tzinfo=UTC)
+    checkin2_date = datetime.combine(checkin2_day, datetime.min.time()).replace(tzinfo=UTC)
     checkin1 = Checkin(
         id=uuid4(),
         patient_id=patient_id,
