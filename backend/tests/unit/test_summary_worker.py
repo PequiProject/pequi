@@ -71,7 +71,7 @@ async def test_summary_job_processes_active_patients(db_session: AsyncSession, m
         id=uuid4(),
         patient_id=patient_id,
         symptom_intensity=7,
-        mood="neutral",
+        mood="ok",
         created_at=now - timedelta(days=3),
     )
     db_session.add_all([checkin1, checkin2])
