@@ -4,11 +4,13 @@ from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pequi.models.checkin import Checkin
 from pequi.models.patient import PatientProfile
 from pequi.models.user import User
+from pequi.models.weekly_summary import WeeklySummary
 from pequi.repositories.weekly_summary_repo import WeeklySummaryRepository
 from pequi.workers.summary_worker import summary_job
 
@@ -44,7 +46,6 @@ async def test_summary_job_processes_active_patients(db_session: AsyncSession, m
 
     # Criar checkins na semana
     now = datetime.now(UTC)
-    week_ago = now - timedelta(days=7)
 
     checkin1 = Checkin(
         id=uuid4(),
@@ -68,9 +69,6 @@ async def test_summary_job_processes_active_patients(db_session: AsyncSession, m
     await summary_job(ctx)
 
     # Verificar que summary foi criado
-    from sqlalchemy import select
-    from pequi.models.weekly_summary import WeeklySummary
-
     stmt = select(WeeklySummary).where(WeeklySummary.patient_id == patient_id)
     result = await db_session.execute(stmt)
     summary = result.scalar_one_or_none()
