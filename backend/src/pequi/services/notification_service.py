@@ -15,3 +15,24 @@ class NotificationService:
             patient_id=str(patient_id),
             feedback_length=len(feedback),
         )
+
+    async def send_dose_reminder(self, patient_id: UUID) -> None:
+        """Envia lembrete diário de dose ao paciente."""
+        logger.info(
+            "notification.dose_reminder_queued",
+            patient_id=str(patient_id),
+        )
+
+    async def send_low_adherence_alert(self, patient_id: UUID) -> None:
+        """Envia alerta de baixa adesão para o profissional."""
+        logger.info(
+            "notification.low_adherence_alert_queued",
+            patient_id=str(patient_id),
+        )
+
+    async def send_alert_notification(self, patient_id: UUID) -> None:
+        """Envia notificação de novo alerta para o profissional."""
+        logger.info(
+            "notification.alert_notification_queued",
+            patient_id=str(patient_id),
+        )
