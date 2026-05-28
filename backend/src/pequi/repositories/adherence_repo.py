@@ -25,9 +25,28 @@ class AdherenceRepository:
         adherence_pct: Decimal,
     ) -> AdherenceSnapshot:
         """Upsert adherence snapshot (idempotent) using INSERT ON CONFLICT."""
-        stmt = (
-            insert(AdherenceSnapshot)
-            .values(
+        # First try to select existing snapshot
+        from sqlalchemy import select
+
+        stmt = select(AdherenceSnapshot).where(
+            AdherenceSnapshot.treatment_id == treatment_id,
+            AdherenceSnapshot.period_start == period_start,
+            AdherenceSnapshot.period_end == period_end,
+        )
+        result = await self._session.execute(stmt)
+        existing = result.scalar_one_or_none()
+
+        if existing:
+            # Update existing snapshot
+            existing.total_doses = total_doses
+            existing.taken_doses = taken_doses
+            existing.adherence_pct = adherence_pct
+            existing.calculated_at = datetime.now(UTC)
+            await self._session.flush()
+            return existing
+        else:
+            # Insert new snapshot
+            snapshot = AdherenceSnapshot(
                 patient_id=patient_id,
                 treatment_id=treatment_id,
                 period_start=period_start,
@@ -37,29 +56,9 @@ class AdherenceRepository:
                 adherence_pct=adherence_pct,
                 calculated_at=datetime.now(UTC),
             )
-            .on_conflict_do_update(
-                index_elements=["treatment_id", "period_start", "period_end"],
-                set_={
-                    "total_doses": insert(AdherenceSnapshot).excluded.total_doses,
-                    "taken_doses": insert(AdherenceSnapshot).excluded.taken_doses,
-                    "adherence_pct": insert(AdherenceSnapshot).excluded.adherence_pct,
-                    "calculated_at": datetime.now(UTC),
-                },
-            )
-        )
-        await self._session.execute(stmt)
-        await self._session.flush()
-
-        # Select the snapshot to return the updated value
-        from sqlalchemy import select
-
-        stmt = select(AdherenceSnapshot).where(
-            AdherenceSnapshot.treatment_id == treatment_id,
-            AdherenceSnapshot.period_start == period_start,
-            AdherenceSnapshot.period_end == period_end,
-        )
-        result = await self._session.execute(stmt)
-        return result.scalar_one()
+            self._session.add(snapshot)
+            await self._session.flush()
+            return snapshot
 
     async def get_dose_counts_in_period(
         self,
