@@ -142,6 +142,9 @@ async def test_adherence_repo_upsert_is_idempotent(db_session: AsyncSession):
     )
     assert snapshot1.adherence_pct == Decimal("70.00")
 
+    # Commit para garantir que o snapshot foi persistido
+    await db_session.commit()
+
     # Segundo upsert (deve atualizar, não duplicar)
     snapshot2 = await repo.upsert_snapshot(
         patient_id=patient_id,
@@ -211,6 +214,14 @@ async def test_adherence_repo_lists_active_treatments(db_session: AsyncSession):
     """Testa listagem de tratamentos ativos."""
     repo = AdherenceRepository(db_session)
     patient_id, _, professional_id = await _create_patient_with_treatment(db_session)
+
+    # Marcar tratamento existente como completed para não interferir
+    from sqlalchemy import update
+    from pequi.models.treatment import Treatment
+
+    stmt = update(Treatment).where(Treatment.patient_id == patient_id).values(status=TreatmentStatus.completed)
+    await db_session.execute(stmt)
+    await db_session.flush()
 
     # Criar tratamento ativo
     active_treatment = Treatment(
