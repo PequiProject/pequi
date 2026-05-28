@@ -8,8 +8,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pequi.models.checkin import Checkin
+from pequi.models.health_professional import HealthProfessional
 from pequi.models.health_unit import HealthUnit
 from pequi.models.patient import PatientProfile
+from pequi.models.treatment import Treatment, TreatmentStatus
 from pequi.models.user import User
 from pequi.models.weekly_summary import WeeklySymptomSummary
 from pequi.repositories.weekly_summary_repo import WeeklySummaryRepository
@@ -25,6 +27,9 @@ async def test_summary_job_processes_active_patients(db_session: AsyncSession, m
     patient_id = uuid4()
     user_id = uuid4()
     health_unit_id = uuid4()
+    professional_user_id = uuid4()
+    professional_id = uuid4()
+    treatment_id = uuid4()
 
     # Criar user necessário para FK
     user = User(
@@ -55,6 +60,39 @@ async def test_summary_job_processes_active_patients(db_session: AsyncSession, m
         date_of_birth=datetime(1990, 1, 1).date(),
     )
     db_session.add(patient)
+    await db_session.flush()
+
+    # Criar user para health professional
+    professional_user = User(
+        id=professional_user_id,
+        email=f"prof{professional_user_id}@example.com",
+        hashed_password="hashed",
+        full_name="Test Professional",
+        role="health_professional",
+    )
+    db_session.add(professional_user)
+    await db_session.flush()
+
+    # Criar health professional necessário para FK
+    health_professional = HealthProfessional(
+        id=professional_id,
+        user_id=professional_user_id,
+        health_unit_id=health_unit_id,
+    )
+    db_session.add(health_professional)
+    await db_session.flush()
+
+    # Criar treatment ativo necessário para list_active_patients
+    treatment = Treatment(
+        id=treatment_id,
+        patient_id=patient_id,
+        prescribed_by=professional_id,
+        regimen="MB",
+        start_date=datetime(2026, 1, 1).date(),
+        expected_end=datetime(2026, 12, 31).date(),
+        status=TreatmentStatus.active,
+    )
+    db_session.add(treatment)
     await db_session.flush()
 
     # Criar checkins na semana
