@@ -8,6 +8,7 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pequi.models.dose_log import AdherenceSnapshot, DoseLog
+from pequi.models.health_unit import HealthUnit
 from pequi.models.patient import PatientProfile
 from pequi.models.treatment import Treatment, TreatmentStatus
 from pequi.models.user import User
@@ -45,6 +46,7 @@ async def test_adherence_repo_upsert_is_idempotent(db_session: AsyncSession):
     patient_id = uuid4()
     treatment_id = uuid4()
     user_id = uuid4()
+    health_unit_id = uuid4()
     period_start = date(2026, 1, 1)
     period_end = date(2026, 1, 7)
 
@@ -59,11 +61,21 @@ async def test_adherence_repo_upsert_is_idempotent(db_session: AsyncSession):
     db_session.add(user)
     await db_session.flush()
 
+    # Criar health_unit necessário para FK
+    health_unit = HealthUnit(
+        id=health_unit_id,
+        name="Test Health Unit",
+        city="Test City",
+        state="SP",
+    )
+    db_session.add(health_unit)
+    await db_session.flush()
+
     # Criar patient_profile necessário para FK
     patient = PatientProfile(
         id=patient_id,
         user_id=user_id,
-        health_unit_id=uuid4(),
+        health_unit_id=health_unit_id,
         date_of_birth=date(1990, 1, 1),
     )
     db_session.add(patient)
@@ -127,6 +139,7 @@ async def test_adherence_repo_counts_doses_in_period(db_session: AsyncSession):
     patient_id = uuid4()
     treatment_id = uuid4()
     user_id = uuid4()
+    health_unit_id = uuid4()
 
     # Criar user necessário para FK
     user = User(
@@ -139,11 +152,21 @@ async def test_adherence_repo_counts_doses_in_period(db_session: AsyncSession):
     db_session.add(user)
     await db_session.flush()
 
+    # Criar health_unit necessário para FK
+    health_unit = HealthUnit(
+        id=health_unit_id,
+        name="Test Health Unit",
+        city="Test City",
+        state="SP",
+    )
+    db_session.add(health_unit)
+    await db_session.flush()
+
     # Criar patient_profile necessário para FK
     patient = PatientProfile(
         id=patient_id,
         user_id=user_id,
-        health_unit_id=uuid4(),
+        health_unit_id=health_unit_id,
         date_of_birth=date(1990, 1, 1),
     )
     db_session.add(patient)
@@ -200,6 +223,7 @@ async def test_adherence_repo_lists_active_treatments(db_session: AsyncSession):
     repo = AdherenceRepository(db_session)
     patient_id = uuid4()
     user_id = uuid4()
+    health_unit_id = uuid4()
 
     # Criar user necessário para FK
     user = User(
@@ -212,11 +236,21 @@ async def test_adherence_repo_lists_active_treatments(db_session: AsyncSession):
     db_session.add(user)
     await db_session.flush()
 
+    # Criar health_unit necessário para FK
+    health_unit = HealthUnit(
+        id=health_unit_id,
+        name="Test Health Unit",
+        city="Test City",
+        state="SP",
+    )
+    db_session.add(health_unit)
+    await db_session.flush()
+
     # Criar patient_profile necessário para FK
     patient = PatientProfile(
         id=patient_id,
         user_id=user_id,
-        health_unit_id=uuid4(),
+        health_unit_id=health_unit_id,
         date_of_birth=date(1990, 1, 1),
     )
     db_session.add(patient)
@@ -265,6 +299,7 @@ async def test_adherence_job_processes_active_treatments(db_session: AsyncSessio
     patient_id = uuid4()
     treatment_id = uuid4()
     user_id = uuid4()
+    health_unit_id = uuid4()
 
     # Criar user necessário para FK
     user = User(
@@ -277,11 +312,21 @@ async def test_adherence_job_processes_active_treatments(db_session: AsyncSessio
     db_session.add(user)
     await db_session.flush()
 
+    # Criar health_unit necessário para FK
+    health_unit = HealthUnit(
+        id=health_unit_id,
+        name="Test Health Unit",
+        city="Test City",
+        state="SP",
+    )
+    db_session.add(health_unit)
+    await db_session.flush()
+
     # Criar patient_profile necessário para FK
     patient = PatientProfile(
         id=patient_id,
         user_id=user_id,
-        health_unit_id=uuid4(),
+        health_unit_id=health_unit_id,
         date_of_birth=date(1990, 1, 1),
     )
     db_session.add(patient)
