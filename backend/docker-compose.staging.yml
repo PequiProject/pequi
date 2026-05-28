@@ -6,10 +6,6 @@ services:
     restart: always
     env_file:
       - .env.staging
-    environment:
-      DATABASE_URL: ${DATABASE_URL}
-      SECRET_KEY: ${SECRET_KEY}
-      ENV: ${ENV}
     command: alembic upgrade head
     depends_on:
       db:
@@ -21,18 +17,6 @@ services:
     restart: always
     env_file:
       - .env.staging
-    environment:
-      DATABASE_URL: ${DATABASE_URL}
-      REDIS_URL: ${REDIS_URL}
-      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
-      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
-      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY}
-      STORAGE_BUCKET_IMAGES: ${STORAGE_BUCKET_IMAGES}
-      STORAGE_REGION: ${STORAGE_REGION}
-      SECRET_KEY: ${SECRET_KEY}
-      ENV: ${ENV}
-      SENTRY_DSN: ${SENTRY_DSN}
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
     depends_on:
       db:
         condition: service_healthy
@@ -49,17 +33,6 @@ services:
     env_file:
       - .env.staging
     command: python -m arq pequi.workers.settings.WorkerSettings
-    environment:
-      DATABASE_URL: ${DATABASE_URL}
-      REDIS_URL: ${REDIS_URL}
-      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
-      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
-      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY}
-      STORAGE_BUCKET_IMAGES: ${STORAGE_BUCKET_IMAGES}
-      STORAGE_REGION: ${STORAGE_REGION}
-      SECRET_KEY: ${SECRET_KEY}
-      ENV: ${ENV}
-      SENTRY_DSN: ${SENTRY_DSN}
     depends_on:
       db:
         condition: service_healthy
