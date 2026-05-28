@@ -139,7 +139,7 @@ jobs:
       - name: Validate migration head
         run: |
           uv run alembic current
-          uv run alembic history -r-1:head
+          uv run alembic history -r-1:heads
 
       - name: Run tests with coverage
         run: |
