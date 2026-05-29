@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LucideAngularModule, ImagePlus, CirclePlus, Calendar, Stethoscope, ChevronLeft, ChevronRight } from 'lucide-angular';
 import { Router, RouterLink } from '@angular/router';
@@ -34,7 +34,7 @@ interface Article {
   templateUrl: './home.html',
   styleUrls: ['./home.css'],
 })
-export class HomeComponent implements OnInit {
+export class HomeComponent implements OnInit, AfterViewInit {
   private readonly router = inject(Router);
   readonly ImagePlus = ImagePlus;
   readonly CirclePlus = CirclePlus;
@@ -42,6 +42,8 @@ export class HomeComponent implements OnInit {
   readonly Stethoscope = Stethoscope;
   readonly ChevronLeft = ChevronLeft;
   readonly ChevronRight = ChevronRight;
+
+  @ViewChild('daysRow') daysRow!: ElementRef<HTMLDivElement>;
 
   currentMonthYear: string = '';
   isExpanded = signal(false);
@@ -94,8 +96,16 @@ export class HomeComponent implements OnInit {
     this.updateMonthYearLabel();
   }
 
+  ngAfterViewInit(): void {
+    this.centerActiveDay();
+  }
+
   toggleCalendar() {
     this.isExpanded.update(val => !val);
+
+    if (!this.isExpanded()) {
+      this.centerActiveDay();
+    }
   }
 
   changeMonth(delta: number) {
@@ -108,18 +118,43 @@ export class HomeComponent implements OnInit {
     this.generateCurrentMonth();
   }
 
-  generateCurrentWeek() {
-    const today = new Date();
-    const currentDay = today.getDay();
+  goToToday() {
+    this.selectedDate = new Date();
+    this.updateMonthYearLabel();
+    this.generateCurrentWeek();
+    this.generateCurrentMonth();
+    this.centerActiveDay();
+  }
 
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - currentDay);
+  centerActiveDay() {
+    setTimeout(() => {
+      if (!this.daysRow) return;
+
+      const container = this.daysRow.nativeElement;
+      const activeCard = container.querySelector('.day-card.active') as HTMLElement;
+
+      if (activeCard) {
+        activeCard.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'nearest', 
+          inline: 'center' 
+        });
+      }
+    }, 100);
+  }
+
+  generateCurrentWeek() {
+    this.calendarWeek = [];
+    const currentDay = this.selectedDate.getDay();
+
+    const startOfScroll = new Date(this.selectedDate);
+    startOfScroll.setDate(this.selectedDate.getDate() - 10);
 
     const daysPt = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
-    for (let i = 0; i < 7; i++) {
-      const dateObj = new Date(startOfWeek);
-      dateObj.setDate(startOfWeek.getDate() + i);
+    for (let i = 0; i < 21; i++) {
+      const dateObj = new Date(startOfScroll);
+      dateObj.setDate(startOfScroll.getDate() + i);
 
       this.calendarWeek.push({
         dateObj,

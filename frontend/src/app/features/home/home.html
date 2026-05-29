@@ -4,26 +4,38 @@
       
       @if (isExpanded()) {
         <div class="flex items-center gap-3">
-          <button (click)="changeMonth(-1)" class="p-1 hover:bg-gray-100 rounded-full transition">
+          <button (click)="changeMonth(-1)" class="p-1 hover:bg-gray-100 rounded-full transition cursor-pointer">
             <lucide-icon [name]="ChevronLeft" [size]="20" class="text-gray-600"></lucide-icon>
           </button>
-          <h2 class="month-title m-0 text-lg font-bold text-[#222]">{{ currentMonthYear }}</h2>
-          <button (click)="changeMonth(1)" class="p-1 hover:bg-gray-100 rounded-full transition">
+          
+          <div class="flex items-center gap-2">
+            <h2 class="month-title m-0 text-lg font-bold text-[#222]">{{ currentMonthYear }}</h2>
+            <button (click)="goToToday()" class="cursor-pointer text-[10px] font-bold uppercase tracking-wider text-[#5b48d9] bg-[#D8D4F7] px-2 py-1 rounded-lg hover:bg-[#c2bcf0] transition">
+              Hoje
+            </button>
+          </div>
+          
+          <button (click)="changeMonth(1)" class="p-1 hover:bg-gray-100 rounded-full transition cursor-pointer">
             <lucide-icon [name]="ChevronRight" [size]="20" class="text-gray-600"></lucide-icon>
           </button>
         </div>
       } @else {
-        <h2 class="month-title m-0 text-lg font-bold text-[#222]">{{ currentMonthYear }}</h2>
+        <div class="flex items-center gap-3">
+          <h2 class="month-title m-0 text-lg font-bold text-[#222]">{{ currentMonthYear }}</h2>
+          <button (click)="goToToday()" class="cursor-pointer text-[10px] font-bold uppercase tracking-wider text-[#5b48d9] bg-[#D8D4F7] px-2 py-1 rounded-lg hover:bg-[#c2bcf0] transition">
+            Hoje
+          </button>
+        </div>
       }
 
-      <button class="calendar-btn flex items-center gap-2 text-[#5b48d9] font-medium transition hover:opacity-80" (click)="toggleCalendar()">
+      <button class="calendar-btn flex items-center gap-2 text-[#5b48d9] font-medium transition hover:opacity-80 cursor-pointer" (click)="toggleCalendar()">
         {{ isExpanded() ? 'Recolher' : 'Expandir' }} 
         <lucide-icon [name]="CalendarIcon" [size]="20"></lucide-icon>
       </button>
     </div>
 
     @if (!isExpanded()) {
-      <div class="days-row">
+      <div class="days-row" #daysRow>
         @for (day of calendarWeek; track day.dayNumber) {
           <div
             class="day-card flex-1 min-w-[45px] max-w-[70px]"
