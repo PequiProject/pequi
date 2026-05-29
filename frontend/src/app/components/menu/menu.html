@@ -62,7 +62,7 @@
             routerLinkActive="bg-[#E0E7FF] text-[#4338CA]"
             ariaCurrentWhenActive="page"
             [attr.aria-label]="item.label"
-            class="flex min-h-11 items-center rounded-xl text-sm font-medium transition bg-transparent text-[#78716C]"
+            class="flex min-h-11 items-center rounded-xl text-sm font-medium transition"
             [class.justify-center]="isCollapsed()"
             [class.gap-3]="!isCollapsed()"
             [class.px-4]="!isCollapsed()"
@@ -104,7 +104,7 @@
           [routerLinkActiveOptions]="{ exact: item.exactLink !== false }"
           routerLinkActive="bg-[#E0E7FF] text-[#4338CA]"
           ariaCurrentWhenActive="page"
-          class="flex h-full min-h-11 flex-col items-center justify-center gap-1 rounded-xl px-2 text-xs font-medium transition bg-transparent text-[#78716C]"
+          class="flex h-full min-h-11 flex-col items-center justify-center gap-1 rounded-xl px-2 text-xs font-medium transition"
         >
           <lucide-icon
             [name]="item.icon"
