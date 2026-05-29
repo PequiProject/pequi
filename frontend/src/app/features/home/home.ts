@@ -35,7 +35,7 @@ interface Article {
   styleUrls: ['./home.css'],
 })
 export class HomeComponent implements OnInit {
-  private router = inject(Router);
+  private readonly router = inject(Router);
   readonly ImagePlus = ImagePlus;
   readonly CirclePlus = CirclePlus;
   readonly CalendarIcon = Calendar;
