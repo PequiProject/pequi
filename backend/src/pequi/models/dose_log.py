@@ -66,6 +66,12 @@ class AdherenceSnapshot(Base):
 
     __tablename__ = "adherence_snapshots"
     __table_args__ = (
+        UniqueConstraint(
+            "treatment_id",
+            "period_start",
+            "period_end",
+            name="uq_adherence_snapshots_period",
+        ),
         Index("ix_adherence_snapshots_treatment_id", "treatment_id"),
         Index("ix_adherence_snapshots_patient_id", "patient_id"),
         Index("ix_adherence_snapshots_calculated_at", "calculated_at"),

@@ -58,7 +58,7 @@ jobs:
           script: |
             set -euo pipefail
 
-            cd ~/pequi
+            cd ~/pequi/backend
 
             git pull origin development
 
@@ -70,8 +70,7 @@ jobs:
             IMAGE_TAG="$IMAGE_TAG" \
               docker compose -f docker-compose.staging.yml up -d --no-build
 
-            docker compose -f docker-compose.staging.yml exec -T migrate \
-              alembic upgrade head
+            docker compose -f docker-compose.staging.yml run --rm migrate
 
             docker image prune -f
         env:
@@ -84,15 +83,18 @@ jobs:
         id: healthcheck
         run: |
           echo "Aguardando API inicializar..."
-          sleep 15
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            --max-time 30 --retry 5 --retry-delay 10 \
-            "http://${{ secrets.EC2_HOST }}:8080/docs")
-          echo "HTTP status: $STATUS"
-          if [ "$STATUS" != "200" ]; then
-            echo "::error::Health check falhou — HTTP $STATUS"
-            exit 1
-          fi
+          sleep 30
+          for i in 1 2 3 4 5; do
+            STATUS=$(curl -s -w "\n%{http_code}" "http://${{ secrets.EC2_HOST }}:8080/docs" | tail -1)
+            echo "Tentativa $i — HTTP status: $STATUS"
+            if [ "$STATUS" = "200" ]; then
+              echo "Health check OK!"
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "::error::Health check falhou após 5 tentativas"
+          exit 1
 
       - name: Exibir logs do container api (apenas em falha)
         if: failure() && steps.healthcheck.outcome == 'failure'
@@ -102,7 +104,7 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd ~/pequi
+            cd ~/pequi/backend
             echo "=== Logs do container api (últimas 100 linhas) ==="
             docker compose -f docker-compose.staging.yml logs --tail=100 api
 
@@ -155,7 +157,7 @@ jobs:
           script: |
             set -euo pipefail
 
-            cd ~/pequi
+            cd ~/pequi/backend
 
             git pull origin main
 
@@ -167,8 +169,7 @@ jobs:
             IMAGE_TAG="$IMAGE_TAG" \
               docker compose -f docker-compose.prod.yml up -d --no-build
 
-            docker compose -f docker-compose.prod.yml exec -T migrate \
-              alembic upgrade head
+            docker compose -f docker-compose.prod.yml run --rm migrate
 
             docker image prune -f
         env:
@@ -183,7 +184,7 @@ jobs:
           echo "Aguardando API inicializar..."
           sleep 15
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            --max-time 30 --retry 5 --retry-delay 10 \
+            --max-time 60 --retry 5 --retry-delay 15 \
             "http://${{ secrets.EC2_HOST }}/docs")
           echo "HTTP status: $STATUS"
           if [ "$STATUS" != "200" ]; then
@@ -199,6 +200,6 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd ~/pequi
+            cd ~/pequi/backend
             echo "=== Logs do container api (últimas 100 linhas) ==="
             docker compose -f docker-compose.prod.yml logs --tail=100 api
