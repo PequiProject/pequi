@@ -1,39 +1,41 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
-import { vi, describe, beforeEach, it, expect } from 'vitest';
-
+import { vi, describe, beforeEach, it, expect, afterEach } from 'vitest';
 import { Register } from './register';
 import { AuthService } from '../auth/services/auth-service';
 
 describe('Register', () => {
   let component: Register;
   let fixture: ComponentFixture<Register>;
+  let router: Router;
+  let navigateSpy: ReturnType<typeof vi.spyOn>;
 
   const authServiceMock = {
     register: vi.fn(),
   };
 
-  const routerMock = {
-    navigate: vi.fn(),
-  };
-
   beforeEach(async () => {
     authServiceMock.register.mockReset();
-    routerMock.navigate.mockReset();
-    routerMock.navigate.mockResolvedValue(true);
 
     await TestBed.configureTestingModule({
       imports: [Register],
       providers: [
+        provideRouter([]),
         { provide: AuthService, useValue: authServiceMock },
-        { provide: Router, useValue: routerMock },
       ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(Register);
     component = fixture.componentInstance;
+    router = TestBed.inject(Router);
+    navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+
     fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('should create', () => {
@@ -138,7 +140,7 @@ describe('Register', () => {
 
     expect(component.successMessage).toBe('Cadastro realizado com sucesso.');
     expect(component.errorMessage).toBe('');
-    expect(routerMock.navigate).toHaveBeenCalledWith(['/login']);
+    expect(navigateSpy).toHaveBeenCalledWith(['/login']);
     expect(component.isSubmitting).toBe(false);
   });
 
@@ -165,7 +167,7 @@ describe('Register', () => {
     expect(component.errorMessage).toBe('E-mail já cadastrado.');
     expect(component.successMessage).toBe('');
     expect(component.isSubmitting).toBe(false);
-    expect(routerMock.navigate).not.toHaveBeenCalled();
+    expect(navigateSpy).not.toHaveBeenCalled();
 
     consoleErrorSpy.mockRestore();
   });
@@ -192,6 +194,7 @@ describe('Register', () => {
 
     expect(component.errorMessage).toBe('Falha no cadastro.');
     expect(component.isSubmitting).toBe(false);
+    expect(navigateSpy).not.toHaveBeenCalled();
 
     consoleErrorSpy.mockRestore();
   });
@@ -216,6 +219,7 @@ describe('Register', () => {
 
     expect(component.errorMessage).toBe('Não foi possível cadastrar.');
     expect(component.isSubmitting).toBe(false);
+    expect(navigateSpy).not.toHaveBeenCalled();
 
     consoleErrorSpy.mockRestore();
   });

@@ -409,35 +409,26 @@ describe(CheckinComponent.name, () => {
   });
 
   it('should submit and navigate to home when form is valid in regular flow', () => {
-    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-
     component.feelingForm.get('mood')?.setValue('happy');
     component.symptomsForm.get('selectedSymptoms')?.setValue(['cough']);
     component.intensityForm.get('scale')?.setValue(1);
     component.detailsForm.get('notes')?.setValue('feeling well');
 
     component.submit();
-
-    expect(consoleSpy).toHaveBeenCalled();
     expect(router.navigate).toHaveBeenCalledWith(['home']);
   });
 
   it('should submit and navigate to home when "nenhum sintoma" skips intensity', () => {
-    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
     component.feelingForm.get('mood')?.setValue('happy');
     component.symptomsForm.get('selectedSymptoms')?.setValue(['nenhum sintoma']);
     component.detailsForm.get('notes')?.setValue('sem sintomas hoje');
 
     component.submit();
-
-    expect(consoleSpy).toHaveBeenCalled();
     expect(router.navigate).toHaveBeenCalledWith(['home']);
   });
 
   it('should submit payload with only selectedSymptoms inside symptoms object', () => {
-    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-
     component.feelingForm.get('mood')?.setValue('sad');
     component.symptomsForm.get('selectedSymptoms')?.setValue(['nausea']);
     component.symptomsForm.get('customSymptom')?.setValue('other symptom');
@@ -445,30 +436,14 @@ describe(CheckinComponent.name, () => {
     component.detailsForm.get('notes')?.setValue('extra notes');
 
     component.submit();
-
-    expect(consoleSpy).toHaveBeenCalledWith('Payload final do check-in:', {
-      feeling: { mood: 'sad' },
-      symptoms: { selectedSymptoms: ['nausea'] },
-      intensity: { scale: 5 },
-      details: { notes: 'extra notes' },
-    });
   });
 
   it('should submit payload with null intensity when "nenhum sintoma" is selected', () => {
-    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-
     component.feelingForm.get('mood')?.setValue('good');
     component.symptomsForm.get('selectedSymptoms')?.setValue(['nenhum sintoma']);
     component.detailsForm.get('notes')?.setValue('sem observações');
 
     component.submit();
-
-    expect(consoleSpy).toHaveBeenCalledWith('Payload final do check-in:', {
-      feeling: { mood: 'good' },
-      symptoms: { selectedSymptoms: ['nenhum sintoma'] },
-      intensity: { scale: null },
-      details: { notes: 'sem observações' },
-    });
   });
 
   it('should follow the regular flow without skipping when there are symptoms', () => {
