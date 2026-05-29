@@ -7,12 +7,7 @@ import {
   signal,
   WritableSignal,
 } from '@angular/core';
-import {
-  FormBuilder,
-  FormGroup,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { CheckinStepFeelingComponent } from '../../components/checkin-step-feeling-component/checkin-step-feeling-component';
@@ -80,8 +75,8 @@ export class CheckinComponent {
   });
 
   constructor() {
-    this.setupCurrentStepValidationWatcher();
-    this.setupIntensityConditionalValidation();
+      // this.setupCurrentStepValidationWatcher();
+      // this.setupIntensityConditionalValidation();
   }
 
   get currentStepNumber(): WritableSignal<number> {
@@ -133,10 +128,10 @@ export class CheckinComponent {
         return;
 
       case 2:
-        if (this.hasNoSymptomsSelected()) {
-          this.currentStep.set(4);
-          return;
-        }
+        // if (this.hasNoSymptomsSelected()) {
+        //   this.currentStep.set(4);
+        //   return;
+        // }
 
         this.currentStep.set(3);
         return;
@@ -153,10 +148,10 @@ export class CheckinComponent {
   prevStep(): void {
     switch (this.currentStep()) {
       case 4:
-        if (this.hasNoSymptomsSelected()) {
-          this.currentStep.set(2);
-          return;
-        }
+        // if (this.hasNoSymptomsSelected()) {
+        //   this.currentStep.set(2);
+        //   return;
+        // }
 
         this.currentStep.set(3);
         return;
@@ -207,54 +202,5 @@ export class CheckinComponent {
       default:
         return this.feelingForm;
     }
-  }
-
-  private hasNoSymptomsSelected(): boolean {
-    const selectedSymptoms =
-      this.symptomsForm.get('selectedSymptoms')?.value ?? [];
-
-    return selectedSymptoms.includes(this.NO_SYMPTOM_VALUE);
-  }
-
-  private setupCurrentStepValidationWatcher(): void {
-    effect(() => {
-      const step = this.currentStep();
-      const currentGroup = this.getStepForm(step);
-
-      this.stepStatusSubscription?.unsubscribe();
-      this.isCurrentStepInvalid.set(currentGroup.invalid);
-
-      this.stepStatusSubscription = currentGroup.statusChanges.subscribe(() => {
-        this.isCurrentStepInvalid.set(currentGroup.invalid);
-      });
-    });
-  }
-
-  private setupIntensityConditionalValidation(): void {
-    const selectedSymptomsControl = this.symptomsForm.get('selectedSymptoms');
-    const intensityScaleControl = this.intensityForm.get('scale');
-
-    this.applyIntensityValidation();
-
-    this.symptomsSelectionSubscription = selectedSymptomsControl?.valueChanges.subscribe(() => {
-      this.applyIntensityValidation();
-    });
-  }
-
-  private applyIntensityValidation(): void {
-    const intensityScaleControl = this.intensityForm.get('scale');
-
-    if (!intensityScaleControl) {
-      return;
-    }
-
-    if (this.hasNoSymptomsSelected()) {
-      intensityScaleControl.clearValidators();
-      intensityScaleControl.setValue(null, { emitEvent: false });
-    } else {
-      intensityScaleControl.setValidators([Validators.required]);
-    }
-
-    intensityScaleControl.updateValueAndValidity({ emitEvent: true });
   }
 }

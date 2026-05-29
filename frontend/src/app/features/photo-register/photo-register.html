@@ -1,0 +1,235 @@
+<input 
+  type="file" 
+  id="marker-photo-upload" 
+  class="hidden" 
+  accept="image/*" 
+  (change)="handleImageUpload($event)"
+>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8" [formGroup]="form">
+  <div class="flex flex-col items-center rounded-3xl bg-[#FCFBF8] p-6 shadow-sm">
+    <div class="text-center mb-4">
+      <h3 class="text-2xl font-bold text-[#222]">Mapa Corporal</h3>
+      <p class="text-sm text-[#666] mt-2 max-w-xs mx-auto">
+        Toque qualquer área na silhueta para criar um novo comentário ou revisar anotações existentes.
+      </p>
+    </div>
+
+    <div class="flex bg-white shadow-sm rounded-full p-1 border border-gray-200 mb-6">
+      <button 
+        type="button"
+        (click)="setView('front')"
+        [ngClass]="currentView() === 'front' ? 'bg-[#5b48d9] text-white shadow-sm' : 'text-gray-500 hover:bg-gray-100'"
+        class="px-6 py-2 text-xs font-semibold rounded-full transition-all">
+        Frente
+      </button>
+      <button 
+        type="button"
+        (click)="setView('back')"
+        [ngClass]="currentView() === 'back' ? 'bg-[#5b48d9] text-white shadow-sm' : 'text-gray-500 hover:bg-gray-100'"
+        class="px-6 py-2 text-xs font-semibold rounded-full transition-all">
+        Costas
+      </button>
+    </div>
+
+    <div class="relative w-full max-w-[280px] aspect-[1/2] mx-auto bg-transparent rounded-3xl shadow-inner overflow-visible">
+      
+      <img
+        [src]="currentView() === 'front' ? 'assets/body-silhouette-front.svg' : 'assets/body-silhouette-back.svg'"
+        alt="Silhueta do corpo humano"
+        class="w-full h-full object-contain cursor-crosshair"
+        (click)="addMarker($event)"
+      />
+
+      @for (marker of visibleMarkers; track marker.id) {
+        <div
+          class="absolute w-6 h-6 -ml-3 -mt-3 rounded-full border-2 border-white flex items-center justify-center shadow-md transform transition-all hover:scale-110 cursor-pointer z-10"
+          [ngClass]="{
+            'bg-[#5b48d9]': marker.status === 'active',
+            'bg-[#3b6b82]': marker.status === 'review',
+            'bg-[#2F7A4A]': marker.status === 'cured'
+          }"
+          [style.left.%]="marker.x"
+          [style.top.%]="marker.y"
+          (click)="toggleMenu($event, marker.id)"
+        >
+          @if (marker.status === 'active') {
+            <span class="text-white text-xs font-bold">!</span>
+          }
+          @if (marker.status === 'cured') {
+            <lucide-icon [name]="CircleCheckIcon" [size]="12" class="text-white>"></lucide-icon>
+          }
+        </div>
+        @if (selectedMarkerId() === marker.id) {
+          <div
+            class="absolute z-20 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 p-3 flex flex-col gap-2"
+            [style.left.%]="marker.x"
+            [style.top.%]="marker.y"
+            style="transform: translate(15px, -50%);"
+          >
+            <div class="border-b border-gray-100 pb-2">
+              <span class="text-xs text-gray-500 uppercase tracking-wider front-semibold">Local</span>
+              <p class="font-bold text-[#333] text-sm">{{ marker.bodyPart }}</p>
+            </div>
+            
+            @if (marker.imageUrl) {
+              <div class="mt-2 mb-2 relative rounded-lg overflow-hidden border border-gray-200">
+                <img [src]="marker.imageUrl" alt="Registro visual" class="w-full h-24 object-cover" />
+                <button 
+                  (click)="triggerImageUpload(marker.id)" 
+                  class="absolute bottom-1 right-1 bg-white p-1 rounded-full shadow hover:bg-gray-50 text-gray-600">
+                  <lucide-icon [name]="CameraIcon" [size]="14"></lucide-icon>
+                </button>
+              </div>
+            } @else {
+              <button 
+                type="button"
+                (click)="triggerImageUpload(marker.id)"
+                class="flex items-center gap-2 w-full text-left p-2 rounded-xl text-sm font-medium text-[#3b6b82] hover:bg-gray-50 transition-colors mt-1 mb-1">
+                <lucide-icon [name]="CameraIcon" [size]="16"></lucide-icon>
+                Adicionar foto
+              </button>
+            }
+            @if (marker.status !== 'cured') {
+              <button 
+                type="button"
+                (click)="markAsCured(marker.id)"
+                class="flex items-center gap-2 w-full text-left p-2 rounded-xl text-sm font-medium text-[#2F7A4A] hover:bg-[#D1F2D9] transition-colors">
+                <lucide-icon [name]="CircleCheckIcon" [size]="16"></lucide-icon>
+                Marcar como curado
+              </button>
+            } @else {
+              <button 
+                type="button"
+                (click)="markAsActive(marker.id)"
+                class="flex items-center gap-2 w-full text-left p-2 rounded-xl text-sm font-medium text-[#5b48d9] hover:bg-[#D8D4F7] transition-colors">
+                <lucide-icon [name]="PlusIcon" [size]="16"></lucide-icon>
+                Reativar local
+              </button>
+            }
+
+            <button 
+              type="button"
+              (click)="removeMarker(marker.id)"
+              class="flex items-center gap-2 w-full text-left p-2 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">
+              <lucide-icon [name]="TrashIcon" [size]="16"></lucide-icon>
+              Remover local
+            </button>
+          </div>
+        }
+      }
+    </div>
+  </div>
+
+  <div class="flex flex-col gap-6">
+    <div class="bg-[#FCFBF8] rounded-3xl p-5 shadow-sm">
+      <h4 class="font-bold text-[#333] mb-4">Visão Geral</h4>
+      <div class="flex flex-col gap-3">
+
+        <div class="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm transition-all">
+          <div 
+            class="flex justify-between items-center p-3 cursor-pointer hover:bg-gray-50"
+            (click)="toggleAtivos()">
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-medium text-[#444]">Locais ativos</span>
+              <lucide-icon [name]="isActivesExpanded() ? ChevronUpIcon : ChevronDownIcon" [size]="16" class="text-gray-400"></lucide-icon>
+            </div>
+            <span class="bg-[#D8D4F7] text-[#5b48d9] text-xs font-bold px-3 py-1 rounded-full">
+              {{ activeCount | number: '2.0' }}
+            </span>
+          </div>
+          
+          @if (isActivesExpanded()) {
+            <div class="px-3 pb-3 pt-1 border-t border-gray-50 flex flex-col gap-2">
+              @for (marker of activeMarkersList; track marker.id) {
+                <div class="flex items-center justify-between p-2 rounded-xl bg-[#F8F9FA] border border-gray-100">
+                  <div class="flex flex-col">
+                    <span class="text-xs font-semibold text-[#555]">{{ marker.bodyPart }}</span>
+                    <span class="text-[10px] text-gray-400 uppercase">{{ marker.view === 'front' ? 'Frente' : 'Costas' }}</span>
+                  </div>
+                  @if (marker.imageUrl) {
+                    <img [src]="marker.imageUrl" class="w-10 h-10 rounded-lg object-cover border border-gray-200">
+                  } @else {
+                    <div class="w-10 h-10 rounded-lg border border-dashed border-gray-300 flex items-center justify-center bg-white">
+                      <lucide-icon [name]="CameraIcon" [size]="12" class="text-gray-300"></lucide-icon>
+                    </div>
+                  }
+                </div>
+              }
+              @if (activeMarkersList.length === 0) {
+                <span class="text-xs text-gray-400 text-center py-2">Nenhum registro ativo encontrado.</span>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm transition-all">
+          <div 
+            class="flex justify-between items-center p-3 cursor-pointer hover:bg-gray-50"
+            (click)="toggleCurados()">
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-medium text-[#444]">Locais curados</span>
+              <lucide-icon [name]="isCuredExpanded() ? ChevronUpIcon : ChevronDownIcon" [size]="16" class="text-gray-400"></lucide-icon>
+            </div>
+            <span class="bg-[#D1F2D9] text-[#2F7A4A] text-xs font-bold px-3 py-1 rounded-full">
+              {{ curedCount | number: '2.0' }}
+            </span>
+          </div>
+
+          @if (isCuredExpanded()) {
+            <div class="px-3 pb-3 pt-1 border-t border-gray-50 flex flex-col gap-2">
+              @for (marker of curedMarkersList; track marker.id) {
+                <div class="flex items-center justify-between p-2 rounded-xl bg-[#F8F9FA] border border-gray-100 opacity-80">
+                  <div class="flex flex-col">
+                    <span class="text-xs font-semibold text-[#555]">{{ marker.bodyPart }}</span>
+                    <span class="text-[10px] text-gray-400 uppercase">{{ marker.view === 'front' ? 'Frente' : 'Costas' }}</span>
+                  </div>
+                  @if (marker.imageUrl) {
+                    <img [src]="marker.imageUrl" class="w-10 h-10 rounded-lg object-cover border border-gray-200">
+                  } @else {
+                    <div class="w-10 h-10 rounded-lg border border-dashed border-gray-300 flex items-center justify-center bg-white">
+                      <lucide-icon [name]="CameraIcon" [size]="12" class="text-gray-300"></lucide-icon>
+                    </div>
+                  }
+                </div>
+              }
+              @if (curedMarkersList.length === 0) {
+                <span class="text-xs text-gray-400 text-center py-2">Nenhum registro curado encontrado.</span>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Guia de Informações -->
+    <div class="bg-[#F8F9FA] border border-gray-100 rounded-3xl p-5 shadow-sm">
+      <h4 class="font-bold text-[#333] mb-4">Como usar o Mapa</h4>
+      
+      <div class="flex flex-col gap-4">
+        <div class="flex items-start gap-3">
+          <div class="mt-1.5 w-2 h-2 rounded-full bg-[#5b48d9] shrink-0"></div>
+          <div>
+            <span class="text-sm font-semibold text-[#444] block">Novos Registros</span>
+            <p class="text-xs text-[#666] leading-relaxed">Clique em qualquer área da silhueta para marcar uma nova alteração na pele.</p>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-3">
+          <div class="mt-1.5 w-2 h-2 rounded-full bg-[#3b6b82] shrink-0"></div>
+          <div>
+            <span class="text-sm font-semibold text-[#444] block">Acompanhamento</span>
+            <p class="text-xs text-[#666] leading-relaxed">Adicione fotos e acompanhe a evolução dos locais selecionados com o tempo.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="border border-dashed border-[#A0C4B0] bg-[#F2F8F4] rounded-3xl p-5 text-center mt-2">
+      <p class="text-[#2F7A4A] text-sm font-medium italic">
+        "Notou algo novo hoje? Mudanças leves valem a pena serem documentadas para o seu registro de
+        bem-estar a longo prazo."
+      </p>
+    </div>
+  </div>
+</div>
