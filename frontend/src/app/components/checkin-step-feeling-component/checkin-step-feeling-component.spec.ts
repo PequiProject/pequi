@@ -92,8 +92,8 @@ describe(CheckinStepFeelingComponent.name, () => {
 
     fixture.detectChanges();
 
-    expect(form.get('mood')?.value).toBe('muito-bem');
-    expect(component.isSelected('muito-bem')).toBeTruthy();
+    expect(form.get('mood')?.value).toBe('mal');
+    expect(component.isSelected('mal')).toBeTruthy();
   });
 
   it('should display validation message when mood is invalid and touched', () => {

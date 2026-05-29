@@ -73,13 +73,19 @@ describe('HealthAppointmentService', () => {
       performed: true,
       followUp: {
         ...EMPTY_FOLLOW_UP_DRAFT,
-        hadMedicationChange: true,
-        newMedicationName: 'Clofazimina',
-        newDoseDescription: '1 cápsula ao dia',
+        updateInstitutedMedsFromConsultation: true,
         medicationChangeDescription: 'Ajuste do esquema',
+        institutedPrednisoneMgKg: '1',
+        institutedAineMgDay: '2',
+        institutedThalidomideMgDay: '3',
+        institutedPentoxifyllineMgDay: '4',
       },
     });
-    expect(record.followUp?.medicationChange?.newMedicationName).toBe('Clofazimina');
-    expect(record.followUp?.medicationChange?.newDoseDescription).toBe('1 cápsula ao dia');
+    expect(record.followUp?.hadMedicationChange).toBe(true);
+    expect(record.followUp?.medicationChange?.newMedicationName).toBe(
+      'Medicamentos instituídos atualizados',
+    );
+    expect(record.followUp?.medicationChange?.newDoseDescription).toContain('Prednisona 1 mg/kg');
+    expect(record.followUp?.medicationChange?.description).toBe('Ajuste do esquema');
   });
 });

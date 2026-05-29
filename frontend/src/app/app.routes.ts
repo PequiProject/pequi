@@ -10,11 +10,17 @@ import { CommunityPostPage } from './features/comunity/community-post-page/commu
 import { Profile } from './features/profile/profile';
 import { Notification } from './components/notification/notification';
 import { RegisterAppointmentComponent } from './features/appointments/register-appointment/register-appointment';
+import { Login } from './features/login/login';
+import { Register } from './features/register/register';
+import { authGuard } from './features/auth/guards/auth-guard';
 
 export const routes: Routes = [
+    { path: 'login', component: Login },
+    { path: 'register', component: Register },
     {
     path: '',
     component: AppShellComponent,
+    canActivate: [authGuard],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'home' },
       { path: 'home', component: HomeComponent, title: 'Início' },
