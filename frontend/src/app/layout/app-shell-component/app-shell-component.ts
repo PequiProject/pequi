@@ -6,12 +6,11 @@ import { CommonModule } from '@angular/common';
 import { filter } from 'rxjs/operators';
 import { Menu } from '../../components/menu/menu';
 import { AppHeader, type AppHeaderLayout } from '../../components/app-header/app-header';
-import { ToastContainer } from '../../components/toast/toast-container';
 
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, Menu, AppHeader, ToastContainer],
+  imports: [CommonModule, RouterOutlet, Menu, AppHeader],
   templateUrl: './app-shell-component.html',
 })
 export class AppShellComponent {
