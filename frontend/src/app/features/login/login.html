@@ -1,0 +1,32 @@
+<section class="auth-page" data-testid="login-screen">
+  <div class="auth-card">
+    <div class="auth-header">
+      <span class="auth-badge">Entrar</span>
+      <h1>Acesse sua conta</h1>
+      <p>Faça login para continuar.</p>
+    </div>
+
+    <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()">
+      <label class="auth-field">
+        <span>E-mail</span>
+        <input type="email" formControlName="email" placeholder="voce@email.com" />
+      </label>
+
+      <label class="auth-field">
+        <span>Senha</span>
+        <input type="password" formControlName="password" placeholder="Digite sua senha" />
+      </label>
+
+      <p class="auth-error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+      <button class="auth-button" type="submit" [disabled]="isSubmitting">
+        {{ isSubmitting ? 'Entrando...' : 'Entrar' }}
+      </button>
+    </form>
+
+    <p class="auth-footer">
+      Ainda não tem conta?
+      <a routerLink="/register">Criar conta</a>
+    </p>
+  </div>
+</section>

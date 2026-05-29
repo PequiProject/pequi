@@ -22,6 +22,10 @@ body:json {
   }
 }
 
+vars:pre-request {
+  baseUrl: http://localhost:8000
+}
+
 assert {
   res.status: eq 201
   res.body.email: eq "paciente@test.com"

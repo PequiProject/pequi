@@ -11,7 +11,7 @@ import { Menu } from '../../components/menu/menu';
   template: '',
 })
 class MockMenuComponent {
-  @Output() collapsedChange = new EventEmitter<boolean>();
+  @Output() menuCollapsedChange = new EventEmitter<boolean>();
 }
 
 describe(AppShellComponent.name, () => {
@@ -56,12 +56,12 @@ describe(AppShellComponent.name, () => {
     expect(content.className).not.toContain('lg:ml-20');
   });
 
-  it('should update isMenuCollapsed when menu emits collapsedChange', () => {
+  it('should update isMenuCollapsed when menu emits menuCollapsedChange', () => {
     const menu = fixture.debugElement.query(
       By.directive(MockMenuComponent)
     ).componentInstance as MockMenuComponent;
 
-    menu.collapsedChange.emit(true);
+    menu.menuCollapsedChange.emit(true);
 
     expect(component.isMenuCollapsed).toBeTruthy();
   });
