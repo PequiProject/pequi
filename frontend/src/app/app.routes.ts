@@ -4,6 +4,7 @@ import { AppShellComponent } from './layout/app-shell-component/app-shell-compon
 import { Journey } from './features/journey/journey';
 import { CheckinComponent } from './features/checkin/checkin';
 import { Education } from './features/education/education';
+import { EducationArticlePage } from './features/education/education-article-page/education-article-page';
 import { Comunity } from './features/comunity/comunity';
 import { CommunityFeed } from './features/comunity/community-feed/community-feed';
 import { CommunityPostPage } from './features/comunity/community-post-page/community-post-page';
@@ -33,6 +34,7 @@ export const routes: Routes = [
         title: 'Registrar consulta',
       },
       { path: 'education', component: Education, title: 'Educação' },
+      { path: 'education/:slug', component: EducationArticlePage, title: 'Artigo' },
       { path: 'comunity', component: Comunity, title: 'Comunidade' },
       { path: 'comunity/feed', component: CommunityFeed, title: 'Comunidade' },
       { path: 'comunity/feed/:postId', component: CommunityPostPage, title: 'Post' },

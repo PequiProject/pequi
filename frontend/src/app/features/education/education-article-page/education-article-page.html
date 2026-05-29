@@ -1,0 +1,90 @@
+<section
+  class="mx-auto w-full max-w-lg lg:max-w-2xl"
+  data-testid="education-article-page"
+  aria-labelledby="article-reader-title"
+>
+  <header class="mb-4 flex shrink-0 items-center gap-3 border-b border-[#E7E5E4] pb-3">
+    <button
+      type="button"
+      data-testid="article-back"
+      (click)="back()"
+      class="cursor-pointer rounded-full p-2 text-[#4338CA] transition hover:bg-[#F8F7FF] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4338CA]"
+      aria-label="Voltar para educação"
+    >
+      <lucide-icon [name]="LucideArrowLeft" [size]="22" [strokeWidth]="2" />
+    </button>
+    <h1 id="article-reader-title" class="text-base font-bold text-[#4338CA] sm:text-lg">
+      Conteúdo educativo
+    </h1>
+  </header>
+
+  @if (loading()) {
+    <p
+      class="rounded-2xl bg-white p-6 text-center text-sm text-[#64655C] ring-1 ring-[#E7E5E4]"
+      data-testid="article-loading"
+    >
+      Carregando artigo...
+    </p>
+  } @else if (error()) {
+    <p
+      class="rounded-2xl bg-white p-6 text-center text-sm text-[#B91C1C] ring-1 ring-[#E7E5E4]"
+      data-testid="article-error"
+    >
+      {{ error() }}
+    </p>
+  } @else if (article(); as item) {
+    <article class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-[#E7E5E4]">
+      @if (item.cover_image_url) {
+        <div class="aspect-[16/9] w-full overflow-hidden bg-[#F5F5F4]">
+          <img
+            [src]="item.cover_image_url"
+            [alt]="'Capa: ' + item.title"
+            class="h-full w-full object-cover"
+          />
+        </div>
+      }
+
+      <div class="p-4 sm:p-6">
+        <div class="mb-3 flex flex-wrap gap-1.5">
+          @for (tag of item.tags; track tag.id) {
+            <span
+              class="rounded-full bg-[#CAF9DC] px-2.5 py-1 text-xs font-medium text-[#436D57]"
+            >
+              {{ tag.name }}
+            </span>
+          }
+        </div>
+
+        <h2 class="mb-3 text-xl font-bold text-[#373831] sm:text-2xl" data-testid="article-title">
+          {{ item.title }}
+        </h2>
+
+        <div class="mb-5 flex flex-wrap items-center gap-2 text-sm text-[#64655C]">
+          <span class="font-medium text-[#373831]">{{ item.author_name }}</span>
+          <span aria-hidden="true">·</span>
+          <span class="inline-flex items-center gap-1">
+            <lucide-icon [name]="LucideClock" [size]="16" [strokeWidth]="2" aria-hidden="true" />
+            {{ readingTimeLabel(item.reading_time_min) }}
+          </span>
+          @if (item.published_at) {
+            <span aria-hidden="true">·</span>
+            <time [attr.datetime]="item.published_at">
+              {{ formatPublishedAt(item.published_at) }}
+            </time>
+          }
+        </div>
+
+        <p class="mb-6 text-base font-medium leading-relaxed text-[#373831] sm:text-lg">
+          {{ item.summary }}
+        </p>
+
+        <div
+          class="prose-education whitespace-pre-wrap text-sm leading-relaxed text-[#64655C] sm:text-base"
+          data-testid="article-content"
+        >
+          {{ item.content }}
+        </div>
+      </div>
+    </article>
+  }
+</section>
