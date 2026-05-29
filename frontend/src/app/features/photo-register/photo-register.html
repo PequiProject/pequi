@@ -8,38 +8,34 @@
 
 <div class="grid grid-cols-1 md:grid-cols-2 gap-8" [formGroup]="form">
   <div class="flex flex-col items-center rounded-3xl bg-[#FCFBF8] p-6 shadow-sm">
-    <div class="text-center mb-6">
+    <div class="text-center mb-4">
       <h3 class="text-2xl font-bold text-[#222]">Mapa Corporal</h3>
       <p class="text-sm text-[#666] mt-2 max-w-xs mx-auto">
-        Toque qualquer área na silhueta para criar um novo comentário ou revisar anotações
-        existentes.
+        Toque qualquer área na silhueta para criar um novo comentário ou revisar anotações existentes.
       </p>
     </div>
 
-    <div
-      class="relative w-full max-w-[280px] aspect-[1/2] mx-auto bg-transparent rounded-3xl shadow-inner overflow-visible"
-    >
-      <div class="absolute top-3 right-3 z-20 flex bg-white/90 backdrop-blur shadow-sm rounded-full p-1 border border-gray-200">
-        <button 
-          type="button"
-          (click)="setView('front'); $event.stopPropagation()"
-          [ngClass]="currentView() === 'front' ? 'bg-[#5b48d9] text-white shadow-sm' : 'text-gray-500 hover:bg-gray-100'"
-          class="px-4 py-1.5 text-xs font-semibold rounded-full transition-all">
-          Frente
-        </button>
-        <button 
-          type="button"
-          (click)="setView('back'); $event.stopPropagation()"
-          [ngClass]="currentView() === 'back' ? 'bg-[#5b48d9] text-white shadow-sm' : 'text-gray-500 hover:bg-gray-100'"
-          class="px-4 py-1.5 text-xs font-semibold rounded-full transition-all">
-          Costas
-        </button>
-      </div>
+    <div class="flex bg-white shadow-sm rounded-full p-1 border border-gray-200 mb-6">
+      <button 
+        type="button"
+        (click)="setView('front')"
+        [ngClass]="currentView() === 'front' ? 'bg-[#5b48d9] text-white shadow-sm' : 'text-gray-500 hover:bg-gray-100'"
+        class="px-6 py-2 text-xs font-semibold rounded-full transition-all">
+        Frente
+      </button>
+      <button 
+        type="button"
+        (click)="setView('back')"
+        [ngClass]="currentView() === 'back' ? 'bg-[#5b48d9] text-white shadow-sm' : 'text-gray-500 hover:bg-gray-100'"
+        class="px-6 py-2 text-xs font-semibold rounded-full transition-all">
+        Costas
+      </button>
+    </div>
 
+    <div class="relative w-full max-w-[280px] aspect-[1/2] mx-auto bg-transparent rounded-3xl shadow-inner overflow-visible">
+      
       <img
-        [src]="
-          currentView() === 'front' ? 'assets/body-silhouette-front.svg' : 'assets/body-silhouette-back.svg'
-        "
+        [src]="currentView() === 'front' ? 'assets/body-silhouette-front.svg' : 'assets/body-silhouette-back.svg'"
         alt="Silhueta do corpo humano"
         class="w-full h-full object-contain cursor-crosshair"
         (click)="addMarker($event)"
