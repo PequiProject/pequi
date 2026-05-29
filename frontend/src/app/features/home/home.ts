@@ -1,6 +1,6 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule, ImagePlus, CirclePlus, Calendar, Stethoscope } from 'lucide-angular';
+import { LucideAngularModule, ImagePlus, CirclePlus, Calendar, Stethoscope, ChevronLeft, ChevronRight } from 'lucide-angular';
 import { Router, RouterLink } from '@angular/router';
 
 interface QuickAction {
@@ -11,7 +11,7 @@ interface QuickAction {
   path: string;
 }
 
-interface CalendarWeek {
+interface CalendarDay {
   dateObj: Date;
   dayName: string;
   dayNumber: number;
@@ -40,9 +40,13 @@ export class HomeComponent implements OnInit {
   readonly CirclePlus = CirclePlus;
   readonly CalendarIcon = Calendar;
   readonly Stethoscope = Stethoscope;
+  readonly ChevronLeft = ChevronLeft;
+  readonly ChevronRight = ChevronRight;
 
   currentMonthYear: string = '';
-  calendarWeek: CalendarWeek[] = [];
+  isExpanded = signal(false);
+  calendarWeek: CalendarDay[] = [];
+  calendarMonth: (CalendarDay | null)[] = [];
   selectedDate: Date = new Date();
 
   QuickAction = [
@@ -86,7 +90,22 @@ export class HomeComponent implements OnInit {
 
   ngOnInit(): void {
     this.generateCurrentWeek();
+    this.generateCurrentMonth();
     this.updateMonthYearLabel();
+  }
+
+  toggleCalendar() {
+    this.isExpanded.update(val => !val);
+  }
+
+  changeMonth(delta: number) {
+    const newDate = new Date(this.selectedDate);
+    newDate.setMonth(newDate.getMonth() + delta);
+    this.selectedDate = newDate;
+    
+    this.updateMonthYearLabel();
+    this.generateCurrentWeek();
+    this.generateCurrentMonth();
   }
 
   generateCurrentWeek() {
@@ -106,6 +125,30 @@ export class HomeComponent implements OnInit {
         dateObj,
         dayName: daysPt[dateObj.getDay()],
         dayNumber: dateObj.getDate(),
+        dots: Array(Math.floor(Math.random() * 3)).fill(0), 
+      });
+    }
+  }
+
+  generateCurrentMonth() {
+    this.calendarMonth = [];
+    const year = this.selectedDate.getFullYear();
+    const month = this.selectedDate.getMonth();
+
+    const firstDayOfMonth = new Date(year, month, 1);
+    const lastDayOfMonth = new Date(year, month + 1, 0);
+    const daysPt = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+    for (let i = 0; i < firstDayOfMonth.getDay(); i++) {
+      this.calendarMonth.push(null);
+    }
+
+    for (let i = 1; i <= lastDayOfMonth.getDate(); i++) {
+      const dateObj = new Date(year, month, i);
+      this.calendarMonth.push({
+        dateObj,
+        dayName: daysPt[dateObj.getDay()],
+        dayNumber: i,
         dots: Array(Math.floor(Math.random() * 3)).fill(0), 
       });
     }

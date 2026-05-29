@@ -32,7 +32,7 @@
 
 .days-row {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   overflow-x: auto;
   padding-bottom: 8px;
   scrollbar-width: none;
@@ -42,7 +42,9 @@
 }
 
 .day-card {
-  min-width: 60px;
+  flex: 1 0 auto;
+  min-width: 48px;
+  max-width: 80px;
   background: #fff;
   border-radius: 16px;
   padding: 12px 8px;
@@ -56,6 +58,12 @@
 }
 
 .day-card.active {
+  background-color: #5b48d9;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(91, 72, 217, 0.3);
+}
+
+.month-day-card.active {
   background-color: #5b48d9;
   color: #fff;
   box-shadow: 0 4px 12px rgba(91, 72, 217, 0.3);
