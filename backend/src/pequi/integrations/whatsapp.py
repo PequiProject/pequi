@@ -1,4 +1,4 @@
-"""WhatsApp client — supports Twilio and Evolution API."""
+"""WhatsApp client - supports Twilio and Evolution API."""
 
 import asyncio
 import hashlib
@@ -59,12 +59,10 @@ class WhatsAppClient:
             try:
                 if self.provider == "twilio":
                     return await self._send_twilio_message(to, body)
-                elif self.provider == "evolution":
+                if self.provider == "evolution":
                     return await self._send_evolution_message(to, body)
-                else:
-                    raise ValueError(f"Unsupported provider: {self.provider}")
+                raise ValueError(f"Unsupported provider: {self.provider}")
             except ValueError:
-                # Configuration errors should not be retried
                 raise
             except Exception as e:
                 if attempt == 2:
@@ -77,14 +75,11 @@ class WhatsAppClient:
                         },
                     )
                     return ""
-                # Exponential backoff: 1s, 2s, 4s
                 await asyncio.sleep(2**attempt)
 
         return ""
 
-    async def send_template(
-        self, to: str, template: str, params: dict[str, str]
-    ) -> str:
+    async def send_template(self, to: str, template: str, params: dict[str, str]) -> str:
         """Send a WhatsApp template message.
 
         Args:
@@ -105,12 +100,10 @@ class WhatsAppClient:
             try:
                 if self.provider == "twilio":
                     return await self._send_twilio_template(to, template, params)
-                elif self.provider == "evolution":
+                if self.provider == "evolution":
                     return await self._send_evolution_template(to, template, params)
-                else:
-                    raise ValueError(f"Unsupported provider: {self.provider}")
+                raise ValueError(f"Unsupported provider: {self.provider}")
             except ValueError:
-                # Configuration errors should not be retried
                 raise
             except Exception as e:
                 if attempt == 2:
@@ -133,7 +126,10 @@ class WhatsAppClient:
         if not self.settings.TWILIO_ACCOUNT_SID or not self.settings.TWILIO_AUTH_TOKEN:
             raise ValueError("Twilio credentials not configured")
 
-        url = f"https://api.twilio.com/2010-04-01/Accounts/{self.settings.TWILIO_ACCOUNT_SID}/Messages.json"
+        url = (
+            "https://api.twilio.com/2010-04-01/Accounts/"
+            f"{self.settings.TWILIO_ACCOUNT_SID}/Messages.json"
+        )
         auth = (self.settings.TWILIO_ACCOUNT_SID, self.settings.TWILIO_AUTH_TOKEN)
         data = {
             "From": self.settings.TWILIO_WHATSAPP_FROM,
@@ -146,14 +142,15 @@ class WhatsAppClient:
         result = response.json()
         return result.get("sid", "")
 
-    async def _send_twilio_template(
-        self, to: str, template: str, params: dict[str, str]
-    ) -> str:
+    async def _send_twilio_template(self, to: str, template: str, _params: dict[str, str]) -> str:
         """Send template via Twilio API."""
         if not self.settings.TWILIO_ACCOUNT_SID or not self.settings.TWILIO_AUTH_TOKEN:
             raise ValueError("Twilio credentials not configured")
 
-        url = f"https://api.twilio.com/2010-04-01/Accounts/{self.settings.TWILIO_ACCOUNT_SID}/Messages.json"
+        url = (
+            "https://api.twilio.com/2010-04-01/Accounts/"
+            f"{self.settings.TWILIO_ACCOUNT_SID}/Messages.json"
+        )
         auth = (self.settings.TWILIO_ACCOUNT_SID, self.settings.TWILIO_AUTH_TOKEN)
         data = {
             "From": self.settings.TWILIO_WHATSAPP_FROM,
@@ -171,7 +168,9 @@ class WhatsAppClient:
         if not self.settings.EVOLUTION_API_URL or not self.settings.EVOLUTION_API_KEY:
             raise ValueError("Evolution API credentials not configured")
 
-        url = f"{self.settings.EVOLUTION_API_URL}/message/sendText/{self.settings.EVOLUTION_API_KEY}"
+        url = (
+            f"{self.settings.EVOLUTION_API_URL}/message/sendText/{self.settings.EVOLUTION_API_KEY}"
+        )
         headers = {"Content-Type": "application/json"}
         data = {"number": to, "text": body}
 
@@ -181,13 +180,15 @@ class WhatsAppClient:
         return result.get("key", {}).get("id", "")
 
     async def _send_evolution_template(
-        self, to: str, template: str, params: dict[str, str]
+        self, to: str, template: str, _params: dict[str, str]
     ) -> str:
         """Send template via Evolution API."""
         if not self.settings.EVOLUTION_API_URL or not self.settings.EVOLUTION_API_KEY:
             raise ValueError("Evolution API credentials not configured")
 
-        url = f"{self.settings.EVOLUTION_API_URL}/message/sendText/{self.settings.EVOLUTION_API_KEY}"
+        url = (
+            f"{self.settings.EVOLUTION_API_URL}/message/sendText/{self.settings.EVOLUTION_API_KEY}"
+        )
         headers = {"Content-Type": "application/json"}
         data = {
             "number": to,

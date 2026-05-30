@@ -46,7 +46,11 @@ class TestWhatsAppClient:
 
     def test_init_custom_provider(self, mock_http_client, mock_settings):
         """Test client initialization with custom provider."""
-        client = WhatsAppClient(provider="evolution", http_client=mock_http_client, settings=mock_settings)
+        client = WhatsAppClient(
+            provider="evolution",
+            http_client=mock_http_client,
+            settings=mock_settings,
+        )
         assert client.provider == "evolution"
 
     @pytest.mark.asyncio
@@ -66,9 +70,7 @@ class TestWhatsAppClient:
         assert message_id == "test_message_id"
 
     @pytest.mark.asyncio
-    async def test_send_message_twilio_failure_logs_warning(
-        self, whatsapp_client, mocker, caplog
-    ):
+    async def test_send_message_twilio_failure_logs_warning(self, whatsapp_client, mocker, caplog):
         """Test that Twilio failure logs warning and returns empty string."""
         mocker.patch.object(
             whatsapp_client.http_client,
@@ -77,9 +79,7 @@ class TestWhatsAppClient:
         )
 
         with caplog.at_level("WARNING"):
-            message_id = await whatsapp_client.send_message(
-                "+5511999999999", "Test message"
-            )
+            message_id = await whatsapp_client.send_message("+5511999999999", "Test message")
 
         assert message_id == ""
         assert "Failed to send WhatsApp message" in caplog.text
@@ -94,7 +94,11 @@ class TestWhatsAppClient:
         mock_http_client = mocker.Mock(spec=AsyncClient)
         mock_http_client.post = AsyncMock(return_value=mock_response)
 
-        client = WhatsAppClient(provider="evolution", http_client=mock_http_client, settings=mock_settings)
+        client = WhatsAppClient(
+            provider="evolution",
+            http_client=mock_http_client,
+            settings=mock_settings,
+        )
         message_id = await client.send_message("+5511999999999", "Test message")
         assert message_id == "test_message_id"
 
@@ -126,7 +130,11 @@ class TestWhatsAppClient:
         mock_http_client = mocker.Mock(spec=AsyncClient)
         mock_http_client.post = AsyncMock(return_value=mock_response)
 
-        client = WhatsAppClient(provider="evolution", http_client=mock_http_client, settings=mock_settings)
+        client = WhatsAppClient(
+            provider="evolution",
+            http_client=mock_http_client,
+            settings=mock_settings,
+        )
         template_id = await client.send_template(
             "+5511999999999", "test_template", {"param1": "value1"}
         )
@@ -139,7 +147,6 @@ class TestWhatsAppClient:
         mock_response.status_code = 200
         mock_response.json.return_value = {"sid": "test_message_id"}
 
-        # Fail twice, then succeed
         post_mock = mocker.patch.object(
             whatsapp_client.http_client,
             "post",
@@ -153,7 +160,11 @@ class TestWhatsAppClient:
     @pytest.mark.asyncio
     async def test_send_message_unsupported_provider(self, mock_http_client, mock_settings):
         """Test that unsupported provider raises ValueError."""
-        client = WhatsAppClient(provider="unsupported", http_client=mock_http_client, settings=mock_settings)
+        client = WhatsAppClient(
+            provider="unsupported",
+            http_client=mock_http_client,
+            settings=mock_settings,
+        )
         with pytest.raises(ValueError, match="Unsupported provider"):
             await client.send_message("+5511999999999", "Test message")
 
@@ -168,7 +179,11 @@ class TestWhatsAppClient:
             TWILIO_AUTH_TOKEN="",
             TWILIO_WHATSAPP_FROM="whatsapp:+14155238886",
         )
-        client = WhatsAppClient(provider="twilio", http_client=mock_http_client, settings=mock_settings)
+        client = WhatsAppClient(
+            provider="twilio",
+            http_client=mock_http_client,
+            settings=mock_settings,
+        )
 
         with pytest.raises(ValueError, match="Twilio credentials not configured"):
             await client._send_twilio_message("+5511999999999", "Test")
@@ -183,7 +198,11 @@ class TestWhatsAppClient:
             EVOLUTION_API_URL="",
             EVOLUTION_API_KEY="",
         )
-        client = WhatsAppClient(provider="evolution", http_client=mock_http_client, settings=mock_settings)
+        client = WhatsAppClient(
+            provider="evolution",
+            http_client=mock_http_client,
+            settings=mock_settings,
+        )
 
         with pytest.raises(ValueError, match="Evolution API credentials not configured"):
             await client._send_evolution_message("+5511999999999", "Test")

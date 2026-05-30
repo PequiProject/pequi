@@ -1,6 +1,7 @@
-"""Anthropic AI client — used by the feedback worker."""
+"""Anthropic AI client - used by the feedback worker."""
 
 import logging
+
 from anthropic import AsyncAnthropic
 
 from pequi.config import Settings, get_settings
@@ -8,15 +9,17 @@ from pequi.config import Settings, get_settings
 logger = logging.getLogger(__name__)
 
 
-SYSTEM_PROMPT = """Você é um assistente de saúde empático que fornece feedback sobre check-ins de pacientes.
-Sua resposta deve ser:
-- Em português brasileiro
-- Empática e acolhedora
-- Focada em apoio emocional e orientações gerais
-- SEM fazer diagnósticos clínicos ou recomendar tratamentos específicos
-- Encorajando o paciente a continuar o acompanhamento com profissionais de saúde
-
-Responda de forma concisa (máximo 500 caracteres)."""
+SYSTEM_PROMPT = (
+    "Você é um assistente de saúde empático que fornece feedback sobre "
+    "check-ins de pacientes.\n"
+    "Sua resposta deve ser:\n"
+    "- Em português brasileiro\n"
+    "- Empática e acolhedora\n"
+    "- Focada em apoio emocional e orientações gerais\n"
+    "- SEM fazer diagnósticos clínicos ou recomendar tratamentos específicos\n"
+    "- Encorajando o paciente a continuar o acompanhamento com profissionais de saúde\n\n"
+    "Responda de forma concisa (máximo 500 caracteres)."
+)
 
 
 class AIClient:
@@ -95,7 +98,6 @@ Forneça um feedback empático e acolhedor para este paciente."""
 
             feedback = response.content[0].text.strip()
 
-            # Truncate to 500 characters
             if len(feedback) > 500:
                 feedback = feedback[:497] + "..."
 

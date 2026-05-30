@@ -3,7 +3,7 @@
 import pytest
 
 from pequi.config import Settings
-from pequi.integrations.ai_client import AIClient, get_anthropic_client, SYSTEM_PROMPT
+from pequi.integrations.ai_client import SYSTEM_PROMPT, AIClient, get_anthropic_client
 
 
 @pytest.fixture
@@ -53,7 +53,10 @@ class TestAIClient:
         """Test successful feedback generation."""
         mock_response = mocker.Mock()
         mock_content = mocker.Mock()
-        mock_content.text = "Entendo que você está passando por um momento difícil. Continue acompanhando com sua equipe de saúde."
+        mock_content.text = (
+            "Entendo que você está passando por um momento difícil. Continue acompanhando "
+            "com sua equipe de saúde."
+        )
         mock_response.content = [mock_content]
 
         mock_client = mocker.Mock()
@@ -67,7 +70,10 @@ class TestAIClient:
             history_summary="Paciente em tratamento há 3 meses",
         )
 
-        assert feedback == "Entendo que você está passando por um momento difícil. Continue acompanhando com sua equipe de saúde."
+        assert feedback == (
+            "Entendo que você está passando por um momento difícil. Continue acompanhando "
+            "com sua equipe de saúde."
+        )
         mock_client.messages.create.assert_called_once()
         call_args = mock_client.messages.create.call_args
         assert call_args.kwargs["model"] == "claude-3-5-haiku-20241022"
@@ -88,9 +94,7 @@ class TestAIClient:
         mock_client.messages.create = mocker.AsyncMock(return_value=mock_response)
 
         client = AIClient(settings=mock_settings, client=mock_client)
-        feedback = await client.generate_checkin_feedback(
-            symptoms=["dor"], intensity=5, mood="ok"
-        )
+        feedback = await client.generate_checkin_feedback(symptoms=["dor"], intensity=5, mood="ok")
 
         assert len(feedback) == 500
         assert feedback.endswith("...")
@@ -136,9 +140,7 @@ class TestAIClient:
         mock_client.messages.create = mocker.AsyncMock(return_value=mock_response)
 
         client = AIClient(settings=mock_settings, client=mock_client)
-        feedback = await client.generate_checkin_feedback(
-            symptoms=[], intensity=3, mood="bem"
-        )
+        feedback = await client.generate_checkin_feedback(symptoms=[], intensity=3, mood="bem")
 
         assert feedback == "Obrigado pelo seu check-in."
         call_args = mock_client.messages.create.call_args
@@ -157,7 +159,10 @@ class TestAIClient:
 
         client = AIClient(settings=mock_settings, client=mock_client)
         feedback = await client.generate_checkin_feedback(
-            symptoms=["dor"], intensity=6, mood="ansioso", history_summary="Paciente com histórico de reações"
+            symptoms=["dor"],
+            intensity=6,
+            mood="ansioso",
+            history_summary="Paciente com histórico de reações",
         )
 
         assert feedback == "Considerando seu histórico, continue o tratamento."
@@ -167,8 +172,8 @@ class TestAIClient:
     def test_system_prompt_content(self):
         """Test that system prompt has correct content."""
         assert "português brasileiro" in SYSTEM_PROMPT
-        assert "Empática" in SYSTEM_PROMPT
-        assert "SEM fazer diagnósticos clínicos" in SYSTEM_PROMPT
+        assert "empática" in SYSTEM_PROMPT.lower()
+        assert "sem fazer diagnósticos clínicos" in SYSTEM_PROMPT.lower()
         assert "500 caracteres" in SYSTEM_PROMPT
 
 

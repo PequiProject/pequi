@@ -69,9 +69,8 @@ async def test_get_failure_logs_error(storage_client, mocker, caplog):
         new=AsyncMock(return_value=AsyncContextManager(mock_client)),
     )
 
-    with caplog.at_level("ERROR"):
-        with pytest.raises(Exception, match="download failed"):
-            await storage_client.get("files/test.txt")
+    with caplog.at_level("ERROR"), pytest.raises(Exception, match="download failed"):
+        await storage_client.get("files/test.txt")
 
     assert "Failed to get object from storage" in caplog.text
 
