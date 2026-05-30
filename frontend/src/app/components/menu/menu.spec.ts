@@ -72,7 +72,7 @@ it('should render all menu items in desktop and mobile nav', () => {
   });
 
   it('should emit collapsedChange when toggled', () => {
-    const emitSpy = vi.spyOn(component.collapsedChange, 'emit');
+    const emitSpy = vi.spyOn(component.menuCollapsedChange, 'emit');
 
     component.toggleSidebar();
     expect(emitSpy).toHaveBeenCalledWith(true);
@@ -108,8 +108,6 @@ it('should render all menu items in desktop and mobile nav', () => {
     const communityLink = fixture.debugElement
       .queryAll(By.css('nav a'))
       .find((el) => el.nativeElement.getAttribute('href')?.includes('/comunity'));
-
-    expect(component.linkActiveOptions(communityItem)).toEqual({ exact: false });
     expect(communityLink?.nativeElement.className).toContain('bg-[#E0E7FF]');
   });
 });

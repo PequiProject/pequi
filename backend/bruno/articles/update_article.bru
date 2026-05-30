@@ -1,0 +1,33 @@
+meta {
+  name: Update Article
+  type: http
+  seq: 5
+}
+
+patch {
+  url: {{baseUrl}}/v1/articles/{{articleId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "is_published": true,
+    "summary": "Resumo atualizado com tamanho mínimo adequado."
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.id: isDefined
+}
+
+docs {
+  Atualiza artigo (admin).
+
+  Rate limit: 10/hora.
+}

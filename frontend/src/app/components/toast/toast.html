@@ -1,0 +1,38 @@
+<div
+  [class]="containerClass()"
+  [attr.role]="role()"
+  data-testid="toast"
+  [attr.data-variant]="variant()"
+>
+  <lucide-icon
+    [name]="icon()"
+    [size]="20"
+    [strokeWidth]="2"
+    [class]="iconClass()"
+    aria-hidden="true"
+  />
+
+  <div class="min-w-0 flex-1">
+    <p class="m-0 text-sm font-medium leading-snug">
+      {{ title() }}
+    </p>
+    @if (hasDescription()) {
+      <p [class]="descriptionClass()" data-testid="toast-description">
+        {{ description() }}
+      </p>
+    }
+  </div>
+
+  @if (dismissible()) {
+    <button
+      type="button"
+      class="inline-flex shrink-0 rounded-md p-0.5 opacity-80 transition-opacity hover:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+      [class]="iconClass()"
+      aria-label="Fechar aviso"
+      data-testid="toast-dismiss"
+      (click)="onDismiss()"
+    >
+      <lucide-icon [name]="LucideX" [size]="18" [strokeWidth]="2" aria-hidden="true" />
+    </button>
+  }
+</div>

@@ -25,7 +25,7 @@ services:
       SECRET_KEY: dev-secret-key-change-in-production
       ENV: development
       SENTRY_DSN: ""
-      ALLOWED_ORIGINS: '["http://localhost:3000","http://localhost:8000"]'
+      ALLOWED_ORIGINS: '["http://localhost:3000","http://localhost:8000", "http://localhost:4200"]'
     depends_on:
       db:
         condition: service_healthy

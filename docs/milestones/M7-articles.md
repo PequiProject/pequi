@@ -1,6 +1,6 @@
 # M7 — Articles
 
-> **Status:** 🔜 Pendente
+> **Status:** ✅ Implementado
 > **Depende de:** M2
 > **Bloqueado por:** —
 
@@ -50,7 +50,7 @@ article_tag_associations           ← N:M
 | Router | `routers/article.py` |
 | Tests | `tests/unit/test_article_schema.py`, `tests/integration/test_article_flow.py` |
 | Bruno | `bruno/articles/` |
-| Migration | `alembic/versions/007_create_articles.py` |
+| Migration | `alembic/versions/008_create_articles.py` |
 
 ## Endpoints
 

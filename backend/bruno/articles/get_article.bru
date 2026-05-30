@@ -1,0 +1,27 @@
+meta {
+  name: Get Article by Slug
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/v1/articles/{{articleSlug}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.slug: isDefined
+  res.body.view_count: isDefined
+}
+
+docs {
+  Detalhe do artigo por slug. Incrementa view_count em background.
+
+  Rate limit: 100/minuto.
+}

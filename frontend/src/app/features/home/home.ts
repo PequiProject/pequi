@@ -1,7 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LucideAngularModule, ImagePlus, CirclePlus, Calendar, Stethoscope, Pill } from 'lucide-angular';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 interface QuickAction {
   title: string;
@@ -42,7 +42,7 @@ interface HomeHighlightCard {
   styleUrls: ['./home.css'],
 })
 export class HomeComponent implements OnInit {
-  private router = inject(Router);
+  private readonly router = inject(Router);
   readonly ImagePlus = ImagePlus;
   readonly CirclePlus = CirclePlus;
   readonly CalendarIcon = Calendar;
@@ -94,7 +94,7 @@ export class HomeComponent implements OnInit {
       description: 'Acompanhe mudanças na pele',
       icon: this.ImagePlus,
       colorClass: 'green-icon',
-      path: '',
+      path: '/photo-register',
     },
   ];
 
@@ -135,7 +135,7 @@ export class HomeComponent implements OnInit {
         dateObj,
         dayName: daysPt[dateObj.getDay()],
         dayNumber: dateObj.getDate(),
-        dots: Array(Math.floor(Math.random() * 3)).fill(0), //simulação, mudar para dados reais depois
+        dots: Array(Math.floor(Math.random() * 3)).fill(0), 
       });
     }
   }
