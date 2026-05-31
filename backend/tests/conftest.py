@@ -10,9 +10,9 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
-import pequi.models  # noqa: F401 â€” registra todas as tabelas no metadata antes do create_all
-import pequi.models.article  # noqa: F401 â€” ensure article models are registered
-import pequi.models.community  # noqa: F401 â€” ensure community models are registered
+import pequi.models  # noqa: F401 - register all tables before create_all
+import pequi.models.article  # noqa: F401 - ensure article models are registered
+import pequi.models.community  # noqa: F401 - ensure community models are registered
 from pequi.config import get_settings
 from pequi.core.dependencies import get_db
 from pequi.core.rate_limit import limiter, user_limiter
@@ -46,7 +46,7 @@ _DB_POLL_INTERVAL_SEC = 0.05
 
 
 def _xdist_shared_root(tmp_path_factory: pytest.TempPathFactory) -> Path:
-    """DiretÃ³rio compartilhado entre workers do pytest-xdist."""
+    """Shared directory across pytest-xdist workers."""
 
     return tmp_path_factory.getbasetemp().parent
 
@@ -82,13 +82,13 @@ async def _reset_schema() -> None:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 
-        # Limpar dados inseridos pelas migraÃ§Ãµes (body_areas, etc.)
+        # Clear seed data inserted by migrations (body_areas, etc.).
         try:
             await conn.execute(sa.text("TRUNCATE TABLE body_areas CASCADE"))
             await conn.execute(sa.text("TRUNCATE TABLE body_map_entries CASCADE"))
             await conn.execute(sa.text("TRUNCATE TABLE body_area_history CASCADE"))
         except sa.exc.ProgrammingError:
-            # Tabelas podem nÃ£o existir se ainda nÃ£o foram criadas pelas migraÃ§Ãµes
+            # Tables may not exist if migrations have not created them yet.
             pass
 
 
@@ -104,10 +104,10 @@ def event_loop_policy():
 
 @pytest.fixture(scope="session")
 async def create_tables(tmp_path_factory: pytest.TempPathFactory):
-    """Cria o schema uma vez por execuÃ§Ã£o, mesmo com pytest-xdist (-n > 1).
+    """Create the schema once per test run, even with pytest-xdist (-n > 1).
 
-    Sem sincronizaÃ§Ã£o, cada worker chama create_all em paralelo e disputa
-    tipos ENUM no PostgreSQL (ex.: user_role_enum).
+    Without synchronization, workers call create_all in parallel and race on
+    PostgreSQL enum types, such as user_role_enum.
     """
 
     root = _xdist_shared_root(tmp_path_factory)
@@ -133,7 +133,7 @@ async def create_tables(tmp_path_factory: pytest.TempPathFactory):
 
 @pytest.fixture
 async def db_session(create_tables) -> AsyncGenerator[AsyncSession, None]:
-    """Cada teste roda em uma transaÃ§Ã£o que Ã© revertida ao final."""
+    """Run each test inside a transaction that is rolled back at the end."""
 
     async with test_engine.connect() as conn:
         await conn.begin()
@@ -148,7 +148,7 @@ async def db_session(create_tables) -> AsyncGenerator[AsyncSession, None]:
 
 @pytest.fixture
 async def async_client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
-    """Cliente HTTP assÃ­ncrono com override de sessÃ£o de banco."""
+    """Async HTTP client with a database session override."""
 
     async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
         yield db_session

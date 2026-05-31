@@ -1,7 +1,8 @@
+import json
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import field_validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import make_url
 
@@ -41,8 +42,11 @@ class Settings(BaseSettings):
     TWILIO_ACCOUNT_SID: str = ""
     TWILIO_AUTH_TOKEN: str = ""
     TWILIO_WHATSAPP_FROM: str = "whatsapp:+14155238886"
+    TWILIO_CONTENT_SIDS: dict[str, str] = Field(default_factory=dict)
     EVOLUTION_API_URL: str = ""
     EVOLUTION_API_KEY: str = ""
+    EVOLUTION_INSTANCE: str = ""
+    EVOLUTION_TEMPLATE_LANGUAGE: str = "pt_BR"
 
     # Anthropic
     ANTHROPIC_API_KEY: str = ""
@@ -55,8 +59,15 @@ class Settings(BaseSettings):
     @classmethod
     def parse_origins(cls, v: str | list[str]) -> list[str]:
         if isinstance(v, str):
-            import json
+            return json.loads(v)
+        return v
 
+    @field_validator("TWILIO_CONTENT_SIDS", mode="before")
+    @classmethod
+    def parse_twilio_content_sids(cls, v: str | dict[str, str]) -> dict[str, str]:
+        if isinstance(v, str):
+            if not v.strip():
+                return {}
             return json.loads(v)
         return v
 

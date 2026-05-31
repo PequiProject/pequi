@@ -108,9 +108,9 @@ Forneça um feedback empático e acolhedor para este paciente."""
                 "Failed to generate AI feedback: %s",
                 str(e),
                 extra={
-                    "symptoms": symptoms,
+                    "symptom_count": len(symptoms),
                     "intensity": intensity,
-                    "mood": mood,
+                    "error_type": type(e).__name__,
                 },
             )
             return ""

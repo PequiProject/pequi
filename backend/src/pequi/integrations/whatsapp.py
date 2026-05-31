@@ -2,6 +2,7 @@
 
 import asyncio
 import hashlib
+import json
 import logging
 import re
 from typing import Literal
@@ -146,6 +147,9 @@ class WhatsAppClient:
         """Send template via Twilio API."""
         if not self.settings.TWILIO_ACCOUNT_SID or not self.settings.TWILIO_AUTH_TOKEN:
             raise ValueError("Twilio credentials not configured")
+        content_sid = self.settings.TWILIO_CONTENT_SIDS.get(template)
+        if not content_sid:
+            raise ValueError(f"Twilio content SID not configured for template: {template}")
 
         url = (
             "https://api.twilio.com/2010-04-01/Accounts/"
@@ -155,7 +159,8 @@ class WhatsAppClient:
         data = {
             "From": self.settings.TWILIO_WHATSAPP_FROM,
             "To": f"whatsapp:{to}",
-            "MessagingServiceSid": template,
+            "ContentSid": content_sid,
+            "ContentVariables": json.dumps(_params, ensure_ascii=False, separators=(",", ":")),
         }
 
         response = await self.http_client.post(url, auth=auth, data=data)
@@ -165,13 +170,20 @@ class WhatsAppClient:
 
     async def _send_evolution_message(self, to: str, body: str) -> str:
         """Send message via Evolution API."""
-        if not self.settings.EVOLUTION_API_URL or not self.settings.EVOLUTION_API_KEY:
+        if (
+            not self.settings.EVOLUTION_API_URL
+            or not self.settings.EVOLUTION_API_KEY
+            or not self.settings.EVOLUTION_INSTANCE
+        ):
             raise ValueError("Evolution API credentials not configured")
 
         url = (
-            f"{self.settings.EVOLUTION_API_URL}/message/sendText/{self.settings.EVOLUTION_API_KEY}"
+            f"{self.settings.EVOLUTION_API_URL}/message/sendText/{self.settings.EVOLUTION_INSTANCE}"
         )
-        headers = {"Content-Type": "application/json"}
+        headers = {
+            "Content-Type": "application/json",
+            "apikey": self.settings.EVOLUTION_API_KEY,
+        }
         data = {"number": to, "text": body}
 
         response = await self.http_client.post(url, headers=headers, json=data)
@@ -183,17 +195,35 @@ class WhatsAppClient:
         self, to: str, template: str, _params: dict[str, str]
     ) -> str:
         """Send template via Evolution API."""
-        if not self.settings.EVOLUTION_API_URL or not self.settings.EVOLUTION_API_KEY:
+        if (
+            not self.settings.EVOLUTION_API_URL
+            or not self.settings.EVOLUTION_API_KEY
+            or not self.settings.EVOLUTION_INSTANCE
+        ):
             raise ValueError("Evolution API credentials not configured")
 
         url = (
-            f"{self.settings.EVOLUTION_API_URL}/message/sendText/{self.settings.EVOLUTION_API_KEY}"
+            f"{self.settings.EVOLUTION_API_URL}/message/sendTemplate/"
+            f"{self.settings.EVOLUTION_INSTANCE}"
         )
-        headers = {"Content-Type": "application/json"}
+        headers = {
+            "Content-Type": "application/json",
+            "apikey": self.settings.EVOLUTION_API_KEY,
+        }
+        parameters = [
+            {"type": "text", "text": value}
+            for _, value in sorted(_params.items(), key=lambda item: item[0])
+        ]
         data = {
             "number": to,
-            "text": template,
-            "options": {"delay": 1200, "presence": "composing"},
+            "name": template,
+            "language": {"code": self.settings.EVOLUTION_TEMPLATE_LANGUAGE},
+            "components": [
+                {
+                    "type": "body",
+                    "parameters": parameters,
+                }
+            ],
         }
 
         response = await self.http_client.post(url, headers=headers, json=data)

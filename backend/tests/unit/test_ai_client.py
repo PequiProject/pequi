@@ -127,6 +127,8 @@ class TestAIClient:
 
         assert feedback == ""
         assert "Failed to generate AI feedback" in caplog.text
+        assert "dor" not in caplog.text
+        assert "ok" not in caplog.text
 
     @pytest.mark.asyncio
     async def test_generate_checkin_feedback_empty_symptoms(self, mock_settings, mocker):

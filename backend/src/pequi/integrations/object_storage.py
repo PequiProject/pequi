@@ -39,7 +39,7 @@ class ObjectStorageClient:
         self._access_key = access_key or settings.STORAGE_ACCESS_KEY
         self._secret_key = secret_key or settings.STORAGE_SECRET_KEY
         self.region = region or settings.STORAGE_REGION
-        self.public_url = public_url or settings.STORAGE_PUBLIC_URL
+        self.public_url = public_url if public_url is not None else settings.STORAGE_PUBLIC_URL
 
         self._session = aiobotocore.session.get_session()
 
@@ -78,10 +78,9 @@ class ObjectStorageClient:
                     ContentType=content_type,
                 )
 
-            # Return public URL
             if self.public_url:
                 return f"{self.public_url}/{self.bucket}/{key}"
-            return f"{self.endpoint_url}/{self.bucket}/{key}"
+            return await self.generate_presigned_url(key)
         except Exception as e:
             logger.error(
                 "Failed to upload object to storage: %s",

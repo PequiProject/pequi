@@ -6,6 +6,7 @@ baseado em roles (paciente, profissional de saúde e admin).
 """
 
 from collections.abc import AsyncGenerator
+from functools import lru_cache
 from uuid import UUID
 
 from fastapi import Depends
@@ -95,9 +96,23 @@ async def get_update_patient_profile_use_case(
     return UpdatePatientProfileUseCase(PatientRepository(session))
 
 
+@lru_cache
+def get_cached_whatsapp_client() -> WhatsAppClient:
+    """Return the shared WhatsApp client used by FastAPI dependencies."""
+    return WhatsAppClient()
+
+
 async def get_whatsapp_client() -> WhatsAppClient:
     """Dependency that returns a configured WhatsApp client."""
-    return WhatsAppClient()
+    return get_cached_whatsapp_client()
+
+
+async def close_cached_whatsapp_client() -> None:
+    """Close the shared WhatsApp client, if it has been created."""
+    if get_cached_whatsapp_client.cache_info().currsize == 0:
+        return
+    await get_cached_whatsapp_client().close()
+    get_cached_whatsapp_client.cache_clear()
 
 
 async def get_object_storage_client() -> ObjectStorageClient:
@@ -125,7 +140,9 @@ __all__ = [
     "get_current_admin",
     "get_patient_profile_use_case",
     "get_update_patient_profile_use_case",
+    "get_cached_whatsapp_client",
     "get_whatsapp_client",
+    "close_cached_whatsapp_client",
     "get_object_storage_client",
     "get_ai_client",
     "get_storage_service",

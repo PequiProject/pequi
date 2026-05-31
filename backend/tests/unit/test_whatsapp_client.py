@@ -21,6 +21,8 @@ def mock_settings():
         TWILIO_WHATSAPP_FROM="whatsapp:+14155238886",
         EVOLUTION_API_URL="https://test.evolution.api",
         EVOLUTION_API_KEY="test_key",
+        EVOLUTION_INSTANCE="pequi-dev",
+        TWILIO_CONTENT_SIDS={"test_template": "HX123"},
     )
 
 
@@ -101,6 +103,13 @@ class TestWhatsAppClient:
         )
         message_id = await client.send_message("+5511999999999", "Test message")
         assert message_id == "test_message_id"
+        mock_http_client.post.assert_called_once()
+        call_args = mock_http_client.post.call_args
+        assert call_args.args[0] == "https://test.evolution.api/message/sendText/pequi-dev"
+        assert call_args.kwargs["headers"] == {
+            "Content-Type": "application/json",
+            "apikey": "test_key",
+        }
 
     @pytest.mark.asyncio
     async def test_send_template_twilio_success(self, whatsapp_client, mocker):
@@ -119,6 +128,10 @@ class TestWhatsAppClient:
             "+5511999999999", "test_template", {"param1": "value1"}
         )
         assert template_id == "test_template_id"
+        data = whatsapp_client.http_client.post.call_args.kwargs["data"]
+        assert data["ContentSid"] == "HX123"
+        assert data["ContentVariables"] == '{"param1":"value1"}'
+        assert "MessagingServiceSid" not in data
 
     @pytest.mark.asyncio
     async def test_send_template_evolution_success(self, mock_settings, mocker):
@@ -139,6 +152,24 @@ class TestWhatsAppClient:
             "+5511999999999", "test_template", {"param1": "value1"}
         )
         assert template_id == "test_template_id"
+        mock_http_client.post.assert_called_once()
+        call_args = mock_http_client.post.call_args
+        assert call_args.args[0] == "https://test.evolution.api/message/sendTemplate/pequi-dev"
+        assert call_args.kwargs["headers"] == {
+            "Content-Type": "application/json",
+            "apikey": "test_key",
+        }
+        assert call_args.kwargs["json"] == {
+            "number": "+5511999999999",
+            "name": "test_template",
+            "language": {"code": "pt_BR"},
+            "components": [
+                {
+                    "type": "body",
+                    "parameters": [{"type": "text", "text": "value1"}],
+                }
+            ],
+        }
 
     @pytest.mark.asyncio
     async def test_send_message_retry_with_backoff(self, whatsapp_client, mocker):

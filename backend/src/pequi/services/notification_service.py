@@ -12,17 +12,40 @@ class NotificationService:
     def __init__(self, whatsapp_client: WhatsAppClient | None = None) -> None:
         self.whatsapp_client = whatsapp_client
 
-    async def send_feedback(self, patient_id: UUID, feedback: str) -> None:
+    async def send_feedback(
+        self,
+        patient_id: UUID,
+        feedback: str,
+        recipient_phone: str | None = None,
+    ) -> None:
         """Envia feedback de IA ao paciente (push/WhatsApp quando disponível)."""
         logger.info(
             "notification.feedback_queued",
             patient_id=str(patient_id),
             feedback_length=len(feedback),
         )
-        if self.whatsapp_client is not None:
+        if self.whatsapp_client is None:
+            return
+
+        if recipient_phone is None:
             logger.info(
-                "notification.whatsapp_enabled",
+                "notification.whatsapp_skipped_no_phone",
                 patient_id=str(patient_id),
+            )
+            return
+
+        try:
+            message_id = await self.whatsapp_client.send_message(recipient_phone, feedback)
+            logger.info(
+                "notification.whatsapp_sent",
+                patient_id=str(patient_id),
+                message_sent=bool(message_id),
+            )
+        except Exception as exc:
+            logger.warning(
+                "notification.whatsapp_failed",
+                patient_id=str(patient_id),
+                error_type=type(exc).__name__,
             )
 
     async def send_dose_reminder(self, patient_id: UUID) -> None:
