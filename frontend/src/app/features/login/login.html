@@ -17,8 +17,6 @@
         <input type="password" formControlName="password" placeholder="Digite sua senha" />
       </label>
 
-      <p class="auth-error" *ngIf="errorMessage">{{ errorMessage }}</p>
-
       <button class="auth-button" type="submit" [disabled]="isSubmitting">
         {{ isSubmitting ? 'Entrando...' : 'Entrar' }}
       </button>
