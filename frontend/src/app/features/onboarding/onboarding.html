@@ -1,0 +1,155 @@
+<section
+  class="min-h-screen bg-gradient-to-b from-[#E0E7FF] via-[#FDFCF9] to-white px-5 py-8 sm:px-8 lg:px-12 lg:py-12"
+  data-testid="onboarding-screen"
+>
+  <div
+    class="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-6xl flex-col lg:flex-row lg:items-center lg:gap-16 xl:gap-24"
+  >
+    <div
+      class="flex flex-1 flex-col items-center justify-center text-center lg:items-start lg:text-left"
+      data-testid="onboarding-brand-panel"
+    >
+      <img
+        src="/assets/logo-purple.svg"
+        alt="Pequi"
+        class="mb-6 h-28 w-auto select-none [-webkit-user-drag:none] sm:h-32 lg:mb-8 lg:h-56 xl:h-64"
+        draggable="false"
+        data-testid="onboarding-logo"
+      />
+
+      <span
+        class="mb-4 inline-flex rounded-full bg-[#E0E7FF] px-3 py-1 text-xs font-bold tracking-wide text-[#4338CA] lg:hidden"
+      >
+        PEQUI
+      </span>
+
+      <p class="max-w-md text-lg font-bold leading-tight text-[#373831] lg:text-2xl lg:leading-tight xl:text-3xl">
+        Cuidado, acolhimento e acompanhamento para a sua jornada de saúde.
+      </p>
+
+      <p
+        class="mt-4 hidden max-w-sm text-base leading-relaxed text-[#64655C] lg:block"
+        data-testid="onboarding-community-message-desktop"
+      >
+        Junte-se a uma comunidade acolhedora.
+      </p>
+    </div>
+
+    <div
+      class="mt-8 flex w-full flex-1 flex-col lg:mt-0 lg:max-w-md xl:max-w-lg"
+      data-testid="onboarding-action-panel"
+    >
+      <div class="mb-6 hidden lg:block">
+        <span
+          class="inline-flex rounded-full bg-[#E0E7FF] px-3 py-1 text-xs font-bold tracking-wide text-[#4338CA]"
+        >
+          PEQUI
+        </span>
+      </div>
+
+      <h1
+        class="mb-3 text-center text-3xl font-bold leading-tight text-[#373831] sm:text-4xl lg:text-left"
+        data-testid="onboarding-welcome"
+      >
+        Seja bem-vindo à sua jornada
+      </h1>
+
+      <p
+        class="mb-8 text-center text-base leading-relaxed text-[#64655C] lg:text-left"
+        data-testid="onboarding-description"
+      >
+        Acompanhe seu tratamento, registre sintomas e receba insights e feedbacks personalizados
+        com base no que você relata.
+      </p>
+
+      <div class="mb-8 space-y-3">
+        <article
+          class="flex items-start gap-4 rounded-3xl border border-[#C0B9FF]/40 bg-white/70 p-4 shadow-sm"
+        >
+          <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#CAF9DC]">
+            <lucide-icon
+              [name]="LucideLineChart"
+              [size]="20"
+              [strokeWidth]="2"
+              class="text-[#426B55]"
+              aria-hidden="true"
+            />
+          </div>
+          <div class="text-left">
+            <h2 class="text-sm font-bold text-[#373831]">Acompanhe o tratamento</h2>
+            <p class="mt-1 text-sm text-[#64655C]">
+              Registre check-ins e sintomas para acompanhar sua evolução ao longo do cuidado.
+            </p>
+          </div>
+        </article>
+
+        <article
+          class="flex items-start gap-4 rounded-3xl border border-[#C0B9FF]/40 bg-white/70 p-4 shadow-sm"
+        >
+          <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#ADDEF6]">
+            <lucide-icon
+              [name]="LucideSparkles"
+              [size]="20"
+              [strokeWidth]="2"
+              class="text-[#396A7F]"
+              aria-hidden="true"
+            />
+          </div>
+          <div class="text-left">
+            <h2 class="text-sm font-bold text-[#373831]">Insights e feedbacks</h2>
+            <p class="mt-1 text-sm text-[#64655C]">
+              Receba orientações personalizadas com base nos sintomas que você relata.
+            </p>
+          </div>
+        </article>
+
+        <article
+          class="flex items-start gap-4 rounded-3xl border border-[#C0B9FF]/40 bg-white/70 p-4 shadow-sm"
+          data-testid="onboarding-community-card"
+        >
+          <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#E0E7FF]">
+            <lucide-icon
+              [name]="LucideUsers"
+              [size]="20"
+              [strokeWidth]="2"
+              class="text-[#4338CA]"
+              aria-hidden="true"
+            />
+          </div>
+          <div class="text-left">
+            <h2 class="text-sm font-bold text-[#373831]">Comunidade acolhedora</h2>
+            <p class="mt-1 text-sm text-[#64655C]">
+              Troque experiências com outras pessoas e encontre apoio em um espaço seguro.
+            </p>
+          </div>
+        </article>
+      </div>
+
+      <div class="mt-auto space-y-3">
+        <a
+          routerLink="/register"
+          data-testid="onboarding-register-button"
+          class="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#4338CA] text-base font-bold text-white transition-colors hover:bg-[#372fb0]"
+        >
+          Cadastro
+          <span aria-hidden="true">→</span>
+        </a>
+
+        <a
+          routerLink="/login"
+          data-testid="onboarding-login-button"
+          class="flex h-12 w-full items-center justify-center rounded-full border border-[#C0B9FF] bg-white text-base font-bold text-[#4338CA] transition-colors hover:bg-[#E0E7FF]"
+        >
+          Entrar
+        </a>
+      </div>
+
+      <p
+        class="mt-6 text-center text-sm text-[#64655C] lg:hidden"
+        data-testid="onboarding-community-message"
+      >
+        Junte-se a uma comunidade acolhedora.
+      </p>
+    </div>
+  </div>
+</section>

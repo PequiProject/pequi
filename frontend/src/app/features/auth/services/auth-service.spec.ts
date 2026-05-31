@@ -268,10 +268,10 @@ describe('AuthService', () => {
     expect(() => service.refreshToken()).toThrowError('Refresh token não encontrado.');
 
     expect(localStorage.getItem('auth_session')).toBeNull();
-    expect(navigateMock).toHaveBeenCalledWith(['/login']);
+    expect(navigateMock).toHaveBeenCalledWith(['/']);
   });
 
-  it('should remove session and navigate to login on logout', () => {
+  it('should remove session and navigate to onboarding on logout', () => {
     localStorage.setItem(
       'auth_session',
       JSON.stringify({
@@ -286,6 +286,6 @@ describe('AuthService', () => {
     service.logout();
 
     expect(localStorage.getItem('auth_session')).toBeNull();
-    expect(navigateMock).toHaveBeenCalledWith(['/login']);
+    expect(navigateMock).toHaveBeenCalledWith(['/']);
   });
 });
