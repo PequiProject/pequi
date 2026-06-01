@@ -31,9 +31,6 @@
         />
       </label>
 
-      <p class="auth-error" *ngIf="errorMessage">{{ errorMessage }}</p>
-      <p class="auth-success" *ngIf="successMessage">{{ successMessage }}</p>
-
       <button class="auth-button" type="submit" [disabled]="isSubmitting">
         {{ isSubmitting ? 'Cadastrando...' : 'Cadastrar' }}
       </button>
