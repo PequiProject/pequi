@@ -11,16 +11,27 @@
       [class.px-6]="!isCollapsed()"
       [class.px-3]="isCollapsed()"
     >
-      <div class="flex w-full items-center justify-between gap-2">
-        <span
-          class="overflow-hidden whitespace-nowrap text-lg font-semibold transition-all duration-200"
-          [class.w-auto]="!isCollapsed()"
-          [class.w-0]="isCollapsed()"
-          [class.opacity-100]="!isCollapsed()"
-          [class.opacity-0]="isCollapsed()"
+      <div
+        class="flex w-full items-center gap-2"
+        [class.justify-between]="!isCollapsed()"
+        [class.justify-center]="isCollapsed()"
+      >
+        <div
+          class="flex min-w-0 items-center gap-2.5"
+          *ngIf="!isCollapsed()"
         >
-          Pequi
-        </span>
+          <img
+            src="/assets/logo-purple.svg"
+            alt=""
+            class="h-8 w-auto shrink-0 select-none [-webkit-user-drag:none]"
+            draggable="false"
+            data-testid="menu-logo"
+            aria-hidden="true"
+          />
+          <span class="whitespace-nowrap text-lg font-semibold text-[#4338CA]">
+            Pequi
+          </span>
+        </div>
 
         <button
           type="button"

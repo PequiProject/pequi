@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../auth/services/auth-service';
+import { ToastService } from '../../components/toast/toast.service';
 
 @Component({
   selector: 'app-register',
@@ -15,9 +16,8 @@ export class Register {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly toastService = inject(ToastService);
 
-  errorMessage = '';
-  successMessage = '';
   isSubmitting = false;
 
   form = this.fb.group({
@@ -27,41 +27,94 @@ export class Register {
     confirmPassword: ['', [Validators.required]],
   });
 
-submit(): void {
-  this.errorMessage = '';
-  this.successMessage = '';
-  this.form.markAllAsTouched();
+  submit(): void {
+    this.form.markAllAsTouched();
 
-  if (this.form.invalid) {
-    return;
+    if (this.form.invalid) {
+      this.toastService.warning(
+        'Formulário inválido',
+        this.getFormErrorMessage()
+      );
+      return;
+    }
+
+    if ((this.form.value.password ?? '') !== (this.form.value.confirmPassword ?? '')) {
+      this.toastService.warning(
+        'Senhas diferentes',
+        'As senhas informadas não coincidem.'
+      );
+      return;
+    }
+
+    this.isSubmitting = true;
+
+    this.authService
+      .register({
+        full_name: this.form.value.full_name ?? '',
+        email: this.form.value.email ?? '',
+        password: this.form.value.password ?? '',
+      })
+      .subscribe({
+        next: () => {
+          void this.router.navigate(['/login'], {
+            queryParams: { registered: 'true' },
+          });
+        },
+        error: (error) => {
+          const message =
+            error?.error?.detail ||
+            error?.error?.message ||
+            'Não foi possível cadastrar.';
+
+          this.toastService.error('Erro no cadastro', message);
+          this.isSubmitting = false;
+        },
+        complete: () => {
+          this.isSubmitting = false;
+        },
+      });
   }
 
-  if ((this.form.value.password ?? '') !== (this.form.value.confirmPassword ?? '')) {
-    this.errorMessage = 'As senhas não coincidem.';
-    return;
-  }
-  this.isSubmitting = true;
+  private getFormErrorMessage(): string {
+    const fullNameControl = this.form.get('full_name');
+    const emailControl = this.form.get('email');
+    const passwordControl = this.form.get('password');
+    const confirmPasswordControl = this.form.get('confirmPassword');
 
-  this.authService.register({
-    full_name: this.form.value.full_name ?? '',
-    email: this.form.value.email ?? '',
-    password: this.form.value.password ?? '',
-  }).subscribe({
-    next: () => {
-      this.successMessage = 'Cadastro realizado com sucesso.';
-      void this.router.navigate(['/login']);
-    },
-    error: (error) => {
-      console.error('erro no cadastro:', error);
-      this.errorMessage =
-        error?.error?.detail ||
-        error?.error?.message ||
-        'Não foi possível cadastrar.';
-      this.isSubmitting = false;
-    },
-    complete: () => {
-      this.isSubmitting = false;
-    },
-  });
-}
+    if (this.hasError(fullNameControl, 'required')) {
+      return 'Informe seu nome completo.';
+    }
+
+    if (this.hasError(fullNameControl, 'minlength')) {
+      const requiredLength = fullNameControl?.errors?.['minlength']?.requiredLength;
+      return `O nome completo deve ter pelo menos ${requiredLength} caracteres.`;
+    }
+
+    if (this.hasError(emailControl, 'required')) {
+      return 'Informe seu e-mail.';
+    }
+
+    if (this.hasError(emailControl, 'email')) {
+      return 'Informe um e-mail válido.';
+    }
+
+    if (this.hasError(passwordControl, 'required')) {
+      return 'Informe sua senha.';
+    }
+
+    if (this.hasError(passwordControl, 'minlength')) {
+      const requiredLength = passwordControl?.errors?.['minlength']?.requiredLength;
+      return `A senha deve ter pelo menos ${requiredLength} caracteres.`;
+    }
+
+    if (this.hasError(confirmPasswordControl, 'required')) {
+      return 'Confirme sua senha.';
+    }
+
+    return 'Revise os campos obrigatórios antes de continuar.';
+  }
+
+  private hasError(control: AbstractControl | null, errorKey: string): boolean {
+    return !!control?.touched && !!control?.errors?.[errorKey];
+  }
 }

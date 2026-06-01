@@ -34,7 +34,12 @@ def _init_sentry() -> None:
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     configure_logging()
     _init_sentry()
-    yield
+    try:
+        yield
+    finally:
+        from pequi.core.dependencies import close_cached_whatsapp_client
+
+        await close_cached_whatsapp_client()
 
 
 def create_app() -> FastAPI:

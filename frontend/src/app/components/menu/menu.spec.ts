@@ -51,6 +51,21 @@ it('should render all menu items in desktop and mobile nav', () => {
   expect(mobileLinks.length).toBe(component.navItems.length);
 });
 
+  it('should render brand logo next to Pequi when expanded', () => {
+    const logo = fixture.debugElement.query(By.css('[data-testid="menu-logo"]'))
+      ?.nativeElement as HTMLImageElement;
+
+    expect(logo).toBeTruthy();
+    expect(logo.getAttribute('src')).toContain('logo-purple.svg');
+  });
+
+  it('should hide brand logo when sidebar is collapsed', () => {
+    component.toggleSidebar();
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('[data-testid="menu-logo"]'))).toBeNull();
+  });
+
   it('should start expanded', () => {
     expect(component.isCollapsed()).toBeFalsy();
 
