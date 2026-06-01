@@ -15,6 +15,7 @@ import { Login } from './features/login/login';
 import { Register } from './features/register/register';
 import { Onboarding } from './features/onboarding/onboarding';
 import { authGuard } from './features/auth/guards/auth-guard';
+import { Medication } from './features/medication/medication';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', component: Onboarding, title: 'Bem-vindo' },
@@ -29,6 +30,7 @@ export const routes: Routes = [
       { path: 'home', component: HomeComponent, title: 'Início' },
       { path: 'journey', component: Journey, title: 'Jornada' },
       { path: 'checkin', component: CheckinComponent, title: 'Check In' },
+      { path: 'medication', component: Medication, title: 'Remédios' },
       {
         path: 'appointments/register',
         component: RegisterAppointmentComponent,

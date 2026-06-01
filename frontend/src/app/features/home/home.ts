@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, signal, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule, ImagePlus, CirclePlus, Calendar, Stethoscope, ChevronLeft, ChevronRight } from 'lucide-angular';
+import { LucideAngularModule, ImagePlus, CirclePlus, Calendar, Stethoscope, Pill, ChevronLeft, ChevronRight } from 'lucide-angular';
 import { Router, RouterLink } from '@angular/router';
 
 interface QuickAction {
@@ -27,6 +27,13 @@ interface Article {
   actionUrl: string;
 }
 
+interface HomeHighlightCard {
+  value: string;
+  title: string;
+  subtitle?: string;
+  backgroundClass: string;
+}
+
 @Component({
   selector: 'app-home',
   standalone: true,
@@ -40,6 +47,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
   readonly CirclePlus = CirclePlus;
   readonly CalendarIcon = Calendar;
   readonly Stethoscope = Stethoscope;
+  readonly Pill = Pill;
   readonly ChevronLeft = ChevronLeft;
   readonly ChevronRight = ChevronRight;
 
@@ -51,6 +59,20 @@ export class HomeComponent implements OnInit, AfterViewInit {
   calendarMonth: (CalendarDay | null)[] = [];
   selectedDate: Date = new Date();
 
+  summaryCards: HomeHighlightCard[] = [
+    {
+      value: '2/4',
+      title: 'Medicações tomadas',
+      backgroundClass: 'summary-card--purple',
+    },
+    {
+      value: '27/06/2026',
+      title: '15:30',
+      subtitle: 'Próxima consulta',
+      backgroundClass: 'summary-card--blue',
+    },
+  ];
+
   QuickAction = [
     {
       title: 'Check-in',
@@ -58,6 +80,13 @@ export class HomeComponent implements OnInit, AfterViewInit {
       icon: this.CirclePlus,
       colorClass: 'blue-icon',
       path: '/checkin',
+    },
+        {
+      title: 'Registrar medicamentos',
+      description: 'Veja quais remédios tomar hoje',
+      icon: this.Pill,
+      colorClass: 'yellow-icon',
+      path: '/medication',
     },
     {
       title: 'Registrar consulta',

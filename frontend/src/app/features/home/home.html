@@ -88,6 +88,21 @@
       </div>
     }
   </section>
+
+  <section class="summary-section">
+    <div class="summary-grid">
+      @for (card of summaryCards; track $index) {
+        <article class="summary-card" [ngClass]="card.backgroundClass">
+          <span class="summary-card__value">{{ card.value }}</span>
+          <span class="summary-card__title">{{ card.title }}</span>
+          @if (card.subtitle) {
+            <span class="summary-card__subtitle">{{ card.subtitle }}</span>
+          }
+        </article>
+      }
+    </div>
+  </section>
+
 <div>
   <section class="section-container">
     <h3 class="section-title">Ações rápidas</h3>

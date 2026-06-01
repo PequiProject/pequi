@@ -1,0 +1,292 @@
+<section class="mx-auto w-full max-w-5xl">
+  <div class="pb-6">
+    <h2 class="text-2xl font-semibold text-[#373831]">Remédios</h2>
+    <p class="mt-1 text-sm text-[#37614B]">
+      Registre as medicações que você já tomou hoje
+    </p>
+  </div>
+
+  <h3 id="unsupervised-medication-title" class="mb-2 rounded-full px-3 py-1 text-sm font-medium text-[#64655C]">
+    Dose não supervisionada: remédios para tomar em casa
+  </h3>
+
+  <section
+    class="w-full"
+    *ngIf="unsupervisedItems.length"
+    aria-labelledby="unsupervised-medication-title"
+  >
+    <div class="flex flex-col gap-[14px]">
+      <article
+        *ngFor="let item of unsupervisedItems; trackBy: trackById"
+        [ngClass]="
+          item.checked
+            ? 'flex min-h-[96px] flex-col items-start justify-between gap-4 rounded-[24px] bg-[#f3f1ed] p-[18px] opacity-60 sm:min-h-[108px] sm:flex-row sm:items-center sm:rounded-[30px] sm:px-6 sm:py-[22px]'
+            : 'flex min-h-[96px] flex-col items-start justify-between gap-4 rounded-[24px] bg-[#f3f1ed] p-[18px] opacity-100 sm:min-h-[108px] sm:flex-row sm:items-center sm:rounded-[30px] sm:px-6 sm:py-[22px]'
+        "
+      >
+        <div class="flex w-full min-w-0 flex-1 items-center gap-[18px]">
+          <div
+            [ngClass]="
+              item.checked
+                ? 'flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#ededea] text-[#8da0aa] text-[20px] sm:h-14 sm:w-14 sm:text-2xl'
+                : 'flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#f5f6e7] text-[#d9c148] text-[20px] sm:h-14 sm:w-14 sm:text-2xl'
+            "
+          >
+            <lucide-icon [name]="Pill" [size]="28"></lucide-icon>
+          </div>
+
+          <div class="min-w-0">
+            <p class="m-0 text-base font-bold leading-[1.2] text-[#27251f] sm:text-[18px]">
+              {{ item.title }}
+            </p>
+
+            <p
+              class="mt-1 text-sm leading-[1.2] text-[#78756f] sm:text-base"
+              *ngIf="item.subtitle"
+            >
+              {{ item.subtitle }}
+            </p>
+          </div>
+        </div>
+
+        <div class="flex w-full shrink-0 items-center justify-end gap-3 sm:ml-4 sm:w-auto sm:justify-end">
+          <button
+            type="button"
+            [ngClass]="
+              item.alarmEnabled
+                ? 'inline-flex h-[42px] w-[42px] items-center justify-center rounded-full bg-[#e8f2f7] text-[#4338CA] transition hover:bg-[#E0E7FF] sm:h-11 sm:w-11'
+                : 'inline-flex h-[42px] w-[42px] items-center justify-center rounded-full bg-[#f8f6f2] text-[#6b685f] transition hover:bg-[#efebe4] sm:h-11 sm:w-11'
+            "
+            [attr.aria-label]="'Configurar alarme de ' + item.title"
+            (click)="openAlarmModal(item)"
+          >
+            <lucide-icon [name]="Clock3" [size]="18"></lucide-icon>
+          </button>
+
+          <label
+            [attr.aria-label]="'Marcar ' + item.title + ' como Concluído'"
+          >
+            <input
+              type="checkbox"
+              class="peer sr-only"
+              [checked]="item.checked"
+              (change)="toggleUnsupervised(item.id)"
+            />
+
+            <span
+              [ngClass]="
+                item.checked
+                  ? 'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[8px] border-2 border-[#4338CA] bg-[#4338CA] transition duration-200'
+                  : 'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[8px] border-2 border-[#cbc6bd] bg-[#fcfbf8] transition duration-200'
+              "
+            >
+              <span
+                [ngClass]="
+                  item.checked
+                    ? 'scale-100 text-sm leading-none text-white opacity-100 transition duration-200'
+                    : 'scale-75 text-sm leading-none text-white opacity-0 transition duration-200'
+                "
+              >
+                ✓
+              </span>
+            </span>
+          </label>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <div
+    class="flex justify-center p-8 text-center text-sm font-medium"
+    *ngIf="unsupervisedItems.length === 0"
+  >
+    <p>Nenhum medicamento de dose não supervisionada cadastrado.</p>
+  </div>
+
+  <h3 id="supervised-medication-title" class="mb-2 mt-8 rounded-full px-3 py-1 text-sm font-medium text-[#64655C]">
+    Dose supervisionada: remédios para tomar na Unidade de Saúde responsável
+  </h3>
+
+  <section
+    class="w-full"
+    *ngIf="supervisedItems.length"
+    aria-labelledby="supervised-medication-title"
+  >
+    <div class="flex flex-col gap-[14px]">
+      <article
+        *ngFor="let item of supervisedItems; trackBy: trackById"
+        [ngClass]="
+          item.checked
+            ? 'flex min-h-[96px] flex-col items-start justify-between gap-4 rounded-[24px] bg-[#f3f1ed] p-[18px] opacity-60 sm:min-h-[108px] sm:flex-row sm:items-center sm:rounded-[30px] sm:px-6 sm:py-[22px]'
+            : 'flex min-h-[96px] flex-col items-start justify-between gap-4 rounded-[24px] bg-[#f3f1ed] p-[18px] opacity-100 sm:min-h-[108px] sm:flex-row sm:items-center sm:rounded-[30px] sm:px-6 sm:py-[22px]'
+        "
+      >
+        <div class="flex w-full min-w-0 flex-1 items-center gap-[18px]">
+          <div
+            [ngClass]="
+              item.checked
+                ? 'flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#ededea] text-[#8da0aa] text-[20px] sm:h-14 sm:w-14 sm:text-2xl'
+                : 'flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#f5f6e7] text-[#d9c148] text-[20px] sm:h-14 sm:w-14 sm:text-2xl'
+            "
+          >
+            <lucide-icon [name]="Hospital" [size]="28"></lucide-icon>
+          </div>
+
+          <div class="min-w-0">
+            <p class="m-0 text-base font-bold leading-[1.2] text-[#27251f] sm:text-[18px]">
+              {{ item.title }}
+            </p>
+
+            <p
+              class="mt-1 text-sm leading-[1.2] text-[#78756f] sm:text-base"
+              *ngIf="item.subtitle"
+            >
+              {{ item.subtitle }}
+            </p>
+          </div>
+        </div>
+
+        <div class="flex w-full shrink-0 items-center justify-end gap-3 sm:ml-4 sm:w-auto sm:justify-end">
+          <button
+            type="button"
+            [ngClass]="
+              item.alarmEnabled
+                ? 'inline-flex h-[42px] w-[42px] items-center justify-center rounded-full bg-[#e8f2f7] text-[#4338CA] transition hover:bg-[#E0E7FF] sm:h-11 sm:w-11'
+                : 'inline-flex h-[42px] w-[42px] items-center justify-center rounded-full bg-[#f8f6f2] text-[#6b685f] transition hover:bg-[#efebe4] sm:h-11 sm:w-11'
+            "
+            [attr.aria-label]="'Configurar alarme de ' + item.title"
+            (click)="openAlarmModal(item)"
+          >
+            <lucide-icon [name]="Clock3" [size]="18"></lucide-icon>
+          </button>
+
+          <label
+            [attr.aria-label]="'Marcar ' + item.title + ' como Concluído'"
+          >
+            <input
+              type="checkbox"
+              class="peer sr-only"
+              [checked]="item.checked"
+              (change)="toggleSupervised(item.id)"
+            />
+
+            <span
+              [ngClass]="
+                item.checked
+                  ? 'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[8px] border-2 border-[#4338CA] bg-[#4338CA] transition duration-200'
+                  : 'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[8px] border-2 border-[#cbc6bd] bg-[#fcfbf8] transition duration-200'
+              "
+            >
+              <span
+                [ngClass]="
+                  item.checked
+                    ? 'scale-100 text-sm leading-none text-white opacity-100 transition duration-200'
+                    : 'scale-75 text-sm leading-none text-white opacity-0 transition duration-200'
+                "
+              >
+                ✓
+              </span>
+            </span>
+          </label>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <div
+    class="flex justify-center p-8 text-center text-sm font-medium"
+    *ngIf="supervisedItems.length === 0"
+  >
+    <p>Nenhum medicamento de dose supervisionada cadastrado.</p>
+  </div>
+</section>
+
+<div
+  class="fixed inset-0 z-[1000] bg-[rgba(39,37,31,0.4)]"
+  *ngIf="isAlarmModalOpen"
+  (click)="closeAlarmModal()"
+></div>
+
+<section
+  class="fixed inset-0 z-[1001] flex items-end justify-center p-3 sm:items-center sm:p-5"
+  *ngIf="isAlarmModalOpen"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="medication-alarm-modal-title"
+>
+  <div
+    class="w-full rounded-t-[24px] rounded-b-[18px] bg-[#fcfbf8] p-5 shadow-[0_20px_50px_rgba(30,24,18,0.18)] sm:w-[min(100%,520px)] sm:rounded-[28px] sm:p-6"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="mb-5 flex items-start justify-between gap-4">
+      <div>
+        <p class="mb-[6px] text-xs font-bold uppercase tracking-[0.04em] text-[#8c867d]">
+          Lembrete de medicação
+        </p>
+        <h3 id="medication-alarm-modal-title" class="m-0 text-[22px] leading-[1.2] text-[#27251f]">
+          {{ getSelectedMedicationName() }}
+        </h3>
+      </div>
+
+      <button
+        type="button"
+        class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f2eee8] text-[#615d55]"
+        aria-label="Fechar modal"
+        (click)="closeAlarmModal()"
+      >
+        <lucide-icon [name]="X" [size]="18"></lucide-icon>
+      </button>
+    </div>
+
+    <div class="flex flex-col gap-5">
+      <div class="flex flex-col gap-[10px]">
+        <label class="text-sm font-bold text-[#4b473f]">Dias da semana</label>
+
+        <div class="flex flex-wrap gap-[10px]">
+          <button
+            type="button"
+            *ngFor="let day of weekdays"
+            [ngClass]="
+              isDaySelected(day.key)
+                ? 'min-h-10 min-w-[56px] rounded-full bg-[#E0E7FF] px-[14px] text-sm font-semibold text-[#4338CA] transition'
+                : 'min-h-10 min-w-[56px] rounded-full bg-[#f8f5f0] px-[14px] text-sm font-semibold text-[#625d55] transition'
+            "
+            (click)="toggleModalDay(day.key)"
+          >
+            {{ day.shortLabel }}
+          </button>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-[10px]">
+        <label class="text-sm font-bold text-[#4b473f]" for="medication-alarm-time">
+          Horário
+        </label>
+        <input
+          id="medication-alarm-time"
+          class="min-h-12 w-full rounded-[14px] border border-[#c9bba2] bg-white px-[14px] text-[#2f2b25] outline-none"
+          type="time"
+          [(ngModel)]="modalDraftTime"
+        />
+      </div>
+    </div>
+
+    <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+      <button
+        type="button"
+        class="min-h-[44px] w-full rounded-full bg-[#efebe4] px-[18px] font-bold text-[#5d584f] sm:w-auto"
+        (click)="closeAlarmModal()"
+      >
+        Cancelar
+      </button>
+
+      <button
+        type="button"
+        class="min-h-[44px] w-full rounded-full bg-[#4338CA] hover:bg-[#C0B9FF] px-[18px] font-bold text-white sm:w-auto"
+        (click)="saveAlarmConfig()"
+      >
+        Salvar
+      </button>
+    </div>
+  </div>
+</section>
