@@ -41,7 +41,14 @@ def upgrade() -> None:
         sa.Column("completed_at", sa.TIMESTAMP(timezone=True), nullable=True),
         sa.Column(
             "status",
-            data_deletion_status_enum,
+            postgresql.ENUM(
+                "pending",
+                "processing",
+                "completed",
+                "failed",
+                name="data_deletion_status_enum",
+                create_type=False,
+            ),
             server_default="pending",
             nullable=False,
         ),
