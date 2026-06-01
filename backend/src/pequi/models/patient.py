@@ -21,7 +21,7 @@ class PatientProfile(Base):
         ForeignKey("health_units.id", ondelete="RESTRICT"),
         nullable=False,
     )
-    date_of_birth = Column(Date, nullable=False)
+    date_of_birth = Column(Date, nullable=True)
     sex = Column(String(10))
     neighborhood = Column(String)
     city = Column(String)
