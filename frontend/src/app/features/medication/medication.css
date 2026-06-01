@@ -1,0 +1,196 @@
+:host {
+  display: block;
+}
+
+.medication {
+  width: 100%;
+  padding: 8px 0;
+  background: #f7f5f1;
+}
+
+.medication__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.medication__title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.medication__title-icon {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid #7c7a74;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #7c7a74;
+  font-size: 14px;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.medication__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #26241f;
+}
+
+.medication__section + .medication__section {
+  margin-top: 18px;
+}
+
+.medication__section-title {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #8e8a84;
+}
+
+.medication__list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.medication-card {
+  min-height: 108px;
+  border-radius: 30px;
+  background: #f3f1ed;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 24px;
+}
+
+.medication-card--checked {
+  opacity: 0.58;
+}
+
+.medication-card__content {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.medication-card__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  background: #f5f6e7;
+  color: #d9c148;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.medication-card__icon--checked {
+  background: #ededea;
+  color: #8da0aa;
+}
+
+.medication-card__text {
+  min-width: 0;
+}
+
+.medication-card__title-text {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: #27251f;
+}
+
+.medication-card__subtitle {
+  margin: 4px 0 0;
+  font-size: 16px;
+  line-height: 1.2;
+  color: #78756f;
+}
+
+.medication-card__action {
+  margin-left: 16px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.medication-switch {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  display: inline-flex;
+}
+
+.medication-switch input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+}
+
+.medication-switch__slider {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: #dfddd5;
+  transition: 180ms ease;
+}
+
+.medication-switch__slider::before {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #f8f7f3;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  transition: 180ms ease;
+}
+
+.medication-switch input:checked + .medication-switch__slider {
+  background: #cfe3ee;
+}
+
+.medication-switch input:checked + .medication-switch__slider::before {
+  transform: translateX(18px);
+}
+
+@media (max-width: 640px) {
+  .medication-card {
+    min-height: 96px;
+    padding: 18px 18px;
+    border-radius: 24px;
+  }
+
+  .medication-card__icon {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+  }
+
+  .medication-card__title-text {
+    font-size: 16px;
+  }
+
+  .medication-card__subtitle {
+    font-size: 14px;
+  }
+
+  .medication-card__badge {
+    min-width: 64px;
+    height: 30px;
+    font-size: 13px;
+  }
+}

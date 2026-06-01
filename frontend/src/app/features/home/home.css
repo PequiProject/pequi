@@ -151,6 +151,11 @@
   color: #5b48d9;
 }
 
+.yellow-icon {
+  background-color: #f5f6e7;
+  color: #d9c148;
+}
+
 .card-text {
   display: flex;
   flex-direction: column;
@@ -246,5 +251,89 @@
 .analysis-btn:active {
   transform: scale(0.97);
   background-color: #fafafa;
+}
+
+.summary-section {
+  margin-top: 20px;
+  margin-bottom: 28px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.summary-card {
+  min-height: 172px;
+  border-radius: 36px;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.summary-card--purple {
+  background: #dfd8f0;
+}
+
+.summary-card--blue {
+  background: #d9eaf0;
+}
+
+.summary-card__value {
+  font-size: 28px;
+  line-height: 1.1;
+  font-weight: 800;
+  color: #3f5f73;
+  margin-bottom: 10px;
+}
+
+.summary-card--purple .summary-card__value {
+  color: #5b4fb3;
+}
+
+.summary-card__title {
+  font-size: 22px;
+  line-height: 1.25;
+  font-weight: 500;
+  color: #3f5f73;
+  max-width: 10ch;
+}
+
+.summary-card--purple .summary-card__title {
+  color: #3f3b8f;
+}
+
+.summary-card__subtitle {
+  margin-top: 4px;
+  font-size: 16px;
+  line-height: 1.25;
+  font-weight: 400;
+  color: #33444c;
+}
+
+@media (max-width: 768px) {
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .summary-card {
+    min-height: 148px;
+    border-radius: 28px;
+    padding: 24px 20px;
+  }
+
+  .summary-card__value {
+    font-size: 24px;
+  }
+
+  .summary-card__title {
+    font-size: 17px;
+  }
+
+  .summary-card__subtitle {
+    font-size: 15px;
+  }
 }
 
