@@ -86,7 +86,7 @@ refreshToken(): Observable<AuthTokenResponse> {
 
   logout(): void {
     localStorage.removeItem(this.sessionKey);
-    void this.router.navigate(['/login']);
+    void this.router.navigate(['/']);
   }
 
   isAuthenticated(): boolean {

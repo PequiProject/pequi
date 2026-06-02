@@ -34,7 +34,12 @@ def _init_sentry() -> None:
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     configure_logging()
     _init_sentry()
-    yield
+    try:
+        yield
+    finally:
+        from pequi.core.dependencies import close_cached_whatsapp_client
+
+        await close_cached_whatsapp_client()
 
 
 def create_app() -> FastAPI:
@@ -66,6 +71,7 @@ def _register_routers(app: FastAPI) -> None:
 
     app.include_router(health_router)
 
+    from pequi.routers import account as account_router
     from pequi.routers import article as article_router
     from pequi.routers import auth as auth_router
     from pequi.routers import body_map as body_map_router
@@ -75,6 +81,7 @@ def _register_routers(app: FastAPI) -> None:
     from pequi.routers import treatment as treatment_router
 
     app.include_router(patient_router.router, prefix="/v1/patients", tags=["patients"])
+    app.include_router(account_router.router, prefix="/v1/account", tags=["account"])
     app.include_router(auth_router.router, prefix="/v1/auth", tags=["auth"])
     app.include_router(treatment_router.router, prefix="/v1/treatments", tags=["treatments"])
     app.include_router(treatment_router.symptoms_router, prefix="/v1/symptoms", tags=["symptoms"])

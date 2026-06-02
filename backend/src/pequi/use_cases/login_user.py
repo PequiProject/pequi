@@ -12,10 +12,10 @@ class LoginUserUseCase:
         self.user_repo = user_repo
 
     async def execute(self, data: LoginRequest) -> AuthResponse:
-        user = await self.user_repo.get_by_email(data.email)
+        user = await self.user_repo.get_by_identifier(data.identifier)
 
         if not user or not verify_password(data.password, user.hashed_password):
-            raise UnauthorizedError("Invalid email or password")
+            raise UnauthorizedError("Invalid credentials")
 
         if not user.is_active:
             raise UnauthorizedError("User is inactive")

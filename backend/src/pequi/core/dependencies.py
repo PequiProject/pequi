@@ -6,6 +6,7 @@ baseado em roles (paciente, profissional de saúde e admin).
 """
 
 from collections.abc import AsyncGenerator
+from functools import lru_cache
 from uuid import UUID
 
 from fastapi import Depends
@@ -15,7 +16,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from pequi.config import get_settings
 from pequi.core.auth import TOKEN_TYPE_ACCESS, JWTError, decode_token
 from pequi.core.exceptions import ForbiddenError, UnauthorizedError
+from pequi.core.token_blacklist import is_token_revoked
 from pequi.database import get_db as _get_db
+from pequi.integrations import AIClient, ObjectStorageClient, WhatsAppClient, get_anthropic_client
 from pequi.repositories.patient_repo import PatientRepository
 from pequi.services.storage_service import FakeStorageService, StorageService
 from pequi.use_cases.get_patient_profile import GetPatientProfileUseCase
@@ -41,6 +44,8 @@ async def get_token_payload(
 
     if payload.get("type") != TOKEN_TYPE_ACCESS:
         raise UnauthorizedError("Access token required")
+    if await is_token_revoked(payload):
+        raise UnauthorizedError("Token revoked")
 
     return payload
 
@@ -94,6 +99,35 @@ async def get_update_patient_profile_use_case(
     return UpdatePatientProfileUseCase(PatientRepository(session))
 
 
+@lru_cache
+def get_cached_whatsapp_client() -> WhatsAppClient:
+    """Return the shared WhatsApp client used by FastAPI dependencies."""
+    return WhatsAppClient()
+
+
+async def get_whatsapp_client() -> WhatsAppClient:
+    """Dependency that returns a configured WhatsApp client."""
+    return get_cached_whatsapp_client()
+
+
+async def close_cached_whatsapp_client() -> None:
+    """Close the shared WhatsApp client, if it has been created."""
+    if get_cached_whatsapp_client.cache_info().currsize == 0:
+        return
+    await get_cached_whatsapp_client().close()
+    get_cached_whatsapp_client.cache_clear()
+
+
+async def get_object_storage_client() -> ObjectStorageClient:
+    """Dependency that returns a configured object storage client."""
+    return ObjectStorageClient()
+
+
+async def get_ai_client() -> AIClient | None:
+    """Dependency that returns a configured AI client or None if unavailable."""
+    return get_anthropic_client()
+
+
 def get_storage_service() -> StorageService:
     settings = get_settings()
     return FakeStorageService(base_url=settings.STORAGE_PUBLIC_URL)
@@ -109,5 +143,10 @@ __all__ = [
     "get_current_admin",
     "get_patient_profile_use_case",
     "get_update_patient_profile_use_case",
+    "get_cached_whatsapp_client",
+    "get_whatsapp_client",
+    "close_cached_whatsapp_client",
+    "get_object_storage_client",
+    "get_ai_client",
     "get_storage_service",
 ]

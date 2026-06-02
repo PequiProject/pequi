@@ -10,6 +10,7 @@ from pequi.models.community import (
     CommunityPost,
 )
 from pequi.models.consent import Consent
+from pequi.models.data_deletion import DataDeletionRequest
 from pequi.models.dose_log import AdherenceSnapshot, DoseLog
 from pequi.models.health_professional import HealthProfessional
 from pequi.models.health_unit import HealthUnit
@@ -35,6 +36,7 @@ __all__ = [
     "CommunityLike",
     "CommunityPost",
     "Consent",
+    "DataDeletionRequest",
     "DoseLog",
     "DoseSchedule",
     "HealthProfessional",

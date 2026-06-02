@@ -1,0 +1,205 @@
+from unittest.mock import AsyncMock
+
+import pytest
+
+from pequi.config import Settings
+from pequi.integrations.object_storage import ObjectStorageClient
+
+
+class AsyncContextManager:
+    def __init__(self, value):
+        self.value = value
+
+    async def __aenter__(self):
+        return self.value
+
+    async def __aexit__(self, exc_type, exc, tb):
+        return False
+
+
+@pytest.fixture
+def mock_settings():
+    return Settings(
+        SECRET_KEY="test-secret",
+        DATABASE_URL="postgresql+asyncpg://test:test@localhost/test",
+        STORAGE_ENDPOINT="https://test-storage.local",
+        STORAGE_ACCESS_KEY="test_access_key",
+        STORAGE_SECRET_KEY="test_secret_key",
+        STORAGE_BUCKET_IMAGES="test-bucket",
+        STORAGE_REGION="us-east-1",
+        STORAGE_PUBLIC_URL="https://cdn.test-storage.local",
+    )
+
+
+@pytest.fixture
+def storage_client(mock_settings):
+    return ObjectStorageClient(settings=mock_settings)
+
+
+@pytest.mark.asyncio
+async def test_get_success(storage_client, mocker):
+    mock_body = AsyncMock()
+    mock_body.read = AsyncMock(return_value=b"file-content")
+    mock_body.__aenter__ = AsyncMock(return_value=mock_body)
+    mock_body.__aexit__ = AsyncMock(return_value=False)
+
+    mock_client = mocker.Mock()
+    mock_client.get_object = AsyncMock(return_value={"Body": mock_body})
+
+    mocker.patch.object(
+        storage_client,
+        "_get_client",
+        new=AsyncMock(return_value=AsyncContextManager(mock_client)),
+    )
+
+    result = await storage_client.get("files/test.txt")
+
+    assert result == b"file-content"
+    mock_client.get_object.assert_called_once_with(Bucket="test-bucket", Key="files/test.txt")
+
+
+@pytest.mark.asyncio
+async def test_get_failure_logs_error(storage_client, mocker, caplog):
+    mock_client = mocker.Mock()
+    mock_client.get_object = AsyncMock(side_effect=Exception("download failed"))
+
+    mocker.patch.object(
+        storage_client,
+        "_get_client",
+        new=AsyncMock(return_value=AsyncContextManager(mock_client)),
+    )
+
+    with caplog.at_level("ERROR"), pytest.raises(Exception, match="download failed"):
+        await storage_client.get("files/test.txt")
+
+    assert "Failed to get object from storage" in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_delete_success(storage_client, mocker):
+    mock_client = mocker.Mock()
+    mock_client.delete_object = AsyncMock(return_value=None)
+
+    mocker.patch.object(
+        storage_client,
+        "_get_client",
+        new=AsyncMock(return_value=AsyncContextManager(mock_client)),
+    )
+
+    await storage_client.delete("files/test.txt")
+    mock_client.delete_object.assert_called_once_with(Bucket="test-bucket", Key="files/test.txt")
+
+
+@pytest.mark.asyncio
+async def test_delete_failure_logs_error_and_does_not_raise(storage_client, mocker, caplog):
+    mock_client = mocker.Mock()
+    mock_client.delete_object = AsyncMock(side_effect=Exception("delete failed"))
+
+    mocker.patch.object(
+        storage_client,
+        "_get_client",
+        new=AsyncMock(return_value=AsyncContextManager(mock_client)),
+    )
+
+    with caplog.at_level("ERROR"):
+        await storage_client.delete("files/test.txt")
+
+    assert "Failed to delete object from storage" in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_upload_returns_public_url_when_configured(storage_client, mocker):
+    mock_client = mocker.Mock()
+    mock_client.put_object = AsyncMock(return_value=None)
+
+    mocker.patch.object(
+        storage_client,
+        "_get_client",
+        new=AsyncMock(return_value=AsyncContextManager(mock_client)),
+    )
+
+    result = await storage_client.upload("files/test.txt", b"file-content", "text/plain")
+
+    assert result == "https://cdn.test-storage.local/test-bucket/files/test.txt"
+    mock_client.put_object.assert_called_once_with(
+        Bucket="test-bucket",
+        Key="files/test.txt",
+        Body=b"file-content",
+        ContentType="text/plain",
+    )
+
+
+@pytest.mark.asyncio
+async def test_upload_returns_presigned_url_when_public_url_is_not_configured(
+    mock_settings,
+    mocker,
+):
+    storage_client = ObjectStorageClient(settings=mock_settings, public_url="")
+    mock_client = mocker.Mock()
+    mock_client.put_object = AsyncMock(return_value=None)
+    mock_client.generate_presigned_url = AsyncMock(return_value="https://signed.example/test.txt")
+
+    mocker.patch.object(
+        storage_client,
+        "_get_client",
+        new=AsyncMock(return_value=AsyncContextManager(mock_client)),
+    )
+
+    result = await storage_client.upload("files/test.txt", b"file-content")
+
+    assert result == "https://signed.example/test.txt"
+    mock_client.generate_presigned_url.assert_called_once_with(
+        "get_object",
+        Params={"Bucket": "test-bucket", "Key": "files/test.txt"},
+        ExpiresIn=3600,
+    )
+
+
+@pytest.mark.asyncio
+async def test_generate_presigned_url_success(storage_client, mocker):
+    mock_client = mocker.Mock()
+    mock_client.generate_presigned_url = AsyncMock(return_value="https://signed.example/test.txt")
+
+    mocker.patch.object(
+        storage_client,
+        "_get_client",
+        new=AsyncMock(return_value=AsyncContextManager(mock_client)),
+    )
+
+    result = await storage_client.generate_presigned_url("files/test.txt", expires=600)
+
+    assert result == "https://signed.example/test.txt"
+    mock_client.generate_presigned_url.assert_called_once_with(
+        "get_object",
+        Params={"Bucket": "test-bucket", "Key": "files/test.txt"},
+        ExpiresIn=600,
+    )
+
+
+@pytest.mark.asyncio
+async def test_exists_returns_true_when_object_exists(storage_client, mocker):
+    mock_client = mocker.Mock()
+    mock_client.head_object = AsyncMock(return_value={})
+
+    mocker.patch.object(
+        storage_client,
+        "_get_client",
+        new=AsyncMock(return_value=AsyncContextManager(mock_client)),
+    )
+
+    assert await storage_client.exists("files/test.txt") is True
+    mock_client.head_object.assert_called_once_with(Bucket="test-bucket", Key="files/test.txt")
+
+
+@pytest.mark.asyncio
+async def test_exists_returns_false_when_object_does_not_exist(storage_client, mocker):
+    mock_client = mocker.Mock()
+    mock_client.head_object = AsyncMock(side_effect=Exception("not found"))
+
+    mocker.patch.object(
+        storage_client,
+        "_get_client",
+        new=AsyncMock(return_value=AsyncContextManager(mock_client)),
+    )
+
+    assert await storage_client.exists("files/test.txt") is False
