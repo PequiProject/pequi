@@ -1,7 +1,9 @@
 from datetime import UTC, datetime
 from hashlib import sha256
 from typing import Protocol
+from uuid import uuid4
 
+from pequi.core.auth import hash_password
 from pequi.models.body_map import BodyAreaHistory, BodyMapEntry
 from pequi.models.patient import PatientProfile
 from pequi.models.user import User
@@ -26,13 +28,17 @@ class AnonymizationService:
 
         user.email = f"deleted:{digest}@anonymous.local"
         user.full_name = "Usuario Removido"
+        user.hashed_password = hash_password(f"deleted:{uuid4()}:{digest}")
         user.is_active = False
         user.deleted_at = now
 
         patient.date_of_birth = None
+        patient.sex = None
         patient.neighborhood = None
         patient.city = None
         patient.state = None
+        patient.diagnosis_date = None
+        patient.classification = None
         patient.deleted_at = now
 
         await self._delete_body_map_media(body_map_entries, storage)

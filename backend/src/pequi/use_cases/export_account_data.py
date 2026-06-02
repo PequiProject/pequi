@@ -7,13 +7,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from pequi.core.exceptions import NotFoundError
 from pequi.repositories.account_repo import AccountRepository
+from pequi.repositories.audit_repo import AuditRepository
 
 
 class ExportAccountDataUseCase:
     def __init__(self, session: AsyncSession) -> None:
         self._repo = AccountRepository(session)
+        self._audit_repo = AuditRepository(session)
 
-    async def execute(self, user_id: UUID) -> dict:
+    async def execute(self, user_id: UUID, *, ip_address: str | None = None) -> dict:
         user = await self._repo.get_active_user(user_id)
         if user is None:
             raise NotFoundError("User", str(user_id))
@@ -24,6 +26,15 @@ class ExportAccountDataUseCase:
         mapping = await self._repo.get_anonymous_mapping(user_id)
         posts = await self._repo.list_community_posts(mapping.anonymous_id) if mapping else []
         comments = await self._repo.list_community_comments(mapping.anonymous_id) if mapping else []
+
+        await self._audit_repo.log_action(
+            actor_user_id=user_id,
+            actor_role=user.role,
+            entity_type="account",
+            entity_id=str(user_id),
+            action="ACCOUNT_EXPORT",
+            ip_address=ip_address,
+        )
 
         return {
             "profile": {

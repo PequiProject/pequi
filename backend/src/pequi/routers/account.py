@@ -78,7 +78,7 @@ async def export_account_data(
     user_id: Annotated[UUID, Depends(get_current_patient)],
     use_case: Annotated[ExportAccountDataUseCase, Depends(get_export_account_data_use_case)],
 ) -> dict:
-    return await use_case.execute(user_id)
+    return await use_case.execute(user_id, ip_address=_client_ip(request))
 
 
 @router.post("/consent", response_model=ConsentResponse, status_code=201)

@@ -11,6 +11,7 @@ from pequi.core.auth import (
     is_token_type,
 )
 from pequi.core.exceptions import UnauthorizedError
+from pequi.core.token_blacklist import is_token_revoked
 from pequi.repositories.user_repo import UserRepository
 from pequi.schemas.user import AuthResponse, RefreshRequest, UserResponse
 
@@ -29,6 +30,9 @@ class RefreshTokenUseCase:
 
         if not is_token_type(payload, TOKEN_TYPE_REFRESH):
             raise UnauthorizedError("Invalid token type")
+
+        if await is_token_revoked(payload):
+            raise UnauthorizedError("Token revoked")
 
         user_id = UUID(payload["sub"])
         user = await self.user_repo.get_by_id(user_id)

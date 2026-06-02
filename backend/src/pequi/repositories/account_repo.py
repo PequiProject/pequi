@@ -55,6 +55,12 @@ class AccountRepository:
         request.completed_at = datetime.now(UTC)
         await self._session.flush()
 
+    async def fail_deletion_request(self, request: DataDeletionRequest, notes: str) -> None:
+        request.status = DataDeletionStatus.failed
+        request.completed_at = datetime.now(UTC)
+        request.notes = notes[:1000]
+        await self._session.flush()
+
     async def list_body_map_entries(self, patient_id: UUID) -> list[BodyMapEntry]:
         stmt = select(BodyMapEntry).where(BodyMapEntry.patient_id == patient_id)
         return list((await self._session.execute(stmt)).scalars().all())
@@ -108,6 +114,13 @@ class AccountRepository:
     async def get_anonymous_mapping(self, user_id: UUID) -> CommunityAnonymousMap | None:
         stmt = select(CommunityAnonymousMap).where(CommunityAnonymousMap.user_id == user_id)
         return (await self._session.execute(stmt)).scalar_one_or_none()
+
+    async def unlink_anonymous_mapping(self, user_id: UUID) -> None:
+        mapping = await self.get_anonymous_mapping(user_id)
+        if mapping is None:
+            return
+        mapping.user_id = None
+        await self._session.flush()
 
     async def list_community_posts(self, anonymous_id: UUID) -> list[CommunityPost]:
         stmt = (

@@ -28,6 +28,12 @@ def upgrade() -> None:
     data_deletion_status_enum.create(op.get_bind(), checkfirst=True)
 
     op.alter_column("patient_profiles", "date_of_birth", existing_type=sa.DATE(), nullable=True)
+    op.alter_column(
+        "community_anonymous_map",
+        "user_id",
+        existing_type=postgresql.UUID(as_uuid=True),
+        nullable=True,
+    )
     op.create_table(
         "data_deletion_requests",
         sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
@@ -65,5 +71,11 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.drop_index("ix_data_deletion_requests_user_id", table_name="data_deletion_requests")
     op.drop_table("data_deletion_requests")
+    op.alter_column(
+        "community_anonymous_map",
+        "user_id",
+        existing_type=postgresql.UUID(as_uuid=True),
+        nullable=False,
+    )
     op.alter_column("patient_profiles", "date_of_birth", existing_type=sa.DATE(), nullable=False)
     postgresql.ENUM(name="data_deletion_status_enum").drop(op.get_bind(), checkfirst=True)

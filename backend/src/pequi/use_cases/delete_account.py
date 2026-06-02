@@ -46,22 +46,31 @@ class DeleteAccountUseCase:
             )
 
         deletion_request = await self._repo.create_deletion_request(user_id)
-        await self._anonymization_service.anonymize_account(
-            user=user,
-            patient=patient,
-            body_map_entries=await self._repo.list_body_map_entries(patient.id),
-            body_area_history=await self._repo.list_body_area_history(patient.id),
-            storage=self._storage,
-        )
-        await blacklist_token(token_jti, token_exp)
-        await revoke_user_tokens(user_id)
-        await self._audit_repo.log_action(
-            actor_user_id=user_id,
-            actor_role="patient",
-            entity_type="account",
-            entity_id=str(user_id),
-            action="ACCOUNT_DELETION",
-            details=f"data_deletion_request_id={deletion_request.id}",
-            ip_address=ip_address,
-        )
-        await self._repo.complete_deletion_request(deletion_request)
+        try:
+            async with self._session.begin_nested():
+                await self._anonymization_service.anonymize_account(
+                    user=user,
+                    patient=patient,
+                    body_map_entries=await self._repo.list_body_map_entries(patient.id),
+                    body_area_history=await self._repo.list_body_area_history(patient.id),
+                    storage=self._storage,
+                )
+                await self._repo.unlink_anonymous_mapping(user_id)
+                await blacklist_token(token_jti, token_exp)
+                await revoke_user_tokens(user_id)
+                await self._audit_repo.log_action(
+                    actor_user_id=user_id,
+                    actor_role="patient",
+                    entity_type="account",
+                    entity_id=str(user_id),
+                    action="ACCOUNT_DELETION",
+                    details=f"data_deletion_request_id={deletion_request.id}",
+                    ip_address=ip_address,
+                )
+                await self._repo.complete_deletion_request(deletion_request)
+        except Exception as exc:
+            await self._repo.fail_deletion_request(
+                deletion_request,
+                notes=f"{type(exc).__name__}: account deletion failed",
+            )
+            raise

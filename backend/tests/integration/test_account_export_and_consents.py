@@ -2,9 +2,11 @@ from datetime import UTC, date, datetime
 from uuid import uuid4
 
 import pytest
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pequi.models.alert import Alert, AlertSeverity, AlertType
+from pequi.models.audit_log import AuditLog
 from pequi.models.checkin import Checkin, CheckinMood
 from pequi.models.community import CommunityAnonymousMap, CommunityPost
 from pequi.models.consent import Consent
@@ -75,7 +77,10 @@ async def test_export_account_data_includes_profile_clinical_community_and_conse
     db_session.add(post)
     await db_session.flush()
 
-    exported = await ExportAccountDataUseCase(db_session).execute(user.id)
+    exported = await ExportAccountDataUseCase(db_session).execute(
+        user.id,
+        ip_address="127.0.0.1",
+    )
 
     assert exported["profile"]["user"]["email"] == user.email
     assert exported["profile"]["patient"]["id"] == str(patient.id)
@@ -88,6 +93,17 @@ async def test_export_account_data_includes_profile_clinical_community_and_conse
     assert "author_anonymous_id" not in exported["community_posts"][0]
     assert exported["consents"][0]["term_version"] == "v1.2"
     assert datetime.fromisoformat(exported["exported_at"]).tzinfo is not None
+
+    audit = (
+        await db_session.execute(
+            select(AuditLog).where(
+                AuditLog.actor_user_id == user.id,
+                AuditLog.action == "ACCOUNT_EXPORT",
+            )
+        )
+    ).scalar_one()
+    assert audit.entity_type == "account"
+    assert audit.ip_address == "127.0.0.1"
 
 
 async def test_record_and_list_consents_capture_ip_and_user_agent(
