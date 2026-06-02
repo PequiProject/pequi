@@ -1,7 +1,10 @@
+import re
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+
+_USERNAME_RE = re.compile(r"^[a-z0-9][a-z0-9_\-]*[a-z0-9]$")
 
 
 class UserCreate(BaseModel):
@@ -10,13 +13,26 @@ class UserCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     email: EmailStr
+    username: str = Field(..., min_length=3, max_length=30)
     password: str = Field(..., min_length=8, max_length=64)
     full_name: str = Field(..., min_length=2, max_length=100)
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v: str) -> str:
+        normalized = v.lower()
+        if not _USERNAME_RE.match(normalized):
+            raise ValueError(
+                "username must contain only letters, digits, underscores or hyphens, "
+                "and must start and end with a letter or digit"
+            )
+        return normalized
 
 
 class UserResponse(BaseModel):
     id: UUID
     email: EmailStr
+    username: str
     full_name: str
     role: str
     is_active: bool
@@ -40,5 +56,10 @@ class RefreshRequest(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    email: EmailStr
+    """Login por email ou username.
+
+    ``identifier`` pode ser o endereço de e-mail ou o username do usuário.
+    """
+
+    identifier: str = Field(..., min_length=1, max_length=254)
     password: str

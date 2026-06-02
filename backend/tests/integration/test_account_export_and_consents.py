@@ -24,6 +24,7 @@ async def _create_patient(db_session: AsyncSession) -> tuple[User, PatientProfil
     unit = HealthUnit(name="UBS", city="Cidade", state="SP", cnes=str(uuid4())[:12])
     user = User(
         email=f"{uuid4()}@example.com",
+        username=f"patient{uuid4().hex[:8]}",
         hashed_password="hash",
         full_name="Paciente Teste",
         role="patient",

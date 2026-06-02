@@ -27,6 +27,7 @@ class AnonymizationService:
         digest = sha256(str(user.id).encode("utf-8")).hexdigest()
 
         user.email = f"deleted:{digest}@anonymous.local"
+        user.username = f"deleted{digest[:16]}"
         user.full_name = "Usuario Removido"
         user.hashed_password = hash_password(f"deleted:{uuid4()}:{digest}")
         user.is_active = False

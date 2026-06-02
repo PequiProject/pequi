@@ -17,6 +17,7 @@ headers {
 body:json {
   {
     "email": "paciente@test.com",
+    "username": "joaopaciente",
     "password": "secretpassword",
     "full_name": "João Paciente"
   }
@@ -29,4 +30,5 @@ vars:pre-request {
 assert {
   res.status: eq 201
   res.body.email: eq "paciente@test.com"
+  res.body.username: isDefined
 }

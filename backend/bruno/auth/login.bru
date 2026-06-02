@@ -16,7 +16,7 @@ headers {
 
 body:json {
   {
-    "email": "test@example.com",
+    "identifier": "test@example.com",
     "password": "strongpassword123"
   }
 }
@@ -26,4 +26,5 @@ assert {
   res.body.access_token: isDefined
   res.body.refresh_token: isDefined
   res.body.user: isDefined
+  res.body.user.username: isDefined
 }

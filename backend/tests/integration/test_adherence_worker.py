@@ -38,6 +38,7 @@ async def _create_patient_with_treatment(
     user = User(
         id=user_id,
         email=f"test{user_id}@example.com",
+        username=f"patient{str(user_id).replace('-', '')[:8]}",
         hashed_password="hashed",
         full_name="Test User",
         role="patient",
@@ -69,6 +70,7 @@ async def _create_patient_with_treatment(
     professional_user = User(
         id=professional_user_id,
         email=f"prof{professional_user_id}@example.com",
+        username=f"prof{str(professional_user_id).replace('-', '')[:8]}",
         hashed_password="hashed",
         full_name="Test Professional",
         role="health_professional",

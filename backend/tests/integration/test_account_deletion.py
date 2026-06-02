@@ -32,6 +32,7 @@ async def _create_patient(db_session: AsyncSession) -> tuple[User, PatientProfil
     unit = HealthUnit(name="UBS", city="Cidade", state="SP", cnes=str(uuid4())[:12])
     user = User(
         email=f"{uuid4()}@example.com",
+        username=f"patient{uuid4().hex[:8]}",
         hashed_password="$2b$12$YyAjsZqFgKMm.yK7hyRre.eD0mgoTb1foL3.zIg0SBsDzz8qyPZ7G",
         full_name="Paciente Teste",
         role="patient",
@@ -58,6 +59,7 @@ async def _create_patient(db_session: AsyncSession) -> tuple[User, PatientProfil
 async def _create_professional(db_session: AsyncSession, unit_id) -> HealthProfessional:
     user = User(
         email=f"prof-{uuid4()}@example.com",
+        username=f"prof{uuid4().hex[:8]}",
         hashed_password="hash",
         full_name="Profissional",
         role="health_professional",
