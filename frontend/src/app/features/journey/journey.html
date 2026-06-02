@@ -1,1 +1,271 @@
-<p>journey works!</p>
+<section
+  class="min-h-screen bg-stone-50 px-4 py-6 text-slate-800"
+  data-testid="treatment-journey-page"
+>
+  <div class="mx-auto max-w-md space-y-5">
+    <header class="space-y-2">
+      <h1
+        class="text-3xl font-bold tracking-tight text-slate-900"
+        data-testid="journey-title"
+      >
+        Sua jornada
+      </h1>
+
+      <p
+        class="text-sm leading-6 text-slate-600"
+        data-testid="journey-subtitle"
+      >
+        Acompanhe sua evolução no tratamento mês a mês e registre cada etapa
+        importante da sua jornada.
+      </p>
+
+      <div class="flex flex-wrap items-center gap-2 pt-1">
+        <span
+          class="rounded-full bg-violet-100 px-3 py-1 text-xs font-semibold text-violet-700"
+          data-testid="leprosy-type-badge"
+        >
+          {{ leprosyTypeLabel() }}
+        </span>
+
+        <span
+          class="rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700"
+          data-testid="treatment-estimate-badge"
+        >
+          {{ treatmentEstimateText() }}
+        </span>
+      </div>
+    </header>
+
+    <article
+      class="rounded-[28px] bg-gradient-to-br from-violet-500 to-indigo-700 p-6 text-white shadow-lg"
+      data-testid="journey-progress-card"
+    >
+      <div class="space-y-4">
+        <div class="space-y-1">
+          <p class="text-xl font-semibold" data-testid="progress-headline">
+            {{ progressHeadline() }}
+          </p>
+
+          <p
+            class="text-sm leading-6 text-white/85"
+            data-testid="progress-support-text"
+          >
+            {{ progressSupportText() }}
+          </p>
+        </div>
+
+        <div class="flex items-center justify-between gap-4">
+          <div
+            class="flex h-24 w-24 shrink-0 items-center justify-center rounded-full border-4 border-white text-lg font-bold"
+            data-testid="progress-circle"
+          >
+            {{ progressPercent() }}%
+          </div>
+
+          <div class="space-y-1 text-right text-xs leading-5 text-white/85">
+            <p data-testid="progress-type">Tipo: {{ leprosyType() }}</p>
+            <p data-testid="progress-month">
+              Mês atual: {{ currentMonth() }} de {{ totalMonths() }}
+            </p>
+            <p data-testid="progress-days">
+              {{ elapsedDays() }} / {{ totalDays() }} dias
+            </p>
+          </div>
+        </div>
+
+        <div
+          class="rounded-2xl bg-white/12 px-4 py-3 text-sm leading-6 text-white/90"
+          data-testid="remaining-time-card"
+        >
+          {{ remainingText() }}
+        </div>
+      </div>
+    </article>
+
+    <article
+      class="rounded-[24px] border border-emerald-200 bg-white p-5 shadow-sm"
+      data-testid="current-treatment-context"
+    >
+      <div class="flex items-start gap-3">
+        <div
+          class="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700"
+          aria-hidden="true"
+        >
+          ✓
+        </div>
+
+        <div class="space-y-1">
+          <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+            Acompanhamento atual
+          </p>
+
+          <h2 class="text-lg font-semibold text-slate-900">
+            Você está no {{ currentMonth() }}º mês do tratamento
+          </h2>
+
+          <p
+            class="text-sm leading-6 text-slate-600"
+            data-testid="treatment-context-message"
+          >
+            Seu tipo de hanseníase e a estimativa total de tratamento orientam os
+            marcos desta jornada para tornar o progresso mais claro.
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <section class="space-y-4" data-testid="journey-timeline">
+      @for (month of months(); track month.monthIndex) {
+        <div
+          class="relative pl-12"
+          [attr.data-testid]="'journey-month-' + month.monthIndex"
+        >
+          <div
+            class="absolute left-5 top-0 h-full w-px"
+            [ngClass]="month.completed || month.current ? 'bg-emerald-200' : 'bg-slate-200'"
+            aria-hidden="true"
+          ></div>
+
+          <div
+            class="absolute left-0 top-2 flex h-10 w-10 items-center justify-center rounded-full border-4 border-stone-50 text-sm font-semibold"
+            [ngClass]="{
+              'bg-emerald-600 text-white': month.completed,
+              'bg-violet-600 text-white': month.current,
+              'bg-slate-200 text-slate-600': month.locked
+            }"
+            [attr.data-testid]="'journey-month-point-' + month.monthIndex"
+          >
+            {{ month.monthIndex }}
+          </div>
+
+          <div
+            class="overflow-hidden rounded-[24px] bg-white shadow-sm ring-1 ring-black/5"
+            [ngClass]="{
+              'ring-violet-200': month.current,
+              'opacity-80': month.locked
+            }"
+          >
+            <button
+              type="button"
+              class="flex w-full items-start justify-between gap-4 px-5 py-4 text-left"
+              (click)="toggleMonth(month)"
+              [disabled]="month.locked"
+              [attr.aria-expanded]="month.expanded"
+              [attr.data-testid]="'journey-month-toggle-' + month.monthIndex"
+            >
+              <div class="min-w-0 space-y-1">
+                <div class="flex flex-wrap items-center gap-2">
+                  <p class="text-base font-semibold text-slate-900">
+                    {{ month.label }}
+                  </p>
+
+                  <span
+                    class="rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                    [ngClass]="{
+                      'bg-violet-100 text-violet-700': month.current,
+                      'bg-emerald-100 text-emerald-700': month.completed,
+                      'bg-slate-100 text-slate-600': month.locked
+                    }"
+                  >
+                    {{ getMonthStatusLabel(month) }}
+                  </span>
+                </div>
+
+                <p class="text-xs leading-5 text-slate-500">
+                  {{ getMonthSummary(month) }}
+                </p>
+
+                @if (getMedicationAdherenceText(month); as adherence) {
+                  <p
+                    class="text-xs leading-5 text-emerald-700"
+                    [attr.data-testid]="'journey-month-adherence-' + month.monthIndex"
+                  >
+                    {{ adherence }}
+                  </p>
+                }
+              </div>
+
+              <span
+                class="shrink-0 text-xs font-semibold text-slate-500"
+                [ngClass]="{ 'text-slate-400': month.locked }"
+              >
+                {{ getMonthButtonLabel(month) }}
+              </span>
+            </button>
+
+            @if (month.expanded && !month.locked) {
+              <div
+                class="border-t border-slate-100 px-4 py-4"
+                [attr.data-testid]="'journey-month-panel-' + month.monthIndex"
+              >
+                @if (month.events.length) {
+                  <div class="space-y-3">
+                    @for (event of month.events; track event.id) {
+                      <article
+                        class="rounded-[22px] border p-4"
+                        [ngClass]="getEventContainerClass(event.status)"
+                        [attr.data-testid]="'journey-event-' + event.id"
+                      >
+                        <div class="flex items-start justify-between gap-3">
+                          <div class="min-w-0">
+                            <p class="text-xs font-medium uppercase tracking-wide opacity-70">
+                              {{ event.date | date:'dd MMM yyyy' }}
+                            </p>
+
+                            <h3 class="mt-1 text-base font-semibold">
+                              {{ event.title }}
+                            </h3>
+                          </div>
+
+                          <span
+                            class="rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                            [ngClass]="getEventBadgeClass(event.type)"
+                          >
+                            {{ getEventTypeLabel(event.type) }}
+                          </span>
+                        </div>
+
+                        <p class="mt-2 text-sm leading-6 opacity-90">
+                          {{ event.description }}
+                        </p>
+
+                        @if (event.type === 'medication-summary' && event.metadata) {
+                          <div
+                            class="mt-3 rounded-2xl bg-white/70 px-3 py-2 text-xs text-slate-700"
+                            data-testid="medication-summary-card"
+                          >
+                            Doses registradas no mês:
+                            {{ event.metadata.dosesTaken ?? 0 }}
+                            @if (event.metadata.dosesExpected) {
+                              <span>
+                                / {{ event.metadata.dosesExpected }}
+                              </span>
+                            }
+                          </div>
+                        }
+
+                        @if (event.type === 'appointment' && event.metadata?.consultationLocation) {
+                          <div class="mt-3 text-xs text-slate-600">
+                            Local da consulta:
+                            {{ event.metadata?.consultationLocation }}
+                          </div>
+                        }
+                      </article>
+                    }
+                  </div>
+                } @else {
+                  <div
+                    class="rounded-[20px] bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-500"
+                    data-testid="empty-month-state"
+                  >
+                    Nenhum registro foi adicionado neste mês até agora.
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </section>
+  </div>
+</section>
