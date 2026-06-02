@@ -74,21 +74,21 @@
     </button>
 
     @if (images().length > 0) {
-      <div class="mt-4 grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+      <div class="mt-4 grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 pt-2">
         @for (img of images(); track $index) {
-          <div class="relative group aspect-square rounded-xl overflow-hidden border border-[#ECE7E2] shadow-sm">
-            <img [src]="img.previewUrl" class="w-full h-full object-cover" alt="Preview do registro fotográfico">
+          <div class="relative aspect-square rounded-xl overflow-visible border border-[#ECE7E2] shadow-sm">
+            
+            <img [src]="img.previewUrl" class="w-full h-full object-cover rounded-xl" alt="Preview">
 
-            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <button
-                type="button"
-                (click)="removeImage($index)"
-                class="bg-white p-2 rounded-full text-red-600 hover:bg-red-50 hover:scale-110 transition-transform shadow-md"
-                title="Remover imagem"
-              >
-                <lucide-icon [name]="TrashIcon" [size]="18"></lucide-icon>
-              </button>
-            </div>
+            <button
+              type="button"
+              (click)="removeImage($index)"
+              class="absolute -top-2 -right-2 flex h-7 w-7 items-center justify-center rounded-full bg-white border border-[#ECE7E2] text-red-500 shadow-md hover:bg-red-50 transition-colors"
+              title="Remover imagem"
+            >
+              <lucide-icon [name]="TrashIcon" [size]="14"></lucide-icon>
+            </button>
+            
           </div>
         }
       </div>
