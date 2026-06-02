@@ -17,7 +17,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "103_add_username_to_users"
-down_revision: str | None = "102_unique_constraints"
+down_revision: str | None = "011_create_lgpd_tables"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
