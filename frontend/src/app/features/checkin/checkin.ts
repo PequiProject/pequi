@@ -71,6 +71,7 @@ export class CheckinComponent {
     }),
     details: this.fb.group({
       notes: [''],
+      images: [[] as File[]],
     }),
   });
 
