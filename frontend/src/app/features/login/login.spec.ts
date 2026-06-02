@@ -5,6 +5,7 @@ import { vi, describe, beforeEach, it, expect } from 'vitest';
 
 import { Login } from './login';
 import { AuthService } from '../auth/services/auth-service';
+import { ToastService } from '../../components/toast/toast.service';
 
 describe('Login', () => {
   let component: Login;
@@ -12,6 +13,12 @@ describe('Login', () => {
 
   const authServiceMock = {
     login: vi.fn(),
+  };
+
+  const toastServiceMock = {
+    warning: vi.fn(),
+    error: vi.fn(),
+    success: vi.fn(),
   };
 
   const routerMock = {
@@ -36,6 +43,7 @@ describe('Login', () => {
         { provide: AuthService, useValue: authServiceMock },
         { provide: Router, useValue: routerMock },
         { provide: ActivatedRoute, useValue: activatedRouteMock },
+        { provide: ToastService, useValue: toastServiceMock },
       ],
     }).compileComponents();
 
@@ -50,7 +58,7 @@ describe('Login', () => {
 
   it('should not submit when form is invalid', () => {
     component.form.setValue({
-      email: '',
+      identifier: '',
       password: '',
     });
 
@@ -59,16 +67,6 @@ describe('Login', () => {
     expect(authServiceMock.login).not.toHaveBeenCalled();
     expect(component.form.touched).toBe(true);
     expect(component.isSubmitting).toBe(false);
-  });
-
-  it('should validate invalid email format', () => {
-    component.form.setValue({
-      email: 'email-invalido',
-      password: '123456',
-    });
-
-    expect(component.form.invalid).toBe(true);
-    expect(component.form.get('email')?.invalid).toBe(true);
   });
 
   it('should call authService.login with the correct payload', () => {
@@ -80,7 +78,7 @@ describe('Login', () => {
         token_type: 'bearer',
         user: {
           id: '1',
-          email: 'sarah@test.com',
+          identifier: 'sarah@test.com',
           full_name: 'Sarah',
           role: 'patient',
           is_active: true,
@@ -92,14 +90,14 @@ describe('Login', () => {
     );
 
     component.form.setValue({
-      email: 'sarah@test.com',
+      identifier: 'sarah@test.com',
       password: '123456',
     });
 
     component.submit();
 
     expect(authServiceMock.login).toHaveBeenCalledWith({
-      email: 'sarah@test.com',
+      identifier: 'sarah@test.com',
       password: '123456',
     });
   });
@@ -117,7 +115,7 @@ describe('Login', () => {
         token_type: 'bearer',
         user: {
           id: '1',
-          email: 'sarah@test.com',
+          identifier: 'sarah@test.com',
           full_name: 'Sarah',
           role: 'patient',
           is_active: true,
@@ -129,14 +127,13 @@ describe('Login', () => {
     );
 
     component.form.setValue({
-      email: 'sarah@test.com',
+      identifier: 'sarah@test.com',
       password: '123456',
     });
 
     component.submit();
 
     expect(routerMock.navigateByUrl).toHaveBeenCalledWith('/checkin');
-    expect(component.errorMessage).toBe('');
     expect(component.isSubmitting).toBe(false);
   });
 
@@ -149,7 +146,7 @@ describe('Login', () => {
         token_type: 'bearer',
         user: {
           id: '1',
-          email: 'sarah@test.com',
+          identifier: 'sarah@test.com',
           full_name: 'Sarah',
           role: 'patient',
           is_active: true,
@@ -161,7 +158,7 @@ describe('Login', () => {
     );
 
     component.form.setValue({
-      email: 'sarah@test.com',
+      identifier: 'sarah@test.com',
       password: '123456',
     });
 
@@ -179,7 +176,7 @@ describe('Login', () => {
         token_type: 'bearer',
         user: {
           id: '1',
-          email: 'sarah@test.com',
+          identifier: 'sarah@test.com',
           full_name: 'Sarah',
           role: 'patient',
           is_active: true,
@@ -191,7 +188,7 @@ describe('Login', () => {
     );
 
     component.form.setValue({
-      email: 'sarah@test.com',
+      identifier: 'sarah@test.com',
       password: '123456',
     });
 
@@ -210,13 +207,13 @@ describe('Login', () => {
     );
 
     component.form.setValue({
-      email: 'sarah@test.com',
+      identifier: 'sarah@test.com',
       password: 'senha-errada',
     });
 
     component.submit();
 
-    expect(component.errorMessage).toBe('Credenciais inválidas.');
+    expect(toastServiceMock.error).toHaveBeenCalledWith('Falha no login', 'Credenciais inválidas.');
     expect(component.isSubmitting).toBe(false);
     expect(routerMock.navigateByUrl).not.toHaveBeenCalled();
   });
@@ -227,13 +224,16 @@ describe('Login', () => {
     );
 
     component.form.setValue({
-      email: 'sarah@test.com',
+      identifier: 'sarah@test.com',
       password: 'senha-errada',
     });
 
     component.submit();
 
-    expect(component.errorMessage).toBe('E-mail ou senha inválidos.');
+    expect(toastServiceMock.error).toHaveBeenCalledWith(
+      'Falha no login',
+      'E-mail ou senha inválidos.'
+    );
     expect(component.isSubmitting).toBe(false);
   });
 });

@@ -1,10 +1,11 @@
-import { Injectable, inject } from '@angular/core';
+import { computed, Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 
 export interface RegisterRequest {
   email: string;
+  username: string;
   password: string;
   full_name: string;
 }
@@ -12,6 +13,7 @@ export interface RegisterRequest {
 export interface AuthUser {
   id: string;
   email: string;
+  username: string;
   full_name: string;
   role: string;
   is_active: boolean;
@@ -23,7 +25,7 @@ export interface AuthUser {
 export interface RegisterResponse extends AuthUser {}
 
 export interface LoginRequest {
-  email: string;
+  identifier: string;
   password: string;
 }
 
@@ -47,6 +49,10 @@ export interface AuthSession {
   user: AuthUser;
 }
 
+export interface UsernameUpdateRequest {
+  username: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -56,6 +62,14 @@ export class AuthService {
 
   private readonly baseUrl = 'http://localhost:8000/v1/auth';
   private readonly sessionKey = 'auth_session';
+  private readonly userSignal = signal<AuthUser | null>(this.readStoredUser());
+
+  readonly currentUser = this.userSignal.asReadonly();
+
+  readonly displayName = computed(() => {
+    const username = this.userSignal()?.username?.trim();
+    return username || 'Paciente';
+  });
 
   register(payload: RegisterRequest): Observable<RegisterResponse> {
     return this.http.post<RegisterResponse>(`${this.baseUrl}/register`, payload);
@@ -64,28 +78,35 @@ export class AuthService {
   login(payload: LoginRequest): Observable<AuthTokenResponse> {
     return this.http
       .post<AuthTokenResponse>(`${this.baseUrl}/login`, payload)
-      .pipe(tap(response => this.setSession(response)));
+      .pipe(tap((response) => this.setSession(response)));
   }
 
-refreshToken(): Observable<AuthTokenResponse> {
-  const refreshToken = this.getRefreshToken();
-
-  if (!refreshToken) {
-    this.logout();
-    throw new Error('Refresh token não encontrado.');
+  updateUsername(username: string): Observable<AuthUser> {
+    return this.http
+      .patch<AuthUser>(`${this.baseUrl}/username`, { username })
+      .pipe(tap((user) => this.updateSessionUser(user)));
   }
 
-  const payload: RefreshTokenRequest = {
-    refresh_token: refreshToken,
-  };
+  refreshToken(): Observable<AuthTokenResponse> {
+    const refreshToken = this.getRefreshToken();
 
-  return this.http
-    .post<AuthTokenResponse>(`${this.baseUrl}/refresh`, payload)
-    .pipe(tap(response => this.setSession(response)));
-}
+    if (!refreshToken) {
+      this.logout();
+      throw new Error('Refresh token não encontrado.');
+    }
+
+    const payload: RefreshTokenRequest = {
+      refresh_token: refreshToken,
+    };
+
+    return this.http
+      .post<AuthTokenResponse>(`${this.baseUrl}/refresh`, payload)
+      .pipe(tap((response) => this.setSession(response)));
+  }
 
   logout(): void {
     localStorage.removeItem(this.sessionKey);
+    this.userSignal.set(null);
     void this.router.navigate(['/']);
   }
 
@@ -102,7 +123,14 @@ refreshToken(): Observable<AuthTokenResponse> {
   }
 
   getCurrentUser(): AuthUser | null {
-    return this.getSession()?.user ?? null;
+    const current = this.userSignal();
+    if (current) return current;
+
+    const fromStorage = this.readStoredUser();
+    if (fromStorage) {
+      this.userSignal.set(fromStorage);
+    }
+    return fromStorage;
   }
 
   private setSession(response: AuthTokenResponse): void {
@@ -115,6 +143,20 @@ refreshToken(): Observable<AuthTokenResponse> {
     };
 
     localStorage.setItem(this.sessionKey, JSON.stringify(session));
+    this.userSignal.set(response.user);
+  }
+
+  private updateSessionUser(user: AuthUser): void {
+    const session = this.getSession();
+    if (!session) return;
+
+    const next: AuthSession = { ...session, user };
+    localStorage.setItem(this.sessionKey, JSON.stringify(next));
+    this.userSignal.set(user);
+  }
+
+  private readStoredUser(): AuthUser | null {
+    return this.getSession()?.user ?? null;
   }
 
   private getSession(): AuthSession | null {

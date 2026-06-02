@@ -6,6 +6,7 @@ import { AuthService } from './auth-service';
 
 export interface RegisterRequest {
   email: string;
+  username: string;
   password: string;
   full_name: string;
 }
@@ -13,6 +14,7 @@ export interface RegisterRequest {
 export interface AuthUser {
   id: string;
   email: string;
+  username: string;
   full_name: string;
   role: string;
   is_active: boolean;
@@ -24,7 +26,7 @@ export interface AuthUser {
 export interface RegisterResponse extends AuthUser {}
 
 export interface LoginRequest {
-  email: string;
+  identifier: string;
   password: string;
 }
 
@@ -57,6 +59,7 @@ describe('AuthService', () => {
   const mockUser: AuthUser = {
     id: 'user-1',
     email: 'teste@teste.com',
+    username: 'sarah',
     full_name: 'Sarah',
     role: 'patient',
     is_active: true,
@@ -108,6 +111,7 @@ describe('AuthService', () => {
   it('should call register with the correct payload', () => {
     const payload: RegisterRequest = {
       email: 'teste@teste.com',
+      username: 'sarah',
       password: '123456',
       full_name: 'Sarah',
     };
@@ -129,7 +133,7 @@ describe('AuthService', () => {
 
   it('should call login and save session in localStorage', () => {
     const payload: LoginRequest = {
-      email: 'teste@teste.com',
+      identifier: 'teste@teste.com',
       password: '123456',
     };
 

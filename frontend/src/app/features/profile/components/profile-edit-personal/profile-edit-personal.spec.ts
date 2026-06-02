@@ -32,16 +32,17 @@ describe('ProfileEditPersonal', () => {
     expect(fixture.nativeElement.querySelector('[data-testid="social-name-hint"]')).toBeTruthy();
   });
 
-  it('should require full name on submit', () => {
-    component.form.patchValue({ fullName: '' });
-    component.submit();
-    expect(component.showValidation()).toBe(true);
-    expect(saved).toBeNull();
+  it('should show read-only full name field', () => {
+    fixture.componentRef.setInput('readonlyFullName', 'Carlos Lima');
+    fixture.detectChanges();
+    const input = fixture.nativeElement.querySelector('[data-testid="full-name"]') as HTMLInputElement;
+    expect(input.readOnly).toBe(true);
+    expect(input.value).toBe('Carlos Lima');
   });
 
-  it('should emit saved data with full name', () => {
+  it('should emit saved data with locked full name', () => {
+    fixture.componentRef.setInput('readonlyFullName', 'Carlos Lima');
     component.form.patchValue({
-      fullName: 'Carlos Lima',
       cpf: '111.222.333-44',
     });
     component.submit();
@@ -62,8 +63,8 @@ describe('ProfileEditPersonal', () => {
   });
 
   it('should not save gender identity when user does not want to inform', () => {
+    fixture.componentRef.setInput('readonlyFullName', 'Teste');
     component.form.patchValue({
-      fullName: 'Teste',
       wantsGenderIdentity: 'nao',
       genderIdentity: 'travesti',
     });

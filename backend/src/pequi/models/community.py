@@ -20,7 +20,7 @@ class CommunityAnonymousMap(Base):
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="RESTRICT"),
         unique=True,
-        nullable=False,
+        nullable=True,
         index=True,
     )
     anonymous_id = Column(

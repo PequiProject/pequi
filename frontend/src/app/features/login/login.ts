@@ -3,6 +3,7 @@ import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../auth/services/auth-service';
+import { getApiErrorMessage } from '../../core/api-error.utils';
 import { ToastService } from '../../components/toast/toast.service';
 
 @Component({
@@ -33,7 +34,7 @@ export class Login {
   }
 
   form = this.fb.group({
-    email: ['', [Validators.required, Validators.email]],
+    identifier: ['', [Validators.required]],
     password: ['', [Validators.required]],
   });
 
@@ -43,7 +44,7 @@ export class Login {
     if (this.form.invalid) {
       this.toastService.warning(
         'Formulário inválido',
-        'Preencha e-mail e senha corretamente.'
+        'Preencha e-mail ou nome de usuário e senha.'
       );
       return;
     }
@@ -52,7 +53,7 @@ export class Login {
 
     this.authService
       .login({
-        email: this.form.value.email ?? '',
+        identifier: this.form.value.identifier ?? '',
         password: this.form.value.password ?? '',
       })
       .subscribe({
@@ -63,9 +64,7 @@ export class Login {
           void this.router.navigateByUrl(returnUrl);
         },
         error: (error) => {
-          const message =
-            error?.error?.message ?? 'E-mail ou senha inválidos.';
-
+          const message = getApiErrorMessage(error, 'E-mail ou senha inválidos.');
           this.toastService.error('Falha no login', message);
           this.isSubmitting = false;
         },

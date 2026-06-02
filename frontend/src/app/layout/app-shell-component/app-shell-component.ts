@@ -20,7 +20,6 @@ export class AppShellComponent {
 
   readonly headerLayout = signal<AppHeaderLayout>('default');
   readonly headerPageTitle = signal('Perfil');
-  readonly headerUserName = signal('Usuário');
   readonly quietNotificationBell = signal(false);
 
   constructor() {
@@ -53,6 +52,9 @@ export class AppShellComponent {
     } else if (path.includes('/appointments/register')) {
       this.headerLayout.set('withBack');
       this.headerPageTitle.set('Registrar consulta');
+    } else if (path.includes('/education/') && !path.endsWith('/education')) {
+      this.headerLayout.set('withBack');
+      this.headerPageTitle.set('Educação');
     } else {
       this.headerLayout.set('default');
     }
