@@ -8,8 +8,13 @@
 
     <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()">
       <label class="auth-field">
-        <span>E-mail</span>
-        <input type="email" formControlName="email" placeholder="voce@email.com" />
+        <span>E-mail ou nome de usuário</span>
+        <input
+          type="text"
+          formControlName="identifier"
+          placeholder="voce@email.com ou seu_usuario"
+          autocomplete="username"
+        />
       </label>
 
       <label class="auth-field">

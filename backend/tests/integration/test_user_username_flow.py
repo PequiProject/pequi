@@ -82,7 +82,7 @@ async def test_register_rejects_duplicate_username(db_session):
         )
     )
 
-    with pytest.raises(ConflictError, match="Username already taken"):
+    with pytest.raises(ConflictError, match="Este nome de usuário já está em uso"):
         await use_case.execute(
             UserCreate(
                 email="second@example.com",
@@ -106,7 +106,7 @@ async def test_register_rejects_duplicate_username_case_insensitive(db_session):
         )
     )
 
-    with pytest.raises(ConflictError, match="Username already taken"):
+    with pytest.raises(ConflictError, match="Este nome de usuário já está em uso"):
         await use_case.execute(
             UserCreate(
                 email="other@example.com",

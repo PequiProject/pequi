@@ -34,6 +34,7 @@ describe('Medication', () => {
   beforeEach(async () => {
     medicationDataServiceSpy = {
       getMedicationChecklist: vi.fn().mockReturnValue(of(mockResponse)),
+      saveMedicationAlarm: vi.fn().mockReturnValue(of(undefined)),
     } as Mocked<MedicationDataService>;
 
     await TestBed.configureTestingModule({
@@ -171,7 +172,10 @@ describe('Medication', () => {
       id: 'abc123',
       title: 'Teste',
       subtitle: 'Sub',
+      doseLabel: '500 mg',
       checked: false,
+      alarmEnabled: false,
+      alarmConfig: { days: ['monday' as const], time: '08:00' },
       section: 'unsupervised' as const,
     };
 

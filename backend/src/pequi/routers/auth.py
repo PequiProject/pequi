@@ -6,10 +6,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from pequi.core.dependencies import get_current_user, get_db
 from pequi.core.rate_limit import limiter
 from pequi.repositories.user_repo import UserRepository
-from pequi.schemas.user import AuthResponse, LoginRequest, RefreshRequest, UserCreate, UserResponse
+from pequi.schemas.user import (
+    AuthResponse,
+    LoginRequest,
+    RefreshRequest,
+    UserCreate,
+    UserResponse,
+    UsernameUpdate,
+)
 from pequi.use_cases.login_user import LoginUserUseCase
 from pequi.use_cases.refresh_token import RefreshTokenUseCase
 from pequi.use_cases.register_user import RegisterUserUseCase
+from pequi.use_cases.update_username import UpdateUsernameUseCase
 
 router = APIRouter()
 
@@ -24,6 +32,10 @@ def get_login_use_case(session: AsyncSession = Depends(get_db)) -> LoginUserUseC
 
 def get_refresh_use_case(session: AsyncSession = Depends(get_db)) -> RefreshTokenUseCase:
     return RefreshTokenUseCase(UserRepository(session))
+
+
+def get_update_username_use_case(session: AsyncSession = Depends(get_db)) -> UpdateUsernameUseCase:
+    return UpdateUsernameUseCase(UserRepository(session))
 
 
 @router.post("/register", response_model=UserResponse, status_code=201)
@@ -54,6 +66,17 @@ async def refresh(
     use_case: RefreshTokenUseCase = Depends(get_refresh_use_case),
 ):
     return await use_case.execute(data)
+
+
+@router.patch("/username", response_model=UserResponse)
+@limiter.limit("10/hour")
+async def update_username(
+    request: Request,
+    data: UsernameUpdate,
+    user_id: UUID = Depends(get_current_user),
+    use_case: UpdateUsernameUseCase = Depends(get_update_username_use_case),
+):
+    return await use_case.execute(user_id, data)
 
 
 @router.post("/logout", status_code=204)

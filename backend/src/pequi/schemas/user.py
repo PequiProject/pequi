@@ -4,7 +4,9 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
-_USERNAME_RE = re.compile(r"^[a-z0-9][a-z0-9_\-]*[a-z0-9]$")
+_USERNAME_RE = re.compile(r"^(?=.*[a-z0-9])[a-z0-9._-]{3,30}$")
+_USERNAME_VALIDATION_MSG = "O nome de usuário deve ter de 3 a 30 caracteres, sem espaços."
+_USERNAME_SPACE_MSG = "O nome de usuário não pode conter espaços."
 
 
 class UserCreate(BaseModel):
@@ -20,12 +22,11 @@ class UserCreate(BaseModel):
     @field_validator("username")
     @classmethod
     def validate_username(cls, v: str) -> str:
+        if any(ch.isspace() for ch in v):
+            raise ValueError(_USERNAME_SPACE_MSG)
         normalized = v.lower()
         if not _USERNAME_RE.match(normalized):
-            raise ValueError(
-                "username must contain only letters, digits, underscores or hyphens, "
-                "and must start and end with a letter or digit"
-            )
+            raise ValueError(_USERNAME_VALIDATION_MSG)
         return normalized
 
 
@@ -63,3 +64,19 @@ class LoginRequest(BaseModel):
 
     identifier: str = Field(..., min_length=1, max_length=254)
     password: str
+
+
+class UsernameUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    username: str = Field(..., min_length=3, max_length=30)
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v: str) -> str:
+        if any(ch.isspace() for ch in v):
+            raise ValueError(_USERNAME_SPACE_MSG)
+        normalized = v.lower()
+        if not _USERNAME_RE.match(normalized):
+            raise ValueError(_USERNAME_VALIDATION_MSG)
+        return normalized

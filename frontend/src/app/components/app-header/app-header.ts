@@ -9,6 +9,7 @@ import {
 } from '@lucide/angular';
 import { NotificationHubService } from '../../core/notifications/notification-hub.service';
 import { AuthService } from '../../features/auth/services/auth-service';
+import { PatientProfileService } from '../../features/profile/services/patient-profile.service';
 
 export type AppHeaderLayout = 'default' | 'withBack';
 
@@ -24,13 +25,19 @@ const ICON_BTN =
 export class AppHeader {
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
+  private readonly profileService = inject(PatientProfileService);
   protected readonly notifications = inject(NotificationHubService);
 
   readonly layout = input<AppHeaderLayout>('default');
-  readonly userName = input('Usuário');
   readonly pageTitle = input('');
-  readonly avatarUrl = input<string | null>(null);
   readonly profileLink = input('/profile');
+
+  readonly userName = this.profileService.displayName;
+  readonly userInitials = this.profileService.initials;
+  readonly avatarUrl = computed(() => {
+    const url = this.profileService.profile().avatarDataUrl.trim();
+    return url || null;
+  });
   readonly backLink = input('/home');
   readonly quietNotificationButton = input(false);
 

@@ -19,6 +19,15 @@
       Foto de perfil removida.
     </p>
   }
+  @if (usernameSavedToast()) {
+    <p
+      class="mb-4 rounded-xl bg-[#E8F5E9] px-4 py-3 text-sm font-medium text-[#2E7D32]"
+      data-testid="username-saved-toast"
+      role="status"
+    >
+      Nome de usuário atualizado.
+    </p>
+  }
   @if (personalSavedToast()) {
     <p
       class="mb-4 rounded-xl bg-[#E8F5E9] px-4 py-3 text-sm font-medium text-[#2E7D32]"
@@ -122,15 +131,26 @@
       />
     </div>
 
-    <h2 class="text-xl font-bold text-[#373831]" data-testid="profile-display-name">
-      {{ displayName() }}
-    </h2>
+    <div class="flex items-center justify-center gap-2">
+      <h2 class="text-xl font-bold text-[#373831]" data-testid="profile-display-name">
+        {{ displayName() }}
+      </h2>
+      <button
+        type="button"
+        data-testid="edit-username-button"
+        (click)="openEditUsername()"
+        class="inline-flex h-8 w-8 items-center justify-center rounded-full text-[#4338CA] transition hover:bg-[#EEF2FF]"
+        aria-label="Editar nome de usuário"
+      >
+        <lucide-icon [name]="LucidePencil" [size]="16" [strokeWidth]="2" />
+      </button>
+    </div>
     <p class="mt-1 max-w-xs text-xs text-[#64655C]" data-testid="display-name-community-hint">
       Nome exibido nas suas interações caso não use o modo anônimo.
     </p>
-    @if (profile().personal.fullName && profile().personal.socialName) {
+    @if (legalFullName()) {
       <p class="mt-3 text-sm text-[#64655C]" data-testid="profile-legal-name">
-        Nome completo na caderneta: {{ profile().personal.fullName }}
+        Nome completo: {{ legalFullName() }}
       </p>
     }
   </div>
@@ -969,8 +989,17 @@
 @if (showEditPersonal()) {
   <app-profile-edit-personal
     [initialData]="profile().personal"
+    [readonlyFullName]="legalFullName()"
     (saved)="onPersonalSaved($event)"
     (closed)="closeEditPersonal()"
+  />
+}
+
+@if (showEditUsername()) {
+  <app-profile-edit-username
+    [initialUsername]="displayName()"
+    (saved)="onUsernameSaved($event)"
+    (closed)="closeEditUsername()"
   />
 }
 
