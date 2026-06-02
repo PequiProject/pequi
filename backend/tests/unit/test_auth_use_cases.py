@@ -5,8 +5,9 @@ from uuid import uuid4
 import pytest
 
 from pequi.core.exceptions import ConflictError, UnauthorizedError
-from pequi.schemas.user import LoginRequest, UserCreate
+from pequi.schemas.user import LoginRequest, RefreshRequest, UserCreate
 from pequi.use_cases.login_user import LoginUserUseCase
+from pequi.use_cases.refresh_token import RefreshTokenUseCase
 from pequi.use_cases.register_user import RegisterUserUseCase
 
 pytestmark = pytest.mark.asyncio
@@ -47,6 +48,11 @@ class FakeUserRepository:
         user.updated_at = datetime(2026, 1, 1, tzinfo=UTC)
         return user
 
+    async def get_by_id(self, user_id):
+        if self.existing_user is None or self.existing_user.id != user_id:
+            return None
+        return self.existing_user
+
 
 def _hashed_password(_password):
     return "hashed"
@@ -66,6 +72,10 @@ def _access_token(**_kwargs):
 
 def _refresh_token(**_kwargs):
     return "refresh"
+
+
+async def _token_is_revoked(_payload):
+    return True
 
 
 async def test_register_user_hashes_password_and_always_creates_patient(monkeypatch):
@@ -146,3 +156,22 @@ async def test_login_user_rejects_inactive_user(monkeypatch):
         await use_case.execute(
             LoginRequest(email="inactive@example.com", password="strongpassword123")
         )
+
+
+async def test_refresh_token_rejects_revoked_token(monkeypatch):
+    user = _user()
+    payload = {
+        "sub": str(user.id),
+        "role": "patient",
+        "type": "refresh",
+        "jti": "revoked-refresh",
+        "iat": int(datetime(2026, 1, 1, tzinfo=UTC).timestamp()),
+        "exp": int(datetime(2026, 1, 2, tzinfo=UTC).timestamp()),
+    }
+    monkeypatch.setattr("pequi.use_cases.refresh_token.decode_token", lambda _token: payload)
+    monkeypatch.setattr("pequi.use_cases.refresh_token.is_token_revoked", _token_is_revoked)
+
+    use_case = RefreshTokenUseCase(FakeUserRepository(existing_user=user))
+
+    with pytest.raises(UnauthorizedError, match="revoked"):
+        await use_case.execute(RefreshRequest(refresh_token="refresh"))
