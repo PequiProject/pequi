@@ -93,18 +93,18 @@ services:
     networks:
       - prod_net
 
-nginx:
-  image: nginx:alpine
-  container_name: nginx_prod
-  restart: always
-  depends_on:
-    - api
-  ports:
-    - "80:80"
-  volumes:
-    - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-  networks:
-    - prod_net
+  nginx:
+    image: nginx:alpine
+    container_name: nginx_prod
+    restart: always
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - prod_net
 
 volumes:
   pgdata_prod:
