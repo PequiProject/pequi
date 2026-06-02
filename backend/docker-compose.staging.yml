@@ -1,0 +1,103 @@
+version: '3.8'
+services:
+  migrate:
+    image: ${IMAGE_TAG}
+    container_name: migrate_staging
+    restart: "no"          # ← corrigido
+    env_file:
+      - .env.staging
+    command: alembic upgrade head
+    depends_on:
+      db:
+        condition: service_healthy
+
+
+  api:
+    image: ${IMAGE_TAG}
+    container_name: api_staging
+    restart: always
+    env_file:
+      - .env.staging
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    command: uvicorn pequi.main:app --host 0.0.0.0 --port 8001
+
+  worker:
+    image: ${IMAGE_TAG}
+    container_name: worker_staging
+    restart: always
+    env_file:
+      - .env.staging
+    command: python -m arq pequi.workers.settings.WorkerSettings
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: db_staging
+    restart: always
+    env_file:
+      - .env.staging
+    # remover bloco environment daqui
+    volumes:
+      - pgdata_staging:/var/lib/postgresql/data
+      - ./db-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pequi"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis_staging
+    restart: always
+    env_file:
+      - .env.staging
+    volumes:
+      - redisdata_staging:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  minio:
+    image: minio/minio
+    container_name: minio_staging
+    restart: always
+    env_file:
+      - .env.staging
+    # remover bloco environment daqui
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9002:9001"
+    volumes:
+      - miniodata_staging:/data
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx_staging
+    restart: always
+    depends_on:
+      - api
+    ports:
+      - "8080:8080"
+      - "8443:8443"
+    volumes:
+      - ./nginx/nginx.staging.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certs/staging:/etc/nginx/certs:ro
+
+volumes:
+  pgdata_staging:
+  redisdata_staging:
+  miniodata_staging:

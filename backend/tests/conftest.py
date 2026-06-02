@@ -5,24 +5,26 @@ from collections.abc import AsyncGenerator
 from pathlib import Path
 
 import pytest
+import sqlalchemy as sa
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
+import pequi.models  # noqa: F401 - register all tables before create_all
+import pequi.models.article  # noqa: F401 - ensure article models are registered
+import pequi.models.community  # noqa: F401 - ensure community models are registered
 from pequi.config import get_settings
 from pequi.core.dependencies import get_db
-from pequi.core.rate_limit import limiter
+from pequi.core.rate_limit import limiter, user_limiter
 from pequi.database import Base
 from pequi.main import app
 
-# Disable rate limiting for tests
 limiter.enabled = False
+user_limiter.enabled = False
 
 settings = get_settings()
 
-TEST_DATABASE_URL = settings.DATABASE_URL_TEST or settings.DATABASE_URL.replace(
-    "/pequi", "/pequi_test"
-)
+TEST_DATABASE_URL = settings.get_test_database_url()
 
 test_engine = create_async_engine(
     TEST_DATABASE_URL,
@@ -44,12 +46,14 @@ _DB_POLL_INTERVAL_SEC = 0.05
 
 
 def _xdist_shared_root(tmp_path_factory: pytest.TempPathFactory) -> Path:
-    """Diretório compartilhado entre workers do pytest-xdist."""
+    """Shared directory across pytest-xdist workers."""
+
     return tmp_path_factory.getbasetemp().parent
 
 
 def _try_acquire_file_lock(lock_path: Path) -> bool:
     lock_path.parent.mkdir(parents=True, exist_ok=True)
+
     try:
         fd = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
         os.close(fd)
@@ -64,10 +68,12 @@ def _release_file_lock(lock_path: Path) -> None:
 
 def _wait_until_ready(ready_path: Path, timeout: float = _DB_LOCK_TIMEOUT_SEC) -> None:
     deadline = time.monotonic() + timeout
+
     while not ready_path.is_file():
         if time.monotonic() >= deadline:
             msg = f"Timed out waiting for test database schema at {ready_path}"
             raise TimeoutError(msg)
+
         time.sleep(_DB_POLL_INTERVAL_SEC)
 
 
@@ -76,6 +82,15 @@ async def _reset_schema() -> None:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 
+        # Clear seed data inserted by migrations (body_areas, etc.).
+        try:
+            await conn.execute(sa.text("TRUNCATE TABLE body_areas CASCADE"))
+            await conn.execute(sa.text("TRUNCATE TABLE body_map_entries CASCADE"))
+            await conn.execute(sa.text("TRUNCATE TABLE body_area_history CASCADE"))
+        except sa.exc.ProgrammingError:
+            # Tables may not exist if migrations have not created them yet.
+            pass
+
 
 @pytest.fixture(scope="session")
 def event_loop_policy():
@@ -83,16 +98,18 @@ def event_loop_policy():
 
     if sys.platform == "win32":
         return asyncio.WindowsSelectorEventLoopPolicy()
+
     return asyncio.DefaultEventLoopPolicy()
 
 
 @pytest.fixture(scope="session")
 async def create_tables(tmp_path_factory: pytest.TempPathFactory):
-    """Cria o schema uma vez por execução, mesmo com pytest-xdist (-n > 1).
+    """Create the schema once per test run, even with pytest-xdist (-n > 1).
 
-    Sem sincronização, cada worker chama create_all em paralelo e disputa
-    tipos ENUM no PostgreSQL (ex.: user_role_enum).
+    Without synchronization, workers call create_all in parallel and race on
+    PostgreSQL enum types, such as user_role_enum.
     """
+
     root = _xdist_shared_root(tmp_path_factory)
     lock_path = root / "pequi_test_db.lock"
     ready_path = root / "pequi_test_db.ready"
@@ -115,11 +132,13 @@ async def create_tables(tmp_path_factory: pytest.TempPathFactory):
 
 
 @pytest.fixture
-async def db_session() -> AsyncGenerator[AsyncSession, None]:
-    """Cada teste roda em uma transação que é revertida ao final."""
+async def db_session(create_tables) -> AsyncGenerator[AsyncSession, None]:
+    """Run each test inside a transaction that is rolled back at the end."""
+
     async with test_engine.connect() as conn:
         await conn.begin()
         session = AsyncSession(bind=conn, expire_on_commit=False)
+
         try:
             yield session
         finally:
@@ -129,7 +148,7 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
 
 @pytest.fixture
 async def async_client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
-    """Cliente HTTP assíncrono com override de sessão de banco."""
+    """Async HTTP client with a database session override."""
 
     async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
         yield db_session

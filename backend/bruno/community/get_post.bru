@@ -1,0 +1,35 @@
+meta {
+  name: Get Post
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/v1/community/posts/{{postId}}
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+assert {
+  res.status: eq 200
+  res.body.id: isDefined
+  res.body.author_anonymous_id: isDefined
+  res.body.user_id: isNotDefined
+}
+
+docs {
+  Retorna um post específico por ID (PEQ-106).
+
+  - Qualquer usuário autenticado pode acessar.
+  - Retorna apenas author_anonymous_id (nunca user_id).
+  - 404 se post não existe ou foi deletado.
+
+  Rate limit: 100/minuto.
+}

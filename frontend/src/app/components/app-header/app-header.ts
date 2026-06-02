@@ -1,11 +1,15 @@
-import { Component, computed, inject, input } from '@angular/core';
+import { Component, HostListener, computed, inject, input, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import {
   LucideArrowLeft,
   LucideBell,
   LucideDynamicIcon,
+  LucideLogOut,
+  LucideUser,
 } from '@lucide/angular';
 import { NotificationHubService } from '../../core/notifications/notification-hub.service';
+import { AuthService } from '../../features/auth/services/auth-service';
+import { PatientProfileService } from '../../features/profile/services/patient-profile.service';
 
 export type AppHeaderLayout = 'default' | 'withBack';
 
@@ -20,19 +24,27 @@ const ICON_BTN =
 })
 export class AppHeader {
   private readonly router = inject(Router);
+  private readonly authService = inject(AuthService);
+  private readonly profileService = inject(PatientProfileService);
   protected readonly notifications = inject(NotificationHubService);
 
   readonly layout = input<AppHeaderLayout>('default');
-  readonly userName = input('Usuário');
   readonly pageTitle = input('');
-  readonly avatarUrl = input<string | null>(null);
   readonly profileLink = input('/profile');
+
+  readonly userName = this.profileService.displayName;
+  readonly userInitials = this.profileService.initials;
+  readonly avatarUrl = computed(() => {
+    const url = this.profileService.profile().avatarDataUrl.trim();
+    return url || null;
+  });
   readonly backLink = input('/home');
-  /** When true, notification bell keeps a flat background on hover/focus/active (e.g. on /notifications). */
   readonly quietNotificationButton = input(false);
 
   readonly LucideBell = LucideBell;
   readonly LucideArrowLeft = LucideArrowLeft;
+  readonly LucideLogOut = LucideLogOut;
+  readonly LucideUser = LucideUser;
 
   readonly unread = this.notifications.unreadCount;
   readonly showUnreadBadge = computed(() => this.unread() > 0);
@@ -44,7 +56,35 @@ export class AppHeader {
       : `${ICON_BTN} relative`
   );
 
+  readonly isProfileMenuOpen = signal(false);
+
   onNotificationsClick(): void {
     void this.router.navigateByUrl('/notifications');
+  }
+
+  toggleProfileMenu(event: Event): void {
+    event.stopPropagation();
+    this.isProfileMenuOpen.update(value => !value);
+  }
+
+  closeProfileMenu(): void {
+    this.isProfileMenuOpen.set(false);
+  }
+
+  onProfileClick(event: Event): void {
+    event.stopPropagation();
+    this.closeProfileMenu();
+    void this.router.navigateByUrl(this.profileLink());
+  }
+
+  logout(event?: Event): void {
+    event?.stopPropagation();
+    this.closeProfileMenu();
+    this.authService.logout();
+  }
+
+  @HostListener('document:click')
+  onDocumentClick(): void {
+    this.closeProfileMenu();
   }
 }

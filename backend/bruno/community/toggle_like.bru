@@ -1,0 +1,35 @@
+meta {
+  name: Toggle Like
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/v1/community/posts/{{postId}}/like
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+assert {
+  res.status: eq 200
+  res.body.liked: isDefined
+  res.body.like_count: isDefined
+}
+
+docs {
+  Toggle like em post (PEQ-106).
+
+  - Apenas pacientes podem dar like.
+  - Primeira chamada: cria like (liked=true).
+  - Segunda chamada: remove like (liked=false).
+  - Retorna contador atualizado de likes.
+
+  Rate limit: 60/hora.
+}

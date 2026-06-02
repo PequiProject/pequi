@@ -1,0 +1,90 @@
+<div
+  class="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="edit-username-title"
+  data-testid="edit-username-dialog"
+  (click)="onBackdropClick($event)"
+>
+  <div
+    class="flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl bg-white shadow-lg ring-1 ring-[#E7E5E4] sm:max-h-[90dvh] sm:rounded-2xl"
+    data-testid="edit-username-panel"
+    (click)="$event.stopPropagation()"
+  >
+    <header class="flex shrink-0 items-center justify-between border-b border-[#E7E5E4] px-5 py-4">
+      <h2 id="edit-username-title" class="text-base font-bold text-[#4338CA] sm:text-lg">
+        Nome de usuário
+      </h2>
+      <button
+        type="button"
+        data-testid="close-edit-username"
+        (click)="onClose()"
+        class="rounded-full p-2 text-[#64655C] transition hover:bg-[#F5F5F4]"
+        aria-label="Fechar"
+      >
+        <lucide-icon [name]="LucideX" [size]="20" [strokeWidth]="2" />
+      </button>
+    </header>
+
+    <form
+      [formGroup]="form"
+      class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 py-4"
+      autocomplete="off"
+      (ngSubmit)="submit()"
+    >
+      <p class="text-sm text-[#64655C]" data-testid="username-hint">
+        Este é o nome exibido nas suas interações quando não usa o modo anônimo.
+        {{ usernameHint }}
+      </p>
+
+      <div>
+        <label for="username" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+          Nome de usuário
+        </label>
+        <input
+          id="username"
+          type="text"
+          formControlName="username"
+          data-testid="username-input"
+          autocomplete="off"
+          spellcheck="false"
+          class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+        />
+        @if (showValidation() && form.controls.username.hasError('required')) {
+          <p class="mt-1 text-xs text-[#B91C1C]">Informe um nome de usuário.</p>
+        }
+        @if (showValidation() && form.controls.username.hasError('usernameSpace')) {
+          <p class="mt-1 text-xs text-[#B91C1C]">
+            {{ usernameSpaceMessage }}
+          </p>
+        }
+        @if (showValidation() && form.controls.username.hasError('username')) {
+          <p class="mt-1 text-xs text-[#B91C1C]">
+            {{ usernameHint }}
+          </p>
+        }
+      </div>
+    </form>
+
+    <footer class="flex shrink-0 gap-3 border-t border-[#E7E5E4] px-5 py-4">
+      <button
+        type="button"
+        data-testid="cancel-edit-username"
+        (click)="onClose()"
+        [disabled]="isSubmitting()"
+        class="flex-1 rounded-xl border border-[#D6D3D1] px-4 py-3 text-sm font-semibold text-[#373831] transition hover:bg-[#FAFAF9] disabled:opacity-60"
+      >
+        Cancelar
+      </button>
+      <button
+        type="submit"
+        data-testid="save-edit-username"
+        (click)="submit()"
+        [disabled]="isSubmitting()"
+        class="flex-1 rounded-xl bg-[#4338CA] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+      >
+        {{ isSubmitting() ? 'Salvando...' : 'Salvar' }}
+      </button>
+    </footer>
+  </div>
+</div>

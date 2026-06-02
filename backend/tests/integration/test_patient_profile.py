@@ -22,6 +22,7 @@ async def test_get_patient_profile(create_tables, db_session):
     user = User(
         id=user_id,
         email="patient_test@example.com",
+        username="patienttest",
         hashed_password="hash",
         full_name="Patient Test",
         role="patient",

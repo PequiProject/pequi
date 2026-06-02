@@ -1,8 +1,10 @@
+import json
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import field_validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy.engine import make_url
 
 
 class Settings(BaseSettings):
@@ -18,7 +20,12 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
-    ALLOWED_ORIGINS: list[str] = ["http://localhost:3000"]
+    ALLOWED_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:4200"]
+    TRUSTED_HOSTS: list[str] = [
+        "*.pequi.health",
+        "pequi.health",
+        "*.pages.dev",
+    ]
 
     # Banco de dados
     DATABASE_URL: str
@@ -40,8 +47,11 @@ class Settings(BaseSettings):
     TWILIO_ACCOUNT_SID: str = ""
     TWILIO_AUTH_TOKEN: str = ""
     TWILIO_WHATSAPP_FROM: str = "whatsapp:+14155238886"
+    TWILIO_CONTENT_SIDS: dict[str, str] = Field(default_factory=dict)
     EVOLUTION_API_URL: str = ""
     EVOLUTION_API_KEY: str = ""
+    EVOLUTION_INSTANCE: str = ""
+    EVOLUTION_TEMPLATE_LANGUAGE: str = "pt_BR"
 
     # Anthropic
     ANTHROPIC_API_KEY: str = ""
@@ -53,6 +63,22 @@ class Settings(BaseSettings):
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod
     def parse_origins(cls, v: str | list[str]) -> list[str]:
+        if isinstance(v, str):
+            return json.loads(v)
+        return v
+
+    @field_validator("TWILIO_CONTENT_SIDS", mode="before")
+    @classmethod
+    def parse_twilio_content_sids(cls, v: str | dict[str, str]) -> dict[str, str]:
+        if isinstance(v, str):
+            if not v.strip():
+                return {}
+            return json.loads(v)
+        return v
+
+    @field_validator("TRUSTED_HOSTS", mode="before")
+    @classmethod
+    def parse_trusted_hosts(cls, v: str | list[str]) -> list[str]:
         if isinstance(v, str):
             import json
 
@@ -66,6 +92,20 @@ class Settings(BaseSettings):
     @property
     def is_development(self) -> bool:
         return self.ENV == "development"
+
+    def get_test_database_url(self) -> str:
+        """URL do PostgreSQL de testes.
+
+        Nunca derive por ``str.replace`` na URL completa: isso altera o usuário
+        em ``://pequi:`` quando o path já contém ``pequi_test`` (comum no CI).
+        """
+        if self.DATABASE_URL_TEST:
+            return self.DATABASE_URL_TEST
+        return (
+            make_url(self.DATABASE_URL)
+            .set(database="pequi_test")
+            .render_as_string(hide_password=False)
+        )
 
 
 @lru_cache

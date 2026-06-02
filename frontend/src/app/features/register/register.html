@@ -1,0 +1,55 @@
+<section class="auth-page">
+  <div class="auth-card">
+    <div class="auth-header">
+      <span class="auth-badge">Cadastro</span>
+      <h1>Crie sua conta</h1>
+      <p>Preencha seus dados para começar.</p>
+    </div>
+
+    <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()">
+      <label class="auth-field">
+        <span>Nome completo</span>
+        <input type="text" formControlName="full_name" placeholder="Seu nome completo" />
+      </label>
+
+      <label class="auth-field">
+        <span>Nome de usuário</span>
+        <input
+          type="text"
+          formControlName="username"
+          placeholder="como você quer ser chamado(a)"
+          autocomplete="username"
+          spellcheck="false"
+        />
+      </label>
+
+      <label class="auth-field">
+        <span>E-mail</span>
+        <input type="email" formControlName="email" placeholder="voce@email.com" />
+      </label>
+
+      <label class="auth-field">
+        <span>Senha</span>
+        <input type="password" formControlName="password" placeholder="Crie uma senha" />
+      </label>
+
+      <label class="auth-field">
+        <span>Confirmar senha</span>
+        <input
+          type="password"
+          formControlName="confirmPassword"
+          placeholder="Repita a senha"
+        />
+      </label>
+
+      <button class="auth-button" type="submit" [disabled]="isSubmitting">
+        {{ isSubmitting ? 'Cadastrando...' : 'Cadastrar' }}
+      </button>
+    </form>
+
+    <p class="auth-footer">
+      Já possui conta?
+      <a routerLink="/login">Entrar</a>
+    </p>
+  </div>
+</section>

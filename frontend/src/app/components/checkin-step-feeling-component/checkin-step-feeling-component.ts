@@ -24,25 +24,11 @@ export class CheckinStepFeelingComponent {
 
   moodOptions: MoodOption[] = [
     {
-      value: 'terrivel',
-      label: 'Terrível',
-      emoji: '😔',
-      color: 'bg-[#D95C5C]',
-      bars: 1,
-    },
-    {
-      value: 'mal',
-      label: 'Mal',
-      emoji: '🙁',
-      color: 'bg-[#D98A3A]',
-      bars: 2,
-    },
-    {
-      value: 'bem',
-      label: 'Bem',
-      emoji: '😐',
-      color: 'bg-[#C9A63A]',
-      bars: 3,
+      value: 'great',
+      label: 'Ótimo',
+      emoji: '😄',
+      color: 'bg-[#6B5CCF]',
+      bars: 5,
     },
     {
       value: 'muito-bem',
@@ -52,11 +38,25 @@ export class CheckinStepFeelingComponent {
       bars: 4,
     },
     {
-      value: 'otimo',
-      label: 'Ótimo',
-      emoji: '😄',
-      color: 'bg-[#6B5CCF]',
-      bars: 5,
+      value: 'ok',
+      label: 'Bem',
+      emoji: '😐',
+      color: 'bg-[#C9A63A]',
+      bars: 3,
+    },
+    {
+      value: 'bad',
+      label: 'Mal',
+      emoji: '🙁',
+      color: 'bg-[#D98A3A]',
+      bars: 2,
+    },
+    {
+      value: 'terrible',
+      label: 'Terrível',
+      emoji: '😔',
+      color: 'bg-[#D95C5C]',
+      bars: 1,
     },
   ];
 

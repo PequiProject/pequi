@@ -1,0 +1,478 @@
+<div
+  class="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="edit-personal-title"
+  data-testid="edit-personal-dialog"
+  (click)="onBackdropClick($event)"
+>
+  <div
+    class="flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl bg-white shadow-lg ring-1 ring-[#E7E5E4] sm:max-h-[90dvh] sm:rounded-2xl"
+    data-testid="edit-personal-panel"
+    (click)="$event.stopPropagation()"
+  >
+    <header
+      class="flex shrink-0 items-center justify-between border-b border-[#E7E5E4] px-4 py-4 sm:px-5"
+    >
+      <h2 id="edit-personal-title" class="text-base font-bold text-[#4338CA] sm:text-lg">
+        Dados pessoais
+      </h2>
+      <button
+        type="button"
+        data-testid="close-edit-personal"
+        (click)="onClose()"
+        class="rounded-full p-2 text-[#64655C] transition hover:bg-[#F5F5F4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4338CA]"
+        aria-label="Fechar"
+      >
+        <lucide-icon [name]="LucideX" [size]="20" [strokeWidth]="2" />
+      </button>
+    </header>
+
+    <form
+      [formGroup]="form"
+      class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4 sm:px-5"
+      autocomplete="off"
+      (ngSubmit)="submit()"
+    >
+      <div>
+        <label for="full-name" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+          Nome completo
+        </label>
+        <p class="mb-2 text-xs text-[#64655C]" data-testid="full-name-hint">
+          Definido no cadastro e usado na caderneta. Não pode ser alterado aqui.
+        </p>
+        <input
+          id="full-name"
+          type="text"
+          [value]="readonlyFullName() || initialData().fullName"
+          data-testid="full-name"
+          readonly
+          class="w-full cursor-not-allowed rounded-xl border border-[#E7E5E4] bg-[#F5F5F4] px-4 py-3 text-sm text-[#64655C]"
+        />
+      </div>
+
+      <div>
+        <label for="social-name" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+          Nome social (opcional)
+        </label>
+        <p class="mb-2 text-xs text-[#64655C]" data-testid="social-name-hint">
+          Registro opcional na caderneta de acompanhamento.
+        </p>
+        <input
+          id="social-name"
+          type="text"
+          formControlName="socialName"
+          data-testid="social-name"
+          class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] placeholder:text-[#A8A29E] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+        />
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label for="cpf" class="mb-1.5 block text-sm font-semibold text-[#373831]">CPF</label>
+          <input
+            id="cpf"
+            type="text"
+            formControlName="cpf"
+            data-testid="cpf"
+            inputmode="numeric"
+            placeholder="000.000.000-00"
+            class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] placeholder:text-[#A8A29E] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+          />
+        </div>
+        <div>
+          <label for="sus-card" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+            Cartão SUS
+          </label>
+          <input
+            id="sus-card"
+            type="text"
+            formControlName="susCard"
+            data-testid="sus-card"
+            class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label for="birth-date" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+          Data de nascimento
+        </label>
+        <input
+          id="birth-date"
+          type="date"
+          formControlName="birthDate"
+          data-testid="birth-date"
+          class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+        />
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label for="marital-status" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+            Estado civil
+          </label>
+          <select
+            id="marital-status"
+            formControlName="maritalStatus"
+            data-testid="marital-status"
+            class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+          >
+            @for (opt of maritalStatusOptions; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        </div>
+        <div>
+          <label for="nationality" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+            Nacionalidade
+          </label>
+          <select
+            id="nationality"
+            formControlName="nationality"
+            data-testid="nationality"
+            class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+          >
+            @for (opt of nationalityOptions; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label for="race-color" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+          Raça/cor
+        </label>
+        <select
+          id="race-color"
+          formControlName="raceColor"
+          data-testid="race-color"
+          class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+        >
+          @for (opt of raceColorOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+        @if (raceColor() === 'indigena') {
+          <div class="mt-3">
+            <label
+              for="indigenous-ethnicity"
+              class="mb-1.5 block text-sm font-semibold text-[#373831]"
+            >
+              Se indígena, qual etnia?
+            </label>
+            <input
+              id="indigenous-ethnicity"
+              type="text"
+              formControlName="indigenousEthnicity"
+              data-testid="indigenous-ethnicity"
+              class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+            />
+          </div>
+        }
+      </div>
+
+      <div>
+        <label for="sex" class="mb-1.5 block text-sm font-semibold text-[#373831]">Sexo</label>
+        <select
+          id="sex"
+          formControlName="sex"
+          data-testid="sex"
+          class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+        >
+          @for (opt of sexOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] p-4">
+        <label
+          for="wants-gender-identity"
+          class="mb-1.5 block text-sm font-semibold text-[#373831]"
+        >
+          Deseja informar identidade de gênero?
+        </label>
+        <select
+          id="wants-gender-identity"
+          formControlName="wantsGenderIdentity"
+          data-testid="wants-gender-identity"
+          class="w-full rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+        >
+          @for (opt of yesNoOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+
+        @if (wantsGenderIdentity() === 'sim') {
+          <div class="mt-3">
+            <label
+              for="gender-identity"
+              class="mb-1.5 block text-sm font-semibold text-[#373831]"
+            >
+              Identidade de gênero
+            </label>
+            <select
+              id="gender-identity"
+              formControlName="genderIdentity"
+              data-testid="gender-identity"
+              class="w-full rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+            >
+              @for (opt of genderIdentityOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+              }
+            </select>
+            @if (genderIdentity() === 'outra') {
+              <input
+                type="text"
+                formControlName="genderIdentityOther"
+                data-testid="gender-identity-other"
+                placeholder="Descreva"
+                class="mt-3 w-full rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm text-[#373831] placeholder:text-[#A8A29E] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+              />
+            }
+          </div>
+        }
+      </div>
+
+      <div class="rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] p-4">
+        <label
+          for="wants-sexual-orientation"
+          class="mb-1.5 block text-sm font-semibold text-[#373831]"
+        >
+          Deseja informar orientação sexual?
+        </label>
+        <select
+          id="wants-sexual-orientation"
+          formControlName="wantsSexualOrientation"
+          data-testid="wants-sexual-orientation"
+          class="w-full rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+        >
+          @for (opt of yesNoOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+
+        @if (wantsSexualOrientation() === 'sim') {
+          <div class="mt-3">
+            <label
+              for="sexual-orientation"
+              class="mb-1.5 block text-sm font-semibold text-[#373831]"
+            >
+              Orientação sexual
+            </label>
+            <select
+              id="sexual-orientation"
+              formControlName="sexualOrientation"
+              data-testid="sexual-orientation"
+              class="w-full rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+            >
+              @for (opt of sexualOrientationOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+              }
+            </select>
+            @if (sexualOrientation() === 'outra') {
+              <input
+                type="text"
+                formControlName="sexualOrientationOther"
+                data-testid="sexual-orientation-other"
+                placeholder="Descreva"
+                class="mt-3 w-full rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm text-[#373831] placeholder:text-[#A8A29E] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+              />
+            }
+          </div>
+        }
+      </div>
+
+      <div>
+        <label for="address" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+          Endereço
+        </label>
+        <textarea
+          id="address"
+          formControlName="address"
+          data-testid="address"
+          rows="2"
+          class="w-full resize-y rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+        ></textarea>
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label for="phone" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+            Telefone
+          </label>
+          <input
+            id="phone"
+            type="tel"
+            formControlName="phone"
+            data-testid="phone"
+            class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+          />
+        </div>
+        <div>
+          <label for="email" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+            E-mail de contato
+          </label>
+          <input
+            id="email"
+            type="email"
+            formControlName="email"
+            data-testid="email"
+            class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+          />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label for="education" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+            Escolaridade
+          </label>
+          <select
+            id="education"
+            formControlName="education"
+            data-testid="education"
+            class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+          >
+            @for (opt of educationOptions; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        </div>
+        <div>
+          <label for="occupation" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+            Ocupação
+          </label>
+          <input
+            id="occupation"
+            type="text"
+            formControlName="occupation"
+            data-testid="occupation"
+            class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label for="health-unit" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+          Unidade de saúde frequentada
+        </label>
+        <input
+          id="health-unit"
+          type="text"
+          formControlName="healthUnit"
+          data-testid="health-unit"
+          class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+        />
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div>
+          <label for="acs-name" class="mb-1.5 block text-sm font-semibold text-[#373831]">ACS</label>
+          <input
+            id="acs-name"
+            type="text"
+            formControlName="acsName"
+            data-testid="acs-name"
+            class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+          />
+        </div>
+        <div>
+          <label for="nurse-name" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+            Enfermeiro(a)
+          </label>
+          <input
+            id="nurse-name"
+            type="text"
+            formControlName="nurseName"
+            data-testid="nurse-name"
+            class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+          />
+        </div>
+        <div>
+          <label for="doctor-name" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+            Médico(a)
+          </label>
+          <input
+            id="doctor-name"
+            type="text"
+            formControlName="doctorName"
+            data-testid="doctor-name"
+            class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label for="emergency-contact" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+          Contato de emergência
+        </label>
+        <input
+          id="emergency-contact"
+          type="text"
+          formControlName="emergencyContact"
+          data-testid="emergency-contact"
+          placeholder="Nome e telefone"
+          class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] placeholder:text-[#A8A29E] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+        />
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label for="blood-type" class="mb-1.5 block text-sm font-semibold text-[#373831]">
+            Tipo sanguíneo
+          </label>
+          <select
+            id="blood-type"
+            formControlName="bloodType"
+            data-testid="blood-type"
+            class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+          >
+            @for (opt of bloodTypeOptions; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        </div>
+        <div>
+          <label
+            for="medication-allergies"
+            class="mb-1.5 block text-sm font-semibold text-[#373831]"
+          >
+            Alergia a medicamentos
+          </label>
+          <input
+            id="medication-allergies"
+            type="text"
+            formControlName="medicationAllergies"
+            data-testid="medication-allergies"
+            placeholder="Nenhuma ou descreva"
+            class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] placeholder:text-[#A8A29E] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+          />
+        </div>
+      </div>
+    </form>
+
+    <footer
+      class="flex shrink-0 gap-3 border-t border-[#E7E5E4] px-4 py-4 sm:px-5"
+    >
+      <button
+        type="button"
+        data-testid="cancel-edit-personal"
+        (click)="onClose()"
+        class="flex-1 rounded-xl border border-[#D6D3D1] px-4 py-3 text-sm font-semibold text-[#373831] transition hover:bg-[#FAFAF9]"
+      >
+        Cancelar
+      </button>
+      <button
+        type="submit"
+        data-testid="save-edit-personal"
+        (click)="submit()"
+        class="flex-1 rounded-xl bg-[#4338CA] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90"
+      >
+        Salvar
+      </button>
+    </footer>
+  </div>
+</div>

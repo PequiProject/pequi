@@ -1,0 +1,167 @@
+name: Tests
+
+# Chamado apenas por ci.yml — sem triggers próprios (evita double execution).
+on:
+  workflow_call:
+
+env:
+  TZ: UTC
+  LANG: C.UTF-8
+  PYTHONUNBUFFERED: "1"
+  # Variáveis de job têm precedência sobre .env (Pydantic Settings).
+  # DATABASE_URL_TEST explícito evita fallback quebrado no conftest quando só o DB de teste existe no CI.
+  DATABASE_URL: postgresql+asyncpg://pequi:pequi@localhost:5432/pequi_test
+  DATABASE_URL_TEST: postgresql+asyncpg://pequi:pequi@localhost:5432/pequi_test
+  REDIS_URL: redis://localhost:6379/0
+  SECRET_KEY: test-secret-do-not-use-in-production
+  ENV: development
+  SENTRY_DSN: ""
+  STORAGE_ENDPOINT: http://localhost:9000
+  STORAGE_ACCESS_KEY: minioadmin
+  STORAGE_SECRET_KEY: minioadmin
+  STORAGE_BUCKET_IMAGES: pequi-images
+
+defaults:
+  run:
+    working-directory: backend
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: pequi
+          POSTGRES_PASSWORD: pequi
+          POSTGRES_DB: pequi_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pequi -d pequi_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup UV
+        uses: astral-sh/setup-uv@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache UV virtualenv
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/uv
+            backend/.venv
+          key: tests-${{ runner.os }}-uv-${{ hashFiles('backend/uv.lock') }}
+          restore-keys: tests-${{ runner.os }}-uv-
+
+      - name: Install dependencies
+        run: uv sync --frozen --extra dev
+
+      - name: Start MinIO
+        run: |
+          docker run -d \
+            --name minio \
+            -p 9000:9000 \
+            -e MINIO_ROOT_USER=minioadmin \
+            -e MINIO_ROOT_PASSWORD=minioadmin \
+            minio/minio:RELEASE.2024-11-07T00-52-20Z \
+            server /data
+          echo "Aguardando MinIO..."
+          timeout 60 bash -c \
+            'until curl -sf http://localhost:9000/minio/health/live; do sleep 2; done'
+          echo "MinIO pronto"
+
+      # .env espelha o ambiente local; env do job já garante valores corretos se o arquivo falhar.
+      - name: Create test env file
+        run: |
+          cat > .env <<'EOF'
+          ENV=development
+          SECRET_KEY=test-secret-do-not-use-in-production
+          DATABASE_URL=postgresql+asyncpg://pequi:pequi@localhost:5432/pequi_test
+          DATABASE_URL_TEST=postgresql+asyncpg://pequi:pequi@localhost:5432/pequi_test
+          REDIS_URL=redis://localhost:6379/0
+          SENTRY_DSN=
+          STORAGE_ENDPOINT=http://localhost:9000
+          STORAGE_ACCESS_KEY=minioadmin
+          STORAGE_SECRET_KEY=minioadmin
+          STORAGE_BUCKET_IMAGES=pequi-images
+          EOF
+
+      - name: Debug database configuration (masked)
+        run: |
+          uv run python - <<'PY'
+          from sqlalchemy.engine import make_url
+
+          from pequi.config import get_settings
+
+          s = get_settings()
+          test_url = make_url(s.get_test_database_url())
+          print("ENV:", s.ENV)
+          print("test DB user:", test_url.username)
+          print("test DB name:", test_url.database)
+          assert test_url.username == "pequi", test_url
+          assert test_url.database == "pequi_test", test_url
+          PY
+
+      - name: Verify PostgreSQL connectivity
+        env:
+          PGPASSWORD: pequi
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client > /dev/null
+          psql -h localhost -U pequi -d pequi_test -c "SELECT current_user, current_database();"
+          psql -h localhost -U pequi -d pequi_test -c "SELECT PostGIS_Version();" || true
+
+      - name: Run Alembic migrations
+        run: uv run alembic upgrade head
+
+      - name: Validate migration head
+        run: |
+          uv run alembic current
+          uv run alembic history -r-1:head
+
+      - name: Run tests with coverage
+        run: |
+          chmod +x scripts/run_tests.sh
+          scripts/run_tests.sh \
+            --cov=src/pequi \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            --cov-fail-under=80
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: |
+            backend/coverage.xml
+            backend/.coverage
+
+      - name: Upload pytest cache
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pytest-artifacts
+          path: backend/.pytest_cache

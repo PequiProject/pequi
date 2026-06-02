@@ -12,13 +12,13 @@ class LoginUserUseCase:
         self.user_repo = user_repo
 
     async def execute(self, data: LoginRequest) -> AuthResponse:
-        user = await self.user_repo.get_by_email(data.email)
+        user = await self.user_repo.get_by_identifier(data.identifier)
 
         if not user or not verify_password(data.password, user.hashed_password):
-            raise UnauthorizedError("Invalid email or password")
+            raise UnauthorizedError("E-mail ou senha inválidos.")
 
         if not user.is_active:
-            raise UnauthorizedError("User is inactive")
+            raise UnauthorizedError("Usuário inativo.")
 
         access_token = create_access_token(subject=user.id, role=user.role)
         refresh_token = create_refresh_token(subject=user.id, role=user.role)

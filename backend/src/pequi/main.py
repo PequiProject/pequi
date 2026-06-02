@@ -34,7 +34,12 @@ def _init_sentry() -> None:
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     configure_logging()
     _init_sentry()
-    yield
+    try:
+        yield
+    finally:
+        from pequi.core.dependencies import close_cached_whatsapp_client
+
+        await close_cached_whatsapp_client()
 
 
 def create_app() -> FastAPI:
@@ -66,14 +71,31 @@ def _register_routers(app: FastAPI) -> None:
 
     app.include_router(health_router)
 
+    from pequi.routers import account as account_router
+    from pequi.routers import article as article_router
     from pequi.routers import auth as auth_router
+    from pequi.routers import body_map as body_map_router
+    from pequi.routers import checkin as checkin_router
+    from pequi.routers import community as community_router
     from pequi.routers import patient as patient_router
+    from pequi.routers import treatment as treatment_router
 
     app.include_router(patient_router.router, prefix="/v1/patients", tags=["patients"])
+    app.include_router(account_router.router, prefix="/v1/account", tags=["account"])
     app.include_router(auth_router.router, prefix="/v1/auth", tags=["auth"])
-
-    # M4: checkin.router → prefix="/v1/checkins"
-    # ...
+    app.include_router(treatment_router.router, prefix="/v1/treatments", tags=["treatments"])
+    app.include_router(treatment_router.symptoms_router, prefix="/v1/symptoms", tags=["symptoms"])
+    app.include_router(checkin_router.router, prefix="/v1/checkins", tags=["checkins"])
+    app.include_router(checkin_router.alerts_router, prefix="/v1/alerts", tags=["alerts"])
+    app.include_router(body_map_router.router, prefix="/v1/body-map", tags=["body-map"])
+    app.include_router(body_map_router.areas_router, prefix="/v1/body-areas", tags=["body-map"])
+    app.include_router(article_router.router, prefix="/v1/articles", tags=["articles"])
+    app.include_router(community_router.router, prefix="/v1/community", tags=["community"])
+    app.include_router(
+        community_router.admin_router,
+        prefix="/v1/admin/community",
+        tags=["admin-community"],
+    )
 
 
 app = create_app()

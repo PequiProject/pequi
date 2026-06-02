@@ -1,0 +1,30 @@
+meta {
+  name: Export Account Data
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/v1/account/export
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.profile: isDefined
+  res.body.checkins: isDefined
+  res.body.treatments: isDefined
+  res.body.dose_logs: isDefined
+  res.body.adherence_snapshots: isDefined
+  res.body.alerts: isDefined
+  res.body.body_map_entries: isDefined
+  res.body.body_area_history: isDefined
+  res.body.weekly_symptom_summaries: isDefined
+  res.body.community_posts: isDefined
+  res.body.consents: isDefined
+  res.body.exported_at: isDefined
+}

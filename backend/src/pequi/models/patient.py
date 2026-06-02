@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Column, Date, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 
@@ -21,7 +21,7 @@ class PatientProfile(Base):
         ForeignKey("health_units.id", ondelete="RESTRICT"),
         nullable=False,
     )
-    date_of_birth = Column(Date, nullable=False)
+    date_of_birth = Column(Date, nullable=True)
     sex = Column(String(10))
     neighborhood = Column(String)
     city = Column(String)
@@ -29,6 +29,7 @@ class PatientProfile(Base):
     disability_grade = Column(Integer, default=0)
     diagnosis_date = Column(Date)
     classification = Column(String(10))
+    notifications_enabled = Column(Boolean, server_default="true", nullable=False, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(
         DateTime(timezone=True),

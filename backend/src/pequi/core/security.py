@@ -30,5 +30,5 @@ def register_middlewares(app: FastAPI) -> None:
     if settings.is_production:
         app.add_middleware(
             TrustedHostMiddleware,
-            allowed_hosts=["*.pequi.health", "pequi.health"],
+            allowed_hosts=settings.TRUSTED_HOSTS,
         )

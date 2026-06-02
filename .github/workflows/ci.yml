@@ -1,0 +1,42 @@
+name: CI
+
+# GitFlow: integração contínua em branches de longa duração, release, hotfix e feature.
+# PRs disparam CI no branch *base* (development / main).
+# Push em feature/* cobre WIP sem PR aberto; com PR aberto pode haver 2 runs — ver concurrency.
+on:
+  pull_request:
+    branches:
+      - main
+      - development
+      - "release/**"
+      - "hotfix/**"
+
+  push:
+    branches:
+      - main
+      - development
+      - "release/**"
+      - "hotfix/**"
+      - "feature/**"
+
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    uses: ./.github/workflows/lint.yml
+
+  tests:
+    needs: lint
+    uses: ./.github/workflows/tests.yml
+
+  security:
+    needs: lint
+    uses: ./.github/workflows/security.yml
+    secrets: inherit
+    permissions:
+      contents: read
+      security-events: write
