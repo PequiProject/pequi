@@ -4,11 +4,9 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
-_USERNAME_RE = re.compile(r"^[a-z0-9][a-z0-9_\-]*[a-z0-9]$")
-_USERNAME_VALIDATION_MSG = (
-    "O nome de usuário deve conter apenas letras, números, sublinhados ou hífens, "
-    "e começar e terminar com letra ou número."
-)
+_USERNAME_RE = re.compile(r"^(?=.*[a-z0-9])[a-z0-9._-]{3,30}$")
+_USERNAME_VALIDATION_MSG = "O nome de usuário deve ter de 3 a 30 caracteres, sem espaços."
+_USERNAME_SPACE_MSG = "O nome de usuário não pode conter espaços."
 
 
 class UserCreate(BaseModel):
@@ -24,6 +22,8 @@ class UserCreate(BaseModel):
     @field_validator("username")
     @classmethod
     def validate_username(cls, v: str) -> str:
+        if any(ch.isspace() for ch in v):
+            raise ValueError(_USERNAME_SPACE_MSG)
         normalized = v.lower()
         if not _USERNAME_RE.match(normalized):
             raise ValueError(_USERNAME_VALIDATION_MSG)
@@ -74,6 +74,8 @@ class UsernameUpdate(BaseModel):
     @field_validator("username")
     @classmethod
     def validate_username(cls, v: str) -> str:
+        if any(ch.isspace() for ch in v):
+            raise ValueError(_USERNAME_SPACE_MSG)
         normalized = v.lower()
         if not _USERNAME_RE.match(normalized):
             raise ValueError(_USERNAME_VALIDATION_MSG)

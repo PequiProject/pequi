@@ -3,7 +3,7 @@ import { Component, inject } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../auth/services/auth-service';
-import { usernameValidator } from '../auth/username.utils';
+import { usernameValidator, USERNAME_SPACE_MESSAGE, USERNAME_VALIDATION_MESSAGE } from '../auth/username.utils';
 import { getApiErrorMessage } from '../../core/api-error.utils';
 import { ToastService } from '../../components/toast/toast.service';
 
@@ -95,8 +95,12 @@ export class Register {
       return 'Informe um nome de usuário.';
     }
 
+    if (this.hasError(usernameControl, 'usernameSpace')) {
+      return USERNAME_SPACE_MESSAGE;
+    }
+
     if (this.hasError(usernameControl, 'username')) {
-      return 'O nome de usuário deve ter de 3 a 30 caracteres, começando e terminando com letra ou número.';
+      return USERNAME_VALIDATION_MESSAGE;
     }
 
     if (this.hasError(emailControl, 'required')) {

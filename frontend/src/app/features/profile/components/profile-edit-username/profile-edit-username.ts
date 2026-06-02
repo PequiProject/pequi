@@ -1,7 +1,7 @@
 import { Component, effect, inject, input, output, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { LucideAngularModule, LucideX } from 'lucide-angular';
-import { normalizeUsername, usernameValidator } from '../../../auth/username.utils';
+import { normalizeUsername, usernameValidator, USERNAME_SPACE_MESSAGE, USERNAME_VALIDATION_MESSAGE } from '../../../auth/username.utils';
 
 @Component({
   selector: 'app-profile-edit-username',
@@ -17,6 +17,8 @@ export class ProfileEditUsername {
   readonly closed = output<void>();
 
   readonly LucideX = LucideX;
+  readonly usernameHint = USERNAME_VALIDATION_MESSAGE;
+  readonly usernameSpaceMessage = USERNAME_SPACE_MESSAGE;
   readonly showValidation = signal(false);
   readonly isSubmitting = signal(false);
 

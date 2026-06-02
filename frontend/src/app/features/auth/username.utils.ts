@@ -1,6 +1,12 @@
 import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 
-const USERNAME_PATTERN = /^[a-z0-9][a-z0-9_-]*[a-z0-9]$/;
+export const USERNAME_VALIDATION_MESSAGE =
+  'Use de 3 a 30 caracteres, sem espaços.';
+
+export const USERNAME_SPACE_MESSAGE =
+  'O nome de usuário não pode conter espaços.';
+
+const USERNAME_PATTERN = /^(?=.*[a-z0-9])[a-z0-9._-]{3,30}$/;
 
 export function normalizeUsername(value: string): string {
   return value.trim().toLowerCase();
@@ -8,7 +14,7 @@ export function normalizeUsername(value: string): string {
 
 export function isValidUsername(value: string): boolean {
   const normalized = normalizeUsername(value);
-  return normalized.length >= 3 && normalized.length <= 30 && USERNAME_PATTERN.test(normalized);
+  return USERNAME_PATTERN.test(normalized);
 }
 
 export function usernameValidator(): ValidatorFn {
@@ -16,6 +22,9 @@ export function usernameValidator(): ValidatorFn {
     const value = String(control.value ?? '');
     if (!value.trim()) {
       return { required: true };
+    }
+    if (/\s/.test(value)) {
+      return { usernameSpace: true };
     }
     if (!isValidUsername(value)) {
       return { username: true };

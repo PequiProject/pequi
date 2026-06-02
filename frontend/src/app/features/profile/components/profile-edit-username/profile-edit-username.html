@@ -33,8 +33,8 @@
       (ngSubmit)="submit()"
     >
       <p class="text-sm text-[#64655C]" data-testid="username-hint">
-        Este é o nome exibido nas suas interações quando não usa o modo anônimo. Use apenas letras,
-        números, hífen ou sublinhado.
+        Este é o nome exibido nas suas interações quando não usa o modo anônimo.
+        {{ usernameHint }}
       </p>
 
       <div>
@@ -53,9 +53,14 @@
         @if (showValidation() && form.controls.username.hasError('required')) {
           <p class="mt-1 text-xs text-[#B91C1C]">Informe um nome de usuário.</p>
         }
+        @if (showValidation() && form.controls.username.hasError('usernameSpace')) {
+          <p class="mt-1 text-xs text-[#B91C1C]">
+            {{ usernameSpaceMessage }}
+          </p>
+        }
         @if (showValidation() && form.controls.username.hasError('username')) {
           <p class="mt-1 text-xs text-[#B91C1C]">
-            Use de 3 a 30 caracteres, começando e terminando com letra ou número.
+            {{ usernameHint }}
           </p>
         }
       </div>
