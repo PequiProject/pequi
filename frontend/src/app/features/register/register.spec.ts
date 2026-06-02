@@ -4,6 +4,7 @@ import { of, throwError } from 'rxjs';
 import { vi, describe, beforeEach, it, expect, afterEach } from 'vitest';
 import { Register } from './register';
 import { AuthService } from '../auth/services/auth-service';
+import { ToastService } from '../../components/toast/toast.service';
 
 describe('Register', () => {
   let component: Register;
@@ -15,6 +16,12 @@ describe('Register', () => {
     register: vi.fn(),
   };
 
+  const toastServiceMock = {
+    warning: vi.fn(),
+    error: vi.fn(),
+    success: vi.fn(),
+  };
+
   beforeEach(async () => {
     authServiceMock.register.mockReset();
 
@@ -23,6 +30,7 @@ describe('Register', () => {
       providers: [
         provideRouter([]),
         { provide: AuthService, useValue: authServiceMock },
+        { provide: ToastService, useValue: toastServiceMock },
       ],
     }).compileComponents();
 
@@ -45,6 +53,7 @@ describe('Register', () => {
   it('should not submit when form is invalid', () => {
     component.form.setValue({
       full_name: '',
+      username: '',
       email: '',
       password: '',
       confirmPassword: '',
@@ -60,6 +69,7 @@ describe('Register', () => {
   it('should validate minimum password length', () => {
     component.form.setValue({
       full_name: 'Sarah',
+      username: 'sarah',
       email: 'sarah@test.com',
       password: '1234567',
       confirmPassword: '1234567',
@@ -72,6 +82,7 @@ describe('Register', () => {
   it('should show error when passwords do not match', () => {
     component.form.setValue({
       full_name: 'Sarah',
+      username: 'sarah',
       email: 'sarah@test.com',
       password: '12345678',
       confirmPassword: '87654321',
@@ -79,8 +90,10 @@ describe('Register', () => {
 
     component.submit();
 
-    expect(component.errorMessage).toBe('As senhas não coincidem.');
-    expect(component.successMessage).toBe('');
+    expect(toastServiceMock.warning).toHaveBeenCalledWith(
+      'Senhas diferentes',
+      'As senhas informadas não coincidem.'
+    );
     expect(component.isSubmitting).toBe(false);
     expect(authServiceMock.register).not.toHaveBeenCalled();
   });
@@ -101,6 +114,7 @@ describe('Register', () => {
 
     component.form.setValue({
       full_name: 'Sarah',
+      username: 'sarah',
       email: 'sarah@test.com',
       password: '12345678',
       confirmPassword: '12345678',
@@ -110,6 +124,7 @@ describe('Register', () => {
 
     expect(authServiceMock.register).toHaveBeenCalledWith({
       full_name: 'Sarah',
+      username: 'sarah',
       email: 'sarah@test.com',
       password: '12345678',
     });
@@ -131,6 +146,7 @@ describe('Register', () => {
 
     component.form.setValue({
       full_name: 'Sarah',
+      username: 'sarah',
       email: 'sarah@test.com',
       password: '12345678',
       confirmPassword: '12345678',
@@ -138,9 +154,9 @@ describe('Register', () => {
 
     component.submit();
 
-    expect(component.successMessage).toBe('Cadastro realizado com sucesso.');
-    expect(component.errorMessage).toBe('');
-    expect(navigateSpy).toHaveBeenCalledWith(['/login']);
+    expect(navigateSpy).toHaveBeenCalledWith(['/login'], {
+      queryParams: { registered: 'true' },
+    });
     expect(component.isSubmitting).toBe(false);
   });
 
@@ -157,6 +173,7 @@ describe('Register', () => {
 
     component.form.setValue({
       full_name: 'Sarah',
+      username: 'sarah',
       email: 'sarah@test.com',
       password: '12345678',
       confirmPassword: '12345678',
@@ -164,8 +181,10 @@ describe('Register', () => {
 
     component.submit();
 
-    expect(component.errorMessage).toBe('E-mail já cadastrado.');
-    expect(component.successMessage).toBe('');
+    expect(toastServiceMock.error).toHaveBeenCalledWith(
+      'Erro no cadastro',
+      'E-mail já cadastrado.'
+    );
     expect(component.isSubmitting).toBe(false);
     expect(navigateSpy).not.toHaveBeenCalled();
 
@@ -185,14 +204,14 @@ describe('Register', () => {
 
     component.form.setValue({
       full_name: 'Sarah',
+      username: 'sarah',
       email: 'sarah@test.com',
       password: '12345678',
       confirmPassword: '12345678',
     });
-
     component.submit();
 
-    expect(component.errorMessage).toBe('Falha no cadastro.');
+    expect(toastServiceMock.error).toHaveBeenCalledWith('Erro no cadastro', 'Falha no cadastro.');
     expect(component.isSubmitting).toBe(false);
     expect(navigateSpy).not.toHaveBeenCalled();
 
@@ -210,6 +229,7 @@ describe('Register', () => {
 
     component.form.setValue({
       full_name: 'Sarah',
+      username: 'sarah',
       email: 'sarah@test.com',
       password: '12345678',
       confirmPassword: '12345678',
@@ -217,7 +237,10 @@ describe('Register', () => {
 
     component.submit();
 
-    expect(component.errorMessage).toBe('Não foi possível cadastrar.');
+    expect(toastServiceMock.error).toHaveBeenCalledWith(
+      'Erro no cadastro',
+      'Não foi possível cadastrar.'
+    );
     expect(component.isSubmitting).toBe(false);
     expect(navigateSpy).not.toHaveBeenCalled();
 

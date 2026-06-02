@@ -135,7 +135,7 @@ async def test_register_user_rejects_duplicate_username():
     repo = FakeUserRepository(existing_user=_user(email="other@example.com", username="takenuser"))
     use_case = RegisterUserUseCase(repo)
 
-    with pytest.raises(ConflictError, match="Username already taken"):
+    with pytest.raises(ConflictError, match="Este nome de usuário já está em uso"):
         await use_case.execute(
             UserCreate(
                 email="new@example.com",
@@ -151,7 +151,7 @@ async def test_register_user_username_case_insensitive_conflict():
     repo = FakeUserRepository(existing_user=_user(email="other@example.com", username="takenuser"))
     use_case = RegisterUserUseCase(repo)
 
-    with pytest.raises(ConflictError, match="Username already taken"):
+    with pytest.raises(ConflictError, match="Este nome de usuário já está em uso"):
         await use_case.execute(
             UserCreate(
                 email="new@example.com",

@@ -33,3 +33,12 @@ class UserRepository(BaseRepository[User]):
         stmt = select(self.model).where(self.model.id == id, self.model.deleted_at.is_(None))
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def update_username(self, user_id: UUID, username: str) -> User | None:
+        user = await self.get_by_id(user_id)
+        if not user:
+            return None
+        user.username = username
+        await self._session.flush()
+        await self._session.refresh(user)
+        return user

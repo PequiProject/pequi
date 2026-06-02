@@ -26,7 +26,7 @@ def test_username_accepts_valid_characters():
 
 
 def test_username_rejects_spaces():
-    with pytest.raises(ValueError, match="username"):
+    with pytest.raises(ValueError, match="nome de usuário"):
         UserCreate(
             email="u@example.com",
             username="joao silva",
@@ -36,7 +36,7 @@ def test_username_rejects_spaces():
 
 
 def test_username_rejects_leading_hyphen():
-    with pytest.raises(ValueError, match="username"):
+    with pytest.raises(ValueError, match="nome de usuário"):
         UserCreate(
             email="u@example.com",
             username="-joao",
@@ -46,7 +46,7 @@ def test_username_rejects_leading_hyphen():
 
 
 def test_username_rejects_trailing_hyphen():
-    with pytest.raises(ValueError, match="username"):
+    with pytest.raises(ValueError, match="nome de usuário"):
         UserCreate(
             email="u@example.com",
             username="joao-",
@@ -86,7 +86,7 @@ def test_username_minimum_length_3():
 
 
 def test_username_rejects_special_chars():
-    with pytest.raises(ValueError, match="username"):
+    with pytest.raises(ValueError, match="nome de usuário"):
         UserCreate(
             email="u@example.com",
             username="joao@silva",

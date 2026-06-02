@@ -83,7 +83,7 @@ async def test_register_user_duplicate_email(create_tables, async_client: AsyncC
         },
     )
     assert response.status_code == 409
-    assert response.json()["detail"] == "Unable to register with these credentials."
+    assert response.json()["detail"] == "Não foi possível cadastrar com estes dados."
 
 
 async def test_register_user_duplicate_username(create_tables, async_client: AsyncClient):
@@ -106,7 +106,7 @@ async def test_register_user_duplicate_username(create_tables, async_client: Asy
         },
     )
     assert response.status_code == 409
-    assert response.json()["detail"] == "Username already taken."
+    assert response.json()["detail"] == "Este nome de usuário já está em uso."
 
 
 async def test_register_duplicate_username_case_insensitive(

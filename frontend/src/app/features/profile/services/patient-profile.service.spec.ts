@@ -1,14 +1,25 @@
 import { TestBed } from '@angular/core/testing';
+import { signal } from '@angular/core';
 import { EMPTY_PERSONAL_DATA, EMPTY_TREATMENT_DATA } from '../models/patient-profile.models';
+import { AuthService } from '../../auth/services/auth-service';
 import { PatientProfileService } from './patient-profile.service';
 
 describe('PatientProfileService', () => {
   let service: PatientProfileService;
 
+  const authServiceMock = {
+    displayName: signal('Paciente'),
+    currentUser: signal<{ full_name: string } | null>(null),
+  };
+
   beforeEach(() => {
     localStorage.clear();
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      providers: [{ provide: AuthService, useValue: authServiceMock }],
+    });
     service = TestBed.inject(PatientProfileService);
+    authServiceMock.displayName.set('Paciente');
+    authServiceMock.currentUser.set(null);
   });
 
   it('should default display name to Paciente', () => {
@@ -16,22 +27,24 @@ describe('PatientProfileService', () => {
     expect(service.initials()).toBe('PA');
   });
 
-  it('should prefer social name over full name', () => {
-    service.updatePersonal({
-      ...EMPTY_PERSONAL_DATA,
-      fullName: 'Maria Silva',
-      socialName: 'Mari',
-    });
-    expect(service.displayName()).toBe('Mari');
+  it('should use username from auth session as display name', () => {
+    authServiceMock.displayName.set('mari_silva');
+    expect(service.displayName()).toBe('mari_silva');
     expect(service.initials()).toBe('MA');
   });
 
-  it('should use full name when social name is empty', () => {
+  it('should expose legal full name from auth user', () => {
+    authServiceMock.currentUser.set({ full_name: 'Maria Silva' });
+    expect(service.legalFullName()).toBe('Maria Silva');
+  });
+
+  it('should lock full name when saving personal data', () => {
+    authServiceMock.currentUser.set({ full_name: 'João Souza' });
     service.updatePersonal({
       ...EMPTY_PERSONAL_DATA,
-      fullName: 'João Souza',
+      fullName: 'Outro Nome',
     });
-    expect(service.displayName()).toBe('João Souza');
+    expect(service.profile().personal.fullName).toBe('João Souza');
   });
 
   it('should persist personal data to localStorage', () => {

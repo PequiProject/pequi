@@ -1,4 +1,5 @@
-import { computed, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
+import { AuthService } from '../../auth/services/auth-service';
 import {
   EMPTY_PATIENT_PROFILE,
   type PatientAccountData,
@@ -17,25 +18,24 @@ export type ChangePasswordResult =
 
 @Injectable({ providedIn: 'root' })
 export class PatientProfileService {
+  private readonly authService = inject(AuthService);
   private readonly profileSignal = signal<PatientProfile>(this.loadFromStorage());
 
   readonly profile = this.profileSignal.asReadonly();
+  readonly displayName = this.authService.displayName;
 
-  readonly displayName = computed(() => {
-    const { personal } = this.profileSignal();
-    const social = personal.socialName.trim();
-    const full = personal.fullName.trim();
-    if (social) return social;
-    if (full) return full;
-    return 'Paciente';
+  readonly legalFullName = computed(() => {
+    const fromAuth = this.authService.currentUser()?.full_name?.trim() ?? '';
+    if (fromAuth) return fromAuth;
+    return this.profileSignal().personal.fullName.trim();
   });
 
   readonly initials = computed(() => {
     const name = this.displayName();
-    const parts = name.split(/\s+/).filter(Boolean);
-    if (parts.length === 0) return 'P';
-    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-    return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+    const cleaned = name.replace(/^@/, '').trim();
+    if (!cleaned) return 'P';
+    if (cleaned.length <= 2) return cleaned.slice(0, 2).toUpperCase();
+    return cleaned.slice(0, 2).toUpperCase();
   });
 
   readonly hasAvatar = computed(() => this.profileSignal().avatarDataUrl.trim() !== '');
@@ -90,7 +90,13 @@ export class PatientProfileService {
   }
 
   updatePersonal(personal: PatientPersonalData): void {
-    this.patch({ personal: { ...personal } });
+    const lockedFullName = this.legalFullName();
+    this.patch({
+      personal: {
+        ...personal,
+        fullName: lockedFullName || personal.fullName,
+      },
+    });
   }
 
   updateTreatment(treatment: PatientTreatmentData): void {

@@ -3,6 +3,8 @@ import { Component, inject } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../auth/services/auth-service';
+import { usernameValidator } from '../auth/username.utils';
+import { getApiErrorMessage } from '../../core/api-error.utils';
 import { ToastService } from '../../components/toast/toast.service';
 
 @Component({
@@ -22,6 +24,7 @@ export class Register {
 
   form = this.fb.group({
     full_name: ['', [Validators.required, Validators.minLength(2)]],
+    username: ['', [usernameValidator()]],
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(8)]],
     confirmPassword: ['', [Validators.required]],
@@ -51,6 +54,7 @@ export class Register {
     this.authService
       .register({
         full_name: this.form.value.full_name ?? '',
+        username: (this.form.value.username ?? '').trim().toLowerCase(),
         email: this.form.value.email ?? '',
         password: this.form.value.password ?? '',
       })
@@ -61,11 +65,7 @@ export class Register {
           });
         },
         error: (error) => {
-          const message =
-            error?.error?.detail ||
-            error?.error?.message ||
-            'Não foi possível cadastrar.';
-
+          const message = getApiErrorMessage(error, 'Não foi possível cadastrar.');
           this.toastService.error('Erro no cadastro', message);
           this.isSubmitting = false;
         },
@@ -77,6 +77,7 @@ export class Register {
 
   private getFormErrorMessage(): string {
     const fullNameControl = this.form.get('full_name');
+    const usernameControl = this.form.get('username');
     const emailControl = this.form.get('email');
     const passwordControl = this.form.get('password');
     const confirmPasswordControl = this.form.get('confirmPassword');
@@ -88,6 +89,14 @@ export class Register {
     if (this.hasError(fullNameControl, 'minlength')) {
       const requiredLength = fullNameControl?.errors?.['minlength']?.requiredLength;
       return `O nome completo deve ter pelo menos ${requiredLength} caracteres.`;
+    }
+
+    if (this.hasError(usernameControl, 'required')) {
+      return 'Informe um nome de usuário.';
+    }
+
+    if (this.hasError(usernameControl, 'username')) {
+      return 'O nome de usuário deve ter de 3 a 30 caracteres, começando e terminando com letra ou número.';
     }
 
     if (this.hasError(emailControl, 'required')) {

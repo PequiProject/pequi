@@ -27,6 +27,7 @@ export class ProfileEditPersonal {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly initialData = input.required<PatientPersonalData>();
+  readonly readonlyFullName = input('');
   readonly saved = output<PatientPersonalData>();
   readonly closed = output<void>();
 
@@ -49,7 +50,6 @@ export class ProfileEditPersonal {
   readonly sexualOrientation = signal('');
 
   readonly form = this.fb.group({
-    fullName: ['', Validators.required],
     socialName: [''],
     cpf: [''],
     susCard: [''],
@@ -160,6 +160,7 @@ export class ProfileEditPersonal {
 
   private buildPersonalData(): PatientPersonalData {
     const raw = this.form.getRawValue() as PatientPersonalData;
+    raw.fullName = this.readonlyFullName().trim() || this.initialData().fullName;
     if (raw.raceColor !== 'indigena') {
       raw.indigenousEthnicity = '';
     }
