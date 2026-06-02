@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     ALLOWED_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:4200"]
     TRUSTED_HOSTS: list[str] = [
+        "localhost",
         "*.pequi.health",
         "pequi.health",
         "*.pages.dev",
