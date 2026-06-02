@@ -37,9 +37,11 @@ async def _create_health_unit(session, *, name: str = "UBS Central") -> HealthUn
 
 
 async def _create_user(session, *, email: str, role: str) -> User:
+    username = email.split("@")[0].replace(".", "_").replace("-", "_")[:30]
     user = User(
         id=uuid4(),
         email=email,
+        username=username,
         hashed_password="$2b$12$placeholder",
         full_name="Test User",
         role=role,

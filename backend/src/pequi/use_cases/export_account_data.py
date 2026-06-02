@@ -43,6 +43,7 @@ class ExportAccountDataUseCase:
                     include=[
                         "id",
                         "email",
+                        "username",
                         "full_name",
                         "role",
                         "is_active",
