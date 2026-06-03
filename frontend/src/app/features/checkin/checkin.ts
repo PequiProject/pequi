@@ -2,8 +2,8 @@ import { CommonModule } from '@angular/common';
 import {
   Component,
   computed,
-  effect,
   inject,
+  OnInit,
   signal,
   WritableSignal,
 } from '@angular/core';
@@ -14,11 +14,13 @@ import {
   Validators,
 } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Subscription } from 'rxjs';
 import { CheckinStepFeelingComponent } from '../../components/checkin-step-feeling-component/checkin-step-feeling-component';
 import { CheckinStepSymptomsComponent } from '../../components/checkin-step-symptoms-component/checkin-step-symptoms-component';
 import { CheckinStepIntensityComponent } from '../../components/checkin-step-intensity-component/checkin-step-intensity-component';
 import { CheckinStepDetailsComponent } from '../../components/checkin-step-details-component/checkin-step-details-component';
+import { ToastService } from '../../components/toast/toast.service';
+import type { SymptomResponse } from './models/checkin.models';
+import { CheckinService } from './services/checkin.service';
 
 type StepItem = {
   id: number;
@@ -39,14 +41,16 @@ type StepItem = {
   templateUrl: './checkin.html',
   styleUrl: './checkin.css',
 })
-export class CheckinComponent {
+export class CheckinComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
-
-  private stepStatusSubscription?: Subscription;
-  private symptomsSelectionSubscription?: Subscription;
+  private readonly checkinService = inject(CheckinService);
+  private readonly toast = inject(ToastService);
 
   private readonly NO_SYMPTOM_VALUE = 'nenhum sintoma';
+
+  readonly symptomCatalog = signal<SymptomResponse[]>([]);
+  readonly submitting = signal(false);
 
   steps: StepItem[] = [
     { id: 1, label: 'Ranking de Sentimentos' },
@@ -79,9 +83,18 @@ export class CheckinComponent {
     return (step / this.steps.length) * 100;
   });
 
-  constructor() {
-    this.setupCurrentStepValidationWatcher();
-    this.setupIntensityConditionalValidation();
+  constructor() {}
+
+  ngOnInit(): void {
+    this.checkinService.listSymptoms().subscribe({
+      next: symptoms => this.symptomCatalog.set(symptoms),
+      error: () => {
+        this.toast.error(
+          'Erro ao carregar sintomas',
+          'Verifique sua conexão e tente novamente.',
+        );
+      },
+    });
   }
 
   get currentStepNumber(): WritableSignal<number> {
@@ -181,15 +194,48 @@ export class CheckinComponent {
     }
 
     const rawValue = this.form.getRawValue();
+    const selectedSymptoms = rawValue.symptoms.selectedSymptoms ?? [];
+    const noSymptomsSelected = selectedSymptoms.includes(this.NO_SYMPTOM_VALUE);
+    const symptomIds = this.checkinService.resolveSymptomIds(
+      selectedSymptoms,
+      this.symptomCatalog(),
+    );
+
+    if (symptomIds.length === 0) {
+      this.toast.error(
+        'Não foi possível identificar os sintomas',
+        'Aguarde o carregamento do catálogo ou selecione outra opção.',
+      );
+      return;
+    }
+
+    if (!rawValue.feeling.mood) {
+      this.form.markAllAsTouched();
+      return;
+    }
+
     const payload = {
-      ...rawValue,
-      symptoms: {
-        selectedSymptoms: rawValue.symptoms.selectedSymptoms,
-      },
+      mood: rawValue.feeling.mood,
+      symptom_intensity: noSymptomsSelected ? 0 : (rawValue.intensity.scale ?? 0),
+      symptom_ids: symptomIds,
+      general_notes: rawValue.details.notes?.trim() || null,
     };
 
-    console.log('Payload final do check-in:', payload);
-    this.router.navigate(['home']);
+    this.submitting.set(true);
+    this.checkinService.submit(payload).subscribe({
+      next: () => {
+        this.submitting.set(false);
+        this.toast.success('Check-in registrado com sucesso!');
+        void this.router.navigate(['/home']);
+      },
+      error: () => {
+        this.submitting.set(false);
+        this.toast.error(
+          'Erro ao enviar check-in',
+          'Tente novamente em instantes.',
+        );
+      },
+    });
   }
 
   private getCurrentStepForm(): FormGroup {

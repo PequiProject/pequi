@@ -21,6 +21,12 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     ALLOWED_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:4200"]
+    TRUSTED_HOSTS: list[str] = [
+        "localhost",
+        "*.pequi.health",
+        "pequi.health",
+        "*.pages.dev",
+    ]
 
     # Banco de dados
     DATABASE_URL: str
@@ -68,6 +74,15 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             if not v.strip():
                 return {}
+            return json.loads(v)
+        return v
+
+    @field_validator("TRUSTED_HOSTS", mode="before")
+    @classmethod
+    def parse_trusted_hosts(cls, v: str | list[str]) -> list[str]:
+        if isinstance(v, str):
+            import json
+
             return json.loads(v)
         return v
 

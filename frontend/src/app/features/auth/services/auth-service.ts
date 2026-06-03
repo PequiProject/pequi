@@ -3,6 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 
+import { environment } from '../../../../environments/environment';
+
 export interface RegisterRequest {
   email: string;
   username: string;
@@ -60,7 +62,7 @@ export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
 
-  private readonly baseUrl = 'http://localhost:8000/v1/auth';
+  private readonly baseUrl = `${environment.apiUrl}/v1/auth`;
   private readonly sessionKey = 'auth_session';
   private readonly userSignal = signal<AuthUser | null>(this.readStoredUser());
 
