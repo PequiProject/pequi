@@ -6,8 +6,10 @@ on:
       - development
       - main
 
+# Grupo único para a EC2 — impede staging e prod rodarem simultaneamente
+# na mesma máquina e causarem condição de corrida no Docker.
 concurrency:
-  group: deploy-${{ github.ref_name }}
+  group: deploy-ec2
   cancel-in-progress: false
 
 jobs:
@@ -65,6 +67,9 @@ jobs:
             aws ecr get-login-password --region us-east-2 \
               | docker login --username AWS --password-stdin "$ECR_REGISTRY"
 
+            # Guarda digest da imagem atual antes de atualizar
+            OLD_IMAGE=$(docker inspect --format='{{.Image}}' api_staging 2>/dev/null || echo "")
+
             docker pull "$IMAGE_TAG"
 
             IMAGE_TAG="$IMAGE_TAG" \
@@ -72,7 +77,10 @@ jobs:
 
             docker compose -f docker-compose.staging.yml run --rm migrate
 
-            docker image prune -f
+            # Remove apenas a imagem anterior — não afeta imagens de produção
+            if [ -n "$OLD_IMAGE" ]; then
+              docker rmi "$OLD_IMAGE" || true
+            fi
         env:
           ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
           IMAGE_TAG: ${{ env.IMAGE_TAG }}
@@ -85,7 +93,9 @@ jobs:
           echo "Aguardando API inicializar..."
           sleep 30
           for i in 1 2 3 4 5; do
-            STATUS=$(curl -s -w "\n%{http_code}" "http://${{ secrets.EC2_HOST }}:8080/docs" | tail -1)
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+              --max-time 10 \
+              "http://${{ secrets.EC2_HOST }}:8080/docs")
             echo "Tentativa $i — HTTP status: $STATUS"
             if [ "$STATUS" = "200" ]; then
               echo "Health check OK!"
@@ -105,7 +115,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd ~/pequi/backend
-            echo "=== Logs do container api (últimas 100 linhas) ==="
+            echo "=== Logs do container api_staging (últimas 100 linhas) ==="
             docker compose -f docker-compose.staging.yml logs --tail=100 api
 
   # ─────────────────────────────────────────────
@@ -164,6 +174,9 @@ jobs:
             aws ecr get-login-password --region us-east-2 \
               | docker login --username AWS --password-stdin "$ECR_REGISTRY"
 
+            # Guarda digest da imagem atual antes de atualizar
+            OLD_IMAGE=$(docker inspect --format='{{.Image}}' api_prod 2>/dev/null || echo "")
+
             docker pull "$IMAGE_TAG"
 
             IMAGE_TAG="$IMAGE_TAG" \
@@ -171,7 +184,10 @@ jobs:
 
             docker compose -f docker-compose.prod.yml run --rm migrate
 
-            docker image prune -f
+            # Remove apenas a imagem anterior — não afeta imagens de staging
+            if [ -n "$OLD_IMAGE" ]; then
+              docker rmi "$OLD_IMAGE" || true
+            fi
         env:
           ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
           IMAGE_TAG: ${{ env.IMAGE_TAG }}
@@ -185,12 +201,13 @@ jobs:
           sleep 15
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
             --max-time 60 --retry 5 --retry-delay 15 \
-            "http://${{ secrets.EC2_HOST }}/docs")
+            "http://${{ secrets.EC2_HOST }}/health")
           echo "HTTP status: $STATUS"
           if [ "$STATUS" != "200" ]; then
             echo "::error::Health check falhou — HTTP $STATUS"
             exit 1
           fi
+          echo "Health check OK!"
 
       - name: Exibir logs do container api (apenas em falha)
         if: failure() && steps.healthcheck.outcome == 'failure'
@@ -201,5 +218,5 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd ~/pequi/backend
-            echo "=== Logs do container api (últimas 100 linhas) ==="
+            echo "=== Logs do container api_prod (últimas 100 linhas) ==="
             docker compose -f docker-compose.prod.yml logs --tail=100 api

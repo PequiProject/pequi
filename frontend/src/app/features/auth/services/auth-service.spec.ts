@@ -3,6 +3,7 @@ import { HttpClientTestingModule, HttpTestingController } from '@angular/common/
 import { Router } from '@angular/router';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { AuthService } from './auth-service';
+import { environment } from '../../../../environments/environment';
 
 export interface RegisterRequest {
   email: string;
@@ -122,7 +123,7 @@ describe('AuthService', () => {
       responseBody = response;
     });
 
-    const req = httpMock.expectOne('http://localhost:8000/v1/auth/register');
+    const req = httpMock.expectOne(`${environment.apiUrl}/v1/auth/register`);
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual(payload);
 
@@ -143,7 +144,7 @@ describe('AuthService', () => {
       responseBody = response;
     });
 
-    const req = httpMock.expectOne('http://localhost:8000/v1/auth/login');
+    const req = httpMock.expectOne(`${environment.apiUrl}/v1/auth/login`);
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual(payload);
 
@@ -252,7 +253,7 @@ describe('AuthService', () => {
       responseBody = response;
     });
 
-    const req = httpMock.expectOne('http://localhost:8000/v1/auth/refresh');
+    const req = httpMock.expectOne(`${environment.apiUrl}/v1/auth/refresh`);
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({
       refresh_token: 'refresh-token-456',

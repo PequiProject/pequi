@@ -11,8 +11,8 @@ from pequi.schemas.user import (
     LoginRequest,
     RefreshRequest,
     UserCreate,
-    UserResponse,
     UsernameUpdate,
+    UserResponse,
 )
 from pequi.use_cases.login_user import LoginUserUseCase
 from pequi.use_cases.refresh_token import RefreshTokenUseCase

@@ -1,34 +1,26 @@
 version: '3.8'
+
 services:
   migrate:
     image: ${IMAGE_TAG}
-    restart: always
-    environment:
-      DATABASE_URL: ${DATABASE_URL}
-      SECRET_KEY: ${SECRET_KEY}
-      ENV: ${ENV}
+    container_name: migrate_prod
+    restart: "no"                          # era 'always' — corrigido
+    env_file:
+      - .env.prod
     command: alembic upgrade head
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - prod_net
 
   api:
     image: ${IMAGE_TAG}
+    container_name: api_prod
     restart: always
-    ports:
-      - "8000:8000"
-    environment:
-      DATABASE_URL: ${DATABASE_URL}
-      REDIS_URL: ${REDIS_URL}
-      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
-      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
-      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY}
-      STORAGE_BUCKET_IMAGES: ${STORAGE_BUCKET_IMAGES}
-      STORAGE_REGION: ${STORAGE_REGION}
-      SECRET_KEY: ${SECRET_KEY}
-      ENV: ${ENV}
-      SENTRY_DSN: ${SENTRY_DSN}
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
+    # sem 'ports' — nginx acessa via rede interna; não expõe 8000 publicamente
+    env_file:
+      - .env.prod
     depends_on:
       db:
         condition: service_healthy
@@ -37,81 +29,88 @@ services:
       redis:
         condition: service_healthy
     command: uvicorn pequi.main:app --host 0.0.0.0 --port 8000
+    networks:
+      - prod_net
 
   worker:
     image: ${IMAGE_TAG}
+    container_name: worker_prod
     restart: always
+    env_file:
+      - .env.prod
     command: python -m arq pequi.workers.settings.WorkerSettings
-    environment:
-      DATABASE_URL: ${DATABASE_URL}
-      REDIS_URL: ${REDIS_URL}
-      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
-      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
-      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY}
-      STORAGE_BUCKET_IMAGES: ${STORAGE_BUCKET_IMAGES}
-      STORAGE_REGION: ${STORAGE_REGION}
-      SECRET_KEY: ${SECRET_KEY}
-      ENV: ${ENV}
-      SENTRY_DSN: ${SENTRY_DSN}
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
+    networks:
+      - prod_net
 
   db:
     image: postgis/postgis:16-3.4
+    container_name: db_prod
     restart: always
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+    env_file:
+      - .env.prod
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata_prod:/var/lib/postgresql/data
       - ./db-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 5s
       timeout: 5s
       retries: 10
+    networks:
+      - prod_net
 
   redis:
     image: redis:7-alpine
+    container_name: redis_prod
     restart: always
     volumes:
-      - redisdata:/data
+      - redisdata_prod:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 10
+    networks:
+      - prod_net
 
   minio:
     image: minio/minio
+    container_name: minio_prod
     restart: always
+    env_file:
+      - .env.prod
     command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "9010:9000"   # 9010 no host para não conflitar com staging (9000)
+      - "9011:9001"   # 9011 no host para não conflitar com staging (9002)
     volumes:
-      - miniodata:/data
+      - miniodata_prod:/data
+    networks:
+      - prod_net
 
   nginx:
     image: nginx:alpine
+    container_name: nginx_prod
     restart: always
     depends_on:
       - api
     ports:
       - "80:80"
-      - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/certs:/etc/nginx/certs:ro
+    networks:
+      - prod_net
 
 volumes:
-  pgdata:
-  redisdata:
-  miniodata:
+  pgdata_prod:
+  redisdata_prod:
+  miniodata_prod:
+
+networks:
+  prod_net:
+    name: prod_net
