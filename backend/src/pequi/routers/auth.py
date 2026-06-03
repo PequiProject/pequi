@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from pequi.core.dependencies import get_current_user, get_db
 from pequi.core.rate_limit import limiter
+from pequi.repositories.patient_repo import PatientRepository
 from pequi.repositories.user_repo import UserRepository
 from pequi.schemas.user import AuthResponse, LoginRequest, RefreshRequest, UserCreate, UserResponse
 from pequi.use_cases.login_user import LoginUserUseCase
@@ -15,7 +16,7 @@ router = APIRouter()
 
 
 def get_register_use_case(session: AsyncSession = Depends(get_db)) -> RegisterUserUseCase:
-    return RegisterUserUseCase(UserRepository(session))
+    return RegisterUserUseCase(UserRepository(session), PatientRepository(session))
 
 
 def get_login_use_case(session: AsyncSession = Depends(get_db)) -> LoginUserUseCase:

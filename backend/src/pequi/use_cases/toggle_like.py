@@ -22,9 +22,7 @@ class ToggleLikeUseCase:
         Se já existe like, retorna 409 Conflict (PEQ-108).
         Se não existe, cria like e retorna 200.
         """
-        patient = await self._patient_repo.get_by_user_id(user_id)
-        if patient is None:
-            raise NotFoundError("PatientProfile")
+        await self._patient_repo.get_or_create_by_user_id(user_id)
 
         post = await self._community_repo.get_post_by_id(post_id)
         if post is None:

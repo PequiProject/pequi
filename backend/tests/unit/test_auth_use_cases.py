@@ -48,6 +48,15 @@ class FakeUserRepository:
         return user
 
 
+class FakePatientRepository:
+    def __init__(self):
+        self.created_for_user_id = None
+
+    async def get_or_create_by_user_id(self, user_id):
+        self.created_for_user_id = user_id
+        return SimpleNamespace(user_id=user_id)
+
+
 def _hashed_password(_password):
     return "hashed"
 
@@ -70,8 +79,9 @@ def _refresh_token(**_kwargs):
 
 async def test_register_user_hashes_password_and_always_creates_patient(monkeypatch):
     repo = FakeUserRepository()
+    patient_repo = FakePatientRepository()
     monkeypatch.setattr("pequi.use_cases.register_user.hash_password", _hashed_password)
-    use_case = RegisterUserUseCase(repo)
+    use_case = RegisterUserUseCase(repo, patient_repo)
 
     result = await use_case.execute(
         UserCreate(
@@ -86,11 +96,12 @@ async def test_register_user_hashes_password_and_always_creates_patient(monkeypa
     assert repo.added_user is not None
     assert repo.added_user.hashed_password == "hashed"
     assert repo.added_user.full_name == "New Patient"
+    assert patient_repo.created_for_user_id == repo.added_user.id
 
 
 async def test_register_user_rejects_duplicate_email():
     repo = FakeUserRepository(existing_user=_user(email="taken@example.com"))
-    use_case = RegisterUserUseCase(repo)
+    use_case = RegisterUserUseCase(repo, FakePatientRepository())
 
     with pytest.raises(ConflictError):
         await use_case.execute(

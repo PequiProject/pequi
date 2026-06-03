@@ -27,7 +27,8 @@ docs {
   Lista comentários de um post (PEQ-106).
 
   - Qualquer usuário autenticado pode acessar.
-  - Retorna apenas author_anonymous_id (nunca user_id).
+  - Retorna author_mode e author_display_name quando identificado.
+  - Nunca retorna user_id.
   - Paginado com limit e offset.
   - Ordenado por created_at asc.
 

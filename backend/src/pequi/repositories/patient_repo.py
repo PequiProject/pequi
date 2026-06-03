@@ -31,6 +31,17 @@ class PatientRepository:
         await self.session.flush()
         return patient
 
+    async def get_or_create_by_user_id(self, user_id: UUID) -> PatientProfile:
+        patient = await self.get_by_user_id(user_id)
+        if patient is not None:
+            return patient
+
+        patient = PatientProfile(user_id=user_id)
+        self.session.add(patient)
+        await self.session.flush()
+        await self.session.refresh(patient)
+        return patient
+
     async def update(self, id: UUID, **fields) -> PatientProfile | None:
         q = (
             update(PatientProfile)

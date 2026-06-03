@@ -27,7 +27,8 @@ docs {
   Lista posts da comunidade anônima (PEQ-106).
 
   - Qualquer usuário autenticado pode acessar.
-  - Retorna apenas author_anonymous_id (nunca user_id).
+  - Retorna author_mode e author_display_name quando identificado.
+  - Nunca retorna user_id.
   - Exclui posts moderados por padrão.
   - Paginado com limit e offset.
 

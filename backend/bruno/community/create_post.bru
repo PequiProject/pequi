@@ -20,9 +20,10 @@ headers {
 
 body:json {
   {
-    "title": "Minha experiência com o tratamento",
+    "title": "Minha experiencia com o tratamento",
     "content": "Estou compartilhando minha jornada de tratamento...",
-    "category": "experience"
+    "category": "experience",
+    "author_mode": "anonymous"
   }
 }
 
@@ -30,6 +31,8 @@ assert {
   res.status: eq 201
   res.body.id: isDefined
   res.body.author_anonymous_id: isDefined
+  res.body.author_mode: eq "anonymous"
+  res.body.author_display_name: isNull
   res.body.title: isDefined
   res.body.content: isDefined
   res.body.category: isDefined
@@ -37,12 +40,13 @@ assert {
 }
 
 docs {
-  Cria post anônimo na comunidade (PEQ-106).
+  Cria post na comunidade (PEQ-106).
 
   - Apenas pacientes podem criar posts.
   - category: experience | question | support | news
+  - author_mode: anonymous | identified
   - Sistema gera anonymous_id automaticamente.
-  - Nunca expõe user_id na resposta.
+  - Nunca expoe user_id na resposta.
 
   Rate limit: 20/hora.
 }

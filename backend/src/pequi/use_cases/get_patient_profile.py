@@ -9,7 +9,5 @@ class GetPatientProfileUseCase:
         self.patient_repo = patient_repo
 
     async def execute(self, user_id: UUID) -> PatientProfileRead | None:
-        patient = await self.patient_repo.get_by_user_id(user_id)
-        if not patient:
-            return None
+        patient = await self.patient_repo.get_or_create_by_user_id(user_id)
         return PatientProfileRead.model_validate(patient)

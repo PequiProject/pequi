@@ -14,14 +14,15 @@ class PatientProfile(Base):
     user_id = Column(
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="RESTRICT"),
+        unique=True,
         nullable=False,
     )
     health_unit_id = Column(
         UUID(as_uuid=True),
         ForeignKey("health_units.id", ondelete="RESTRICT"),
-        nullable=False,
+        nullable=True,
     )
-    date_of_birth = Column(Date, nullable=False)
+    date_of_birth = Column(Date, nullable=True)
     sex = Column(String(10))
     neighborhood = Column(String)
     city = Column(String)

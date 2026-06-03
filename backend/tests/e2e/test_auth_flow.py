@@ -21,6 +21,75 @@ async def test_register_user_success(create_tables, async_client: AsyncClient):
     assert "hashed_password" not in data
 
 
+async def test_register_creates_patient_profile(create_tables, async_client: AsyncClient):
+    register_response = await async_client.post(
+        "/v1/auth/register",
+        json={
+            "email": "patient-profile@example.com",
+            "password": "strongpassword123",
+            "full_name": "Patient Profile",
+        },
+    )
+    assert register_response.status_code == 201
+
+    login_response = await async_client.post(
+        "/v1/auth/login",
+        json={
+            "email": "patient-profile@example.com",
+            "password": "strongpassword123",
+        },
+    )
+    token = login_response.json()["access_token"]
+
+    profile_response = await async_client.get(
+        "/v1/patients/me",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert profile_response.status_code == 200
+    profile = profile_response.json()
+    assert profile["user_id"] == register_response.json()["id"]
+
+
+async def test_registered_user_can_create_identified_community_post(
+    create_tables,
+    async_client: AsyncClient,
+):
+    await async_client.post(
+        "/v1/auth/register",
+        json={
+            "email": "community-profile@example.com",
+            "password": "strongpassword123",
+            "full_name": "Community Author",
+        },
+    )
+    login_response = await async_client.post(
+        "/v1/auth/login",
+        json={
+            "email": "community-profile@example.com",
+            "password": "strongpassword123",
+        },
+    )
+    token = login_response.json()["access_token"]
+
+    post_response = await async_client.post(
+        "/v1/community/posts",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "title": "Minha experiencia",
+            "content": "Estou compartilhando minha jornada de tratamento.",
+            "category": "experience",
+            "author_mode": "identified",
+        },
+    )
+
+    assert post_response.status_code == 201
+    post = post_response.json()
+    assert post["author_mode"] == "identified"
+    assert post["author_display_name"] == "Community Author"
+    assert "user_id" not in post
+
+
 async def test_register_rejects_role_in_body(create_tables, async_client: AsyncClient):
     response = await async_client.post(
         "/v1/auth/register",
