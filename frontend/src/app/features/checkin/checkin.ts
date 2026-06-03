@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   Component,
   computed,
+  effect,
   inject,
   OnInit,
   signal,
@@ -82,6 +83,8 @@ export class CheckinComponent implements OnInit {
     const step = this.currentStep();
     return (step / this.steps.length) * 100;
   });
+  stepStatusSubscription: any;
+  symptomsSelectionSubscription: import("rxjs").Subscription | undefined;
 
   constructor() {}
 
