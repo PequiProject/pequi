@@ -76,6 +76,7 @@ export class CheckinComponent implements OnInit {
     }),
     details: this.fb.group({
       notes: [''],
+      images: [[] as File[]],
     }),
   });
 
