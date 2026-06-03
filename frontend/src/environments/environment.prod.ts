@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://api.pequi.health',
+  apiUrl: '__API_URL__',
 };
