@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from pequi.config import get_settings
 from pequi.core.auth import TOKEN_TYPE_ACCESS, JWTError, decode_token
 from pequi.core.exceptions import ForbiddenError, UnauthorizedError
+from pequi.core.token_blacklist import is_token_revoked
 from pequi.database import get_db as _get_db
 from pequi.integrations import AIClient, ObjectStorageClient, WhatsAppClient, get_anthropic_client
 from pequi.repositories.patient_repo import PatientRepository
@@ -43,6 +44,8 @@ async def get_token_payload(
 
     if payload.get("type") != TOKEN_TYPE_ACCESS:
         raise UnauthorizedError("Access token required")
+    if await is_token_revoked(payload):
+        raise UnauthorizedError("Token revoked")
 
     return payload
 

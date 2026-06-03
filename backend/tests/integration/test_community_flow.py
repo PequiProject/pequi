@@ -30,6 +30,7 @@ async def _create_admin_user(session, email: str = "admin@test.com"):
     user = User(
         id=uuid4(),
         email=email,
+        username=email.split("@")[0].replace(".", "_").replace("-", "_")[:30],
         hashed_password="hashed",
         full_name="Admin User",
         role="admin",

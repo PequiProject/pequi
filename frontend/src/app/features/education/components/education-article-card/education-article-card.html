@@ -1,0 +1,52 @@
+<article
+  class="cursor-pointer overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-[#E7E5E4] transition hover:ring-[#D6D3D1]"
+  tabindex="0"
+  [attr.data-testid]="'article-card-' + article().slug"
+  [attr.aria-label]="'Abrir artigo: ' + article().title"
+  (click)="onOpen()"
+  (keydown.enter)="onOpen(); $event.preventDefault()"
+  (keydown.space)="onOpen(); $event.preventDefault()"
+>
+  @if (article().cover_image_url) {
+    <div class="aspect-[16/9] w-full overflow-hidden bg-[#F5F5F4]">
+      <img
+        [src]="article().cover_image_url"
+        [alt]="'Capa: ' + article().title"
+        class="h-full w-full object-cover"
+        loading="lazy"
+      />
+    </div>
+  }
+
+  <div class="p-4 sm:p-5">
+    <div class="mb-2 flex flex-wrap gap-1.5">
+      @for (tag of article().tags; track tag.id) {
+        <span
+          class="rounded-full bg-[#CAF9DC] px-2.5 py-1 text-xs font-medium text-[#436D57]"
+        >
+          {{ tag.name }}
+        </span>
+      }
+    </div>
+
+    <h3 class="mb-2 text-base font-bold text-[#373831] sm:text-lg">{{ article().title }}</h3>
+
+    <p class="mb-4 line-clamp-3 text-sm leading-relaxed text-[#64655C] sm:text-base">
+      {{ article().summary }}
+    </p>
+
+    <footer class="flex flex-wrap items-center justify-between gap-2 border-t border-[#F5F5F4] pt-3 text-xs text-[#64655C] sm:text-sm">
+      <span class="font-medium text-[#373831]">{{ article().author_name }}</span>
+      <span class="inline-flex items-center gap-1.5">
+        <lucide-icon [name]="LucideClock" [size]="16" [strokeWidth]="2" aria-hidden="true" />
+        <span>{{ readingTimeLabel(article().reading_time_min) }}</span>
+        @if (article().published_at) {
+          <span aria-hidden="true">·</span>
+          <time [attr.datetime]="article().published_at!">
+            {{ formatPublishedAt(article().published_at) }}
+          </time>
+        }
+      </span>
+    </footer>
+  </div>
+</article>

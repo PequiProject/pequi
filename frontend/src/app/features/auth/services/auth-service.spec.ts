@@ -3,9 +3,11 @@ import { HttpClientTestingModule, HttpTestingController } from '@angular/common/
 import { Router } from '@angular/router';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { AuthService } from './auth-service';
+import { environment } from '../../../../environments/environment';
 
 export interface RegisterRequest {
   email: string;
+  username: string;
   password: string;
   full_name: string;
 }
@@ -13,6 +15,7 @@ export interface RegisterRequest {
 export interface AuthUser {
   id: string;
   email: string;
+  username: string;
   full_name: string;
   role: string;
   is_active: boolean;
@@ -24,7 +27,7 @@ export interface AuthUser {
 export interface RegisterResponse extends AuthUser {}
 
 export interface LoginRequest {
-  email: string;
+  identifier: string;
   password: string;
 }
 
@@ -57,6 +60,7 @@ describe('AuthService', () => {
   const mockUser: AuthUser = {
     id: 'user-1',
     email: 'teste@teste.com',
+    username: 'sarah',
     full_name: 'Sarah',
     role: 'patient',
     is_active: true,
@@ -108,6 +112,7 @@ describe('AuthService', () => {
   it('should call register with the correct payload', () => {
     const payload: RegisterRequest = {
       email: 'teste@teste.com',
+      username: 'sarah',
       password: '123456',
       full_name: 'Sarah',
     };
@@ -118,7 +123,7 @@ describe('AuthService', () => {
       responseBody = response;
     });
 
-    const req = httpMock.expectOne('http://localhost:8000/v1/auth/register');
+    const req = httpMock.expectOne(`${environment.apiUrl}/v1/auth/register`);
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual(payload);
 
@@ -129,7 +134,7 @@ describe('AuthService', () => {
 
   it('should call login and save session in localStorage', () => {
     const payload: LoginRequest = {
-      email: 'teste@teste.com',
+      identifier: 'teste@teste.com',
       password: '123456',
     };
 
@@ -139,7 +144,7 @@ describe('AuthService', () => {
       responseBody = response;
     });
 
-    const req = httpMock.expectOne('http://localhost:8000/v1/auth/login');
+    const req = httpMock.expectOne(`${environment.apiUrl}/v1/auth/login`);
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual(payload);
 
@@ -248,7 +253,7 @@ describe('AuthService', () => {
       responseBody = response;
     });
 
-    const req = httpMock.expectOne('http://localhost:8000/v1/auth/refresh');
+    const req = httpMock.expectOne(`${environment.apiUrl}/v1/auth/refresh`);
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({
       refresh_token: 'refresh-token-456',

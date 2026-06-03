@@ -10,6 +10,7 @@ import {
 import type { AccountSavePayload } from './components/profile-edit-account/profile-edit-account';
 import { ProfileEditAccount } from './components/profile-edit-account/profile-edit-account';
 import { ProfileEditPersonal } from './components/profile-edit-personal/profile-edit-personal';
+import { ProfileEditUsername } from './components/profile-edit-username/profile-edit-username';
 import {
   CLASSIFICATION_OPTIONS,
   BLOOD_TYPE_OPTIONS,
@@ -35,13 +36,16 @@ import {
   type ChangePasswordError,
 } from './services/patient-profile.service';
 import { PatientMedicationService } from '../appointments/services/patient-medication.service';
+import { AuthService } from '../auth/services/auth-service';
+import { getApiErrorMessage } from '../../core/api-error.utils';
+import { ToastService } from '../../components/toast/toast.service';
 
 export type ProfileTab = 'overview' | 'treatment';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [ReactiveFormsModule, LucideAngularModule, ProfileEditPersonal, ProfileEditAccount],
+  imports: [ReactiveFormsModule, LucideAngularModule, ProfileEditPersonal, ProfileEditAccount, ProfileEditUsername],
   templateUrl: './profile.html',
 })
 export class Profile {
@@ -52,6 +56,8 @@ export class Profile {
   private readonly fb = inject(FormBuilder);
   private readonly profileService = inject(PatientProfileService);
   private readonly medicationService = inject(PatientMedicationService);
+  private readonly authService = inject(AuthService);
+  private readonly toastService = inject(ToastService);
 
   readonly LucideDownload = LucideDownload;
   readonly LucideKeyRound = LucideKeyRound;
@@ -69,17 +75,20 @@ export class Profile {
 
   readonly profile = this.profileService.profile;
   readonly displayName = this.profileService.displayName;
+  readonly legalFullName = this.profileService.legalFullName;
   readonly initials = this.profileService.initials;
   readonly hasAvatar = this.profileService.hasAvatar;
   readonly hasPersonalData = this.profileService.hasPersonalData;
 
   readonly activeTab = signal<ProfileTab>('overview');
   readonly showEditPersonal = signal(false);
+  readonly showEditUsername = signal(false);
   readonly showEditAccount = signal(false);
   readonly showAvatarMenu = signal(false);
   readonly accountPasswordError = signal<ChangePasswordError | null>(null);
 
   readonly personalSavedToast = signal(false);
+  readonly usernameSavedToast = signal(false);
   readonly treatmentSavedToast = signal(false);
   readonly accountSavedToast = signal(false);
   readonly avatarRemovedToast = signal(false);
@@ -234,6 +243,30 @@ export class Profile {
 
   closeEditPersonal(): void {
     this.showEditPersonal.set(false);
+  }
+
+  openEditUsername(): void {
+    this.showEditUsername.set(true);
+  }
+
+  closeEditUsername(): void {
+    this.showEditUsername.set(false);
+  }
+
+  onUsernameSaved(username: string): void {
+    this.authService.updateUsername(username).subscribe({
+      next: () => {
+        this.showEditUsername.set(false);
+        this.showToast(this.usernameSavedToast);
+      },
+      error: (error) => {
+        const message = getApiErrorMessage(
+          error,
+          'Não foi possível atualizar o nome de usuário.'
+        );
+        this.toastService.error('Erro ao salvar', message);
+      },
+    });
   }
 
   openEditAccount(): void {

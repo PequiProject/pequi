@@ -8,8 +8,19 @@
 
     <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()">
       <label class="auth-field">
-        <span>Nome</span>
-        <input type="text" formControlName="full_name" placeholder="Seu nome" />
+        <span>Nome completo</span>
+        <input type="text" formControlName="full_name" placeholder="Seu nome completo" />
+      </label>
+
+      <label class="auth-field">
+        <span>Nome de usuário</span>
+        <input
+          type="text"
+          formControlName="username"
+          placeholder="como você quer ser chamado(a)"
+          autocomplete="username"
+          spellcheck="false"
+        />
       </label>
 
       <label class="auth-field">

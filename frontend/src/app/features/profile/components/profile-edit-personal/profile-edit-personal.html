@@ -39,18 +39,16 @@
           Nome completo
         </label>
         <p class="mb-2 text-xs text-[#64655C]" data-testid="full-name-hint">
-          Será o nome exibido nas suas interações caso não use o modo anônimo.
+          Definido no cadastro e usado na caderneta. Não pode ser alterado aqui.
         </p>
         <input
           id="full-name"
           type="text"
-          formControlName="fullName"
+          [value]="readonlyFullName() || initialData().fullName"
           data-testid="full-name"
-          class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+          readonly
+          class="w-full cursor-not-allowed rounded-xl border border-[#E7E5E4] bg-[#F5F5F4] px-4 py-3 text-sm text-[#64655C]"
         />
-        @if (showValidation() && form.controls.fullName.invalid) {
-          <p class="mt-1 text-xs text-[#B91C1C]">Informe o nome completo.</p>
-        }
       </div>
 
       <div>
@@ -58,7 +56,7 @@
           Nome social (opcional)
         </label>
         <p class="mb-2 text-xs text-[#64655C]" data-testid="social-name-hint">
-          Se preenchido, será usado no lugar do nome completo como nome exibido nas interações.
+          Registro opcional na caderneta de acompanhamento.
         </p>
         <input
           id="social-name"

@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { Router } from '@angular/router';
+import { of } from 'rxjs';
 import { vi } from 'vitest';
 
 import { CheckinComponent } from './checkin';
@@ -10,6 +11,8 @@ import { CheckinStepFeelingComponent } from '../../components/checkin-step-feeli
 import { CheckinStepSymptomsComponent } from '../../components/checkin-step-symptoms-component/checkin-step-symptoms-component';
 import { CheckinStepIntensityComponent } from '../../components/checkin-step-intensity-component/checkin-step-intensity-component';
 import { CheckinStepDetailsComponent } from '../../components/checkin-step-details-component/checkin-step-details-component';
+import { ToastService } from '../../components/toast/toast.service';
+import { CheckinService } from './services/checkin.service';
 
 @Component({
   selector: 'app-checkin-step-feeling-component',
@@ -55,6 +58,20 @@ describe(CheckinComponent.name, () => {
   let fixture: ComponentFixture<CheckinComponent>;
   let component: CheckinComponent;
   let router: { navigate: ReturnType<typeof vi.fn> };
+  let checkinService: {
+    listSymptoms: ReturnType<typeof vi.fn>;
+    submit: ReturnType<typeof vi.fn>;
+    resolveSymptomIds: ReturnType<typeof vi.fn>;
+  };
+  let toastService: {
+    success: ReturnType<typeof vi.fn>;
+    error: ReturnType<typeof vi.fn>;
+  };
+
+  const mockSymptoms = [
+    { id: 'symptom-1', name: 'Nenhum sintoma hoje', category: 'systemic' },
+    { id: 'symptom-2', name: 'Dormência', category: 'neurological' },
+  ];
 
   const getByTestId = (testId: string) =>
     fixture.debugElement.query(By.css(`[data-testid="${testId}"]`));
@@ -67,9 +84,29 @@ describe(CheckinComponent.name, () => {
       navigate: vi.fn(),
     };
 
+    checkinService = {
+      listSymptoms: vi.fn(() => of(mockSymptoms)),
+      submit: vi.fn(() => of({ id: 'checkin-1' })),
+      resolveSymptomIds: vi.fn((selected: string[]) => {
+        if (selected.includes('nenhum sintoma')) {
+          return ['symptom-1'];
+        }
+        return ['symptom-2'];
+      }),
+    };
+
+    toastService = {
+      success: vi.fn(),
+      error: vi.fn(),
+    };
+
     await TestBed.configureTestingModule({
       imports: [CheckinComponent],
-      providers: [{ provide: Router, useValue: router }],
+      providers: [
+        { provide: Router, useValue: router },
+        { provide: CheckinService, useValue: checkinService },
+        { provide: ToastService, useValue: toastService },
+      ],
     })
       .overrideComponent(CheckinComponent, {
         remove: {
@@ -409,23 +446,33 @@ describe(CheckinComponent.name, () => {
   });
 
   it('should submit and navigate to home when form is valid in regular flow', () => {
-    component.feelingForm.get('mood')?.setValue('happy');
+    component.feelingForm.get('mood')?.setValue('good');
     component.symptomsForm.get('selectedSymptoms')?.setValue(['cough']);
     component.intensityForm.get('scale')?.setValue(1);
     component.detailsForm.get('notes')?.setValue('feeling well');
 
     component.submit();
-    expect(router.navigate).toHaveBeenCalledWith(['home']);
+
+    expect(checkinService.submit).toHaveBeenCalled();
+    expect(toastService.success).toHaveBeenCalled();
+    expect(router.navigate).toHaveBeenCalledWith(['/home']);
   });
 
   it('should submit and navigate to home when "nenhum sintoma" skips intensity', () => {
-
-    component.feelingForm.get('mood')?.setValue('happy');
+    component.feelingForm.get('mood')?.setValue('good');
     component.symptomsForm.get('selectedSymptoms')?.setValue(['nenhum sintoma']);
     component.detailsForm.get('notes')?.setValue('sem sintomas hoje');
 
     component.submit();
-    expect(router.navigate).toHaveBeenCalledWith(['home']);
+
+    expect(checkinService.submit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mood: 'good',
+        symptom_intensity: 0,
+        symptom_ids: ['symptom-1'],
+      }),
+    );
+    expect(router.navigate).toHaveBeenCalledWith(['/home']);
   });
 
   it('should submit payload with only selectedSymptoms inside symptoms object', () => {
