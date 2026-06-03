@@ -31,11 +31,11 @@ export class CheckinStepFeelingComponent {
       bars: 5,
     },
     {
-      value: 'muito-bem',
-      label: 'Muito Bem',
-      emoji: '🙂',
-      color: 'bg-[#5C9B7B]',
-      bars: 4,
+      value: 'mal',
+      label: 'Mal',
+      emoji: '🙁',
+      color: 'bg-[#D98A3A]',
+      bars: 2,
     },
     {
       value: 'ok',
