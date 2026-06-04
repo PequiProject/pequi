@@ -1,7 +1,9 @@
 from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import and_, delete, func, insert, select, update
+from sqlalchemy import and_, delete, func, select, update
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pequi.models.community import (
@@ -37,8 +39,6 @@ class CommunityRepository:
 
         O anonymous_id é estável por usuário — o mesmo em todos os posts.
         """
-        from sqlalchemy.exc import IntegrityError
-
         stmt = select(CommunityAnonymousMap.anonymous_id).where(
             CommunityAnonymousMap.user_id == user_id
         )
@@ -50,11 +50,10 @@ class CommunityRepository:
 
         # Criar novo mapeamento (tratar race condition)
         try:
-            mapping = CommunityAnonymousMap(user_id=user_id)
-            self._session.add(mapping)
-            await self._session.flush()
-            await self._session.refresh(mapping)
-            return mapping.anonymous_id
+            async with self._session.begin_nested():
+                mapping = CommunityAnonymousMap(user_id=user_id)
+                self._session.add(mapping)
+                await self._session.flush()
         except IntegrityError:
             # Outra requisição criou o mapeamento, buscar novamente
             result = await self._session.execute(stmt)
@@ -62,6 +61,9 @@ class CommunityRepository:
             if existing:
                 return existing
             raise
+
+        await self._session.refresh(mapping)
+        return mapping.anonymous_id
 
     async def deanonymize(self, anonymous_id: UUID) -> CommunityAnonymousMap | None:
         """Retorna o mapeamento completo (user_id real) — acesso restrito a admin.
@@ -155,7 +157,10 @@ class CommunityRepository:
         """Soft delete de post (próprio autor ou admin)."""
         stmt = (
             update(CommunityPost)
-            .where(CommunityPost.id == post_id)
+            .where(
+                CommunityPost.id == post_id,
+                CommunityPost.deleted_at.is_(None),
+            )
             .values(deleted_at=datetime.now(UTC))
             .returning(CommunityPost)
         )
@@ -246,24 +251,27 @@ class CommunityRepository:
     ) -> tuple[bool, int]:
         """Adiciona like em post — retorna (liked, like_count).
 
-        Atômico: incrementa like_count apenas se insert for bem-sucedido.
-        Levanta IntegrityError se like já existe.
+        Atômico: incrementa like_count apenas quando um novo like é inserido.
         """
         anonymous_id = await self.get_or_create_anonymous_id(user_id)
 
-        # Adicionar like
-        await self._session.execute(
-            insert(CommunityLike).values(
+        result = await self._session.execute(
+            pg_insert(CommunityLike)
+            .values(
                 anonymous_id=anonymous_id,
                 post_id=post_id,
             )
+            .on_conflict_do_nothing(
+                index_elements=["anonymous_id", "post_id"],
+            )
         )
-        await self._session.execute(
-            update(CommunityPost)
-            .where(CommunityPost.id == post_id)
-            .values(like_count=CommunityPost.like_count + 1)
-        )
-        await self._session.flush()
+        if result.rowcount:
+            await self._session.execute(
+                update(CommunityPost)
+                .where(CommunityPost.id == post_id)
+                .values(like_count=CommunityPost.like_count + 1)
+            )
+            await self._session.flush()
         return True, await self._get_post_like_count(post_id)
 
     async def remove_like(
@@ -318,6 +326,7 @@ class CommunityRepository:
         if author_mode == "anonymous":
             return None
 
+        # Snapshot intencional: posts antigos mantem o username do momento da criacao.
         stmt = select(User.username).where(
             User.id == user_id,
             User.deleted_at.is_(None),
@@ -343,7 +352,10 @@ class CommunityRepository:
 
         stmt = (
             update(CommunityComment)
-            .where(CommunityComment.id == comment_id)
+            .where(
+                CommunityComment.id == comment_id,
+                CommunityComment.deleted_at.is_(None),
+            )
             .values(deleted_at=datetime.now(UTC))
             .returning(CommunityComment)
         )

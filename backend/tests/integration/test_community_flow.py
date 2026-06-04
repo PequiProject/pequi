@@ -145,6 +145,35 @@ async def test_different_users_have_different_anonymous_ids(create_tables, db_se
 
 
 @pytest.mark.asyncio
+async def test_list_posts_filters_multi_category_posts(create_tables, db_session):
+    """Filtering by category finds posts that contain that category in the list."""
+    health_unit = await _create_health_unit(db_session)
+    patient_user = await _create_user(db_session, email="multi-category@test.com", role="patient")
+    await _create_patient(db_session, user=patient_user, health_unit=health_unit)
+
+    community_repo = CommunityRepository(db_session)
+    patient_repo = PatientRepository(db_session)
+    create_use_case = CreatePostUseCase(community_repo, patient_repo)
+
+    post = await create_use_case.execute(
+        patient_user.id,
+        PostCreate(
+            title="Relato com apoio",
+            content="Um relato que tambem busca apoio da comunidade.",
+            categories=["experience", "support"],
+            author_mode="anonymous",
+        ),
+    )
+
+    list_use_case = ListPostsUseCase(community_repo)
+    support_posts = await list_use_case.execute(category="support")
+
+    assert support_posts.total == 1
+    assert support_posts.items[0].id == post.id
+    assert support_posts.items[0].categories == ["experience", "support"]
+
+
+@pytest.mark.asyncio
 async def test_user_id_never_appears_in_post_response(create_tables, db_session):
     """Critical: user_id must never appear in any response field."""
     health_unit = await _create_health_unit(db_session)
@@ -221,6 +250,36 @@ async def test_toggle_like_adds_and_removes(create_tables, db_session):
     result2 = await like_use_case.execute(patient_user.id, post.id)
     assert result2["liked"] is False
     assert result2["like_count"] == 0
+
+
+@pytest.mark.asyncio
+async def test_add_like_duplicate_does_not_increment_count(create_tables, db_session):
+    """Repository add_like is race-safe for duplicate inserts."""
+    health_unit = await _create_health_unit(db_session)
+    patient_user = await _create_user(
+        db_session, email="patient-like-race@test.com", role="patient"
+    )
+    await _create_patient(db_session, user=patient_user, health_unit=health_unit)
+
+    community_repo = CommunityRepository(db_session)
+    patient_repo = PatientRepository(db_session)
+    post = await CreatePostUseCase(community_repo, patient_repo).execute(
+        patient_user.id,
+        PostCreate(
+            title="Test",
+            content="Test content",
+            categories=["experience"],
+            author_mode="anonymous",
+        ),
+    )
+
+    liked, like_count = await community_repo.add_like(patient_user.id, post.id)
+    duplicate_liked, duplicate_count = await community_repo.add_like(patient_user.id, post.id)
+
+    assert liked is True
+    assert duplicate_liked is True
+    assert like_count == 1
+    assert duplicate_count == 1
 
 
 @pytest.mark.asyncio
@@ -309,7 +368,9 @@ async def test_user_cannot_delete_others_post(create_tables, db_session):
 async def test_user_can_delete_own_comment(create_tables, db_session):
     """User can delete their own comment (soft delete)."""
     health_unit = await _create_health_unit(db_session)
-    patient_user = await _create_user(db_session, email="patient-comment-del@test.com", role="patient")
+    patient_user = await _create_user(
+        db_session, email="patient-comment-del@test.com", role="patient"
+    )
     await _create_patient(db_session, user=patient_user, health_unit=health_unit)
 
     community_repo = CommunityRepository(db_session)

@@ -222,7 +222,7 @@ class ExportAccountDataUseCase:
                         "id",
                         "title",
                         "content",
-                        "category",
+                        "categories",
                         "is_pinned",
                         "is_moderated",
                         "like_count",

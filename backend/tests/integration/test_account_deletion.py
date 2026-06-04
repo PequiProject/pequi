@@ -155,7 +155,7 @@ async def test_delete_account_revokes_token_and_unlinks_anonymous_mapping(
         author_anonymous_id=mapping.anonymous_id,
         title="Relato",
         content="Conteudo publico",
-        category="experience",
+        categories=["experience"],
     )
     db_session.add(post)
     await db_session.flush()

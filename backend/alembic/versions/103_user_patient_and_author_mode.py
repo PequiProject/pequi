@@ -67,6 +67,27 @@ def downgrade() -> None:
     op.drop_column("community_posts", "author_mode")
 
     op.drop_constraint("uq_patient_profiles_user_id", "patient_profiles", type_="unique")
-    op.alter_column("patient_profiles", "health_unit_id", nullable=False)
+    op.execute(
+        """
+        DO $$
+        BEGIN
+            IF EXISTS (
+                SELECT 1
+                FROM patient_profiles
+                WHERE health_unit_id IS NULL
+            ) THEN
+                RAISE EXCEPTION
+                    'Cannot downgrade: patient_profiles.health_unit_id has NULL values. '
+                    'Assign a health_unit_id to minimal patient profiles before rollback.';
+            END IF;
+        END $$;
+        """
+    )
+    op.alter_column(
+        "patient_profiles",
+        "health_unit_id",
+        existing_type=postgresql.UUID(as_uuid=True),
+        nullable=False,
+    )
 
     sa.Enum(name="community_author_mode_enum").drop(op.get_bind(), checkfirst=True)
