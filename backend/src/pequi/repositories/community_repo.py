@@ -10,6 +10,7 @@ from pequi.models.community import (
     CommunityLike,
     CommunityPost,
 )
+from pequi.models.user import User
 from pequi.schemas.community import CommentCreate, PostCreate
 
 
@@ -80,9 +81,12 @@ class CommunityRepository:
     ) -> CommunityPost:
         """Cria post anônimo — usa anonymous_id, nunca expõe user_id."""
         anonymous_id = await self.get_or_create_anonymous_id(user_id)
+        author_display_name = await self._get_author_display_name(user_id, data.author_mode)
 
         post = CommunityPost(
             author_anonymous_id=anonymous_id,
+            author_mode=data.author_mode,
+            author_display_name=author_display_name,
             title=data.title,
             content=data.content,
             category=data.category,
@@ -186,10 +190,13 @@ class CommunityRepository:
     ) -> CommunityComment:
         """Cria comentário anônimo — usa anonymous_id, nunca expõe user_id."""
         anonymous_id = await self.get_or_create_anonymous_id(user_id)
+        author_display_name = await self._get_author_display_name(user_id, data.author_mode)
 
         comment = CommunityComment(
             post_id=post_id,
             author_anonymous_id=anonymous_id,
+            author_mode=data.author_mode,
+            author_display_name=author_display_name,
             content=data.content,
         )
         self._session.add(comment)
@@ -305,6 +312,18 @@ class CommunityRepository:
         stmt = select(CommunityPost.like_count).where(CommunityPost.id == post_id)
         result = await self._session.execute(stmt)
         return result.scalar_one() or 0
+
+    async def _get_author_display_name(self, user_id: UUID, author_mode: str) -> str | None:
+        if author_mode == "anonymous":
+            return None
+
+        stmt = select(User.full_name).where(
+            User.id == user_id,
+            User.deleted_at.is_(None),
+            User.is_active.is_(True),
+        )
+        result = await self._session.execute(stmt)
+        return result.scalar_one_or_none()
 
     async def check_comment_ownership(
         self,

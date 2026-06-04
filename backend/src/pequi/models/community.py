@@ -63,6 +63,12 @@ class CommunityPost(Base):
         nullable=False,
         index=True,
     )
+    author_mode = Column(
+        Enum("anonymous", "identified", name="community_author_mode_enum"),
+        nullable=False,
+        server_default="anonymous",
+    )
+    author_display_name = Column(Text, nullable=True)
     title = Column(Text, nullable=False)
     content = Column(Text, nullable=False)
     category = Column(
@@ -110,6 +116,12 @@ class CommunityComment(Base):
         nullable=False,
         index=True,
     )
+    author_mode = Column(
+        Enum("anonymous", "identified", name="community_author_mode_enum"),
+        nullable=False,
+        server_default="anonymous",
+    )
+    author_display_name = Column(Text, nullable=True)
     content = Column(Text, nullable=False)
     created_at = Column(
         DateTime(timezone=True),

@@ -65,6 +65,15 @@ class FakeUserRepository:
         return self.existing_user
 
 
+class FakePatientRepository:
+    def __init__(self):
+        self.created_for_user_id = None
+
+    async def get_or_create_by_user_id(self, user_id):
+        self.created_for_user_id = user_id
+        return SimpleNamespace(user_id=user_id)
+
+
 def _hashed_password(_password):
     return "hashed"
 
@@ -96,8 +105,9 @@ async def _token_is_revoked(_payload):
 
 async def test_register_user_hashes_password_and_always_creates_patient(monkeypatch):
     repo = FakeUserRepository()
+    patient_repo = FakePatientRepository()
     monkeypatch.setattr("pequi.use_cases.register_user.hash_password", _hashed_password)
-    use_case = RegisterUserUseCase(repo)
+    use_case = RegisterUserUseCase(repo, patient_repo)
 
     result = await use_case.execute(
         UserCreate(
@@ -114,11 +124,12 @@ async def test_register_user_hashes_password_and_always_creates_patient(monkeypa
     assert repo.added_user is not None
     assert repo.added_user.hashed_password == "hashed"
     assert repo.added_user.full_name == "New Patient"
+    assert patient_repo.created_for_user_id == repo.added_user.id
 
 
 async def test_register_user_rejects_duplicate_email():
     repo = FakeUserRepository(existing_user=_user(email="taken@example.com", username="taken"))
-    use_case = RegisterUserUseCase(repo)
+    use_case = RegisterUserUseCase(repo, FakePatientRepository())
 
     with pytest.raises(ConflictError):
         await use_case.execute(
@@ -133,7 +144,7 @@ async def test_register_user_rejects_duplicate_email():
 
 async def test_register_user_rejects_duplicate_username():
     repo = FakeUserRepository(existing_user=_user(email="other@example.com", username="takenuser"))
-    use_case = RegisterUserUseCase(repo)
+    use_case = RegisterUserUseCase(repo, FakePatientRepository())
 
     with pytest.raises(ConflictError, match="Este nome de usuário já está em uso"):
         await use_case.execute(
@@ -149,7 +160,7 @@ async def test_register_user_rejects_duplicate_username():
 async def test_register_user_username_case_insensitive_conflict():
     """Username 'TakenUser' deve conflitar com 'takenuser' já cadastrado."""
     repo = FakeUserRepository(existing_user=_user(email="other@example.com", username="takenuser"))
-    use_case = RegisterUserUseCase(repo)
+    use_case = RegisterUserUseCase(repo, FakePatientRepository())
 
     with pytest.raises(ConflictError, match="Este nome de usuário já está em uso"):
         await use_case.execute(
