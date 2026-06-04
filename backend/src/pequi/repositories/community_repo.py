@@ -89,7 +89,7 @@ class CommunityRepository:
             author_display_name=author_display_name,
             title=data.title,
             content=data.content,
-            category=data.category,
+            categories=data.categories,
         )
         self._session.add(post)
         await self._session.flush()
@@ -120,7 +120,7 @@ class CommunityRepository:
         if exclude_moderated:
             filters.append(CommunityPost.is_moderated.is_(False))
         if category:
-            filters.append(CommunityPost.category == category)
+            filters.append(CommunityPost.categories.overlap([category]))
 
         count_stmt = select(func.count()).select_from(CommunityPost).where(*filters)
         total = (await self._session.execute(count_stmt)).scalar_one()
@@ -274,8 +274,7 @@ class CommunityRepository:
         """Remove like em post — retorna (liked, like_count)."""
         anonymous_id = await self.get_or_create_anonymous_id(user_id)
 
-        # Remover like
-        await self._session.execute(
+        result = await self._session.execute(
             delete(CommunityLike).where(
                 and_(
                     CommunityLike.anonymous_id == anonymous_id,
@@ -283,12 +282,14 @@ class CommunityRepository:
                 )
             )
         )
-        await self._session.execute(
-            update(CommunityPost)
-            .where(CommunityPost.id == post_id)
-            .values(like_count=CommunityPost.like_count - 1)
-        )
-        await self._session.flush()
+        if result.rowcount:
+            await self._session.execute(
+                update(CommunityPost)
+                .where(CommunityPost.id == post_id)
+                .values(like_count=func.greatest(CommunityPost.like_count - 1, 0))
+            )
+            await self._session.flush()
+
         return False, await self._get_post_like_count(post_id)
 
     async def check_like_exists(
@@ -317,7 +318,7 @@ class CommunityRepository:
         if author_mode == "anonymous":
             return None
 
-        stmt = select(User.full_name).where(
+        stmt = select(User.username).where(
             User.id == user_id,
             User.deleted_at.is_(None),
             User.is_active.is_(True),
@@ -325,13 +326,49 @@ class CommunityRepository:
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def get_comment_by_id(self, comment_id: UUID) -> CommunityComment | None:
+        """Retorna comentário por ID — ignora soft-deleted."""
+        stmt = select(CommunityComment).where(
+            CommunityComment.id == comment_id,
+            CommunityComment.deleted_at.is_(None),
+        )
+        result = await self._session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def soft_delete_comment(self, comment_id: UUID) -> CommunityComment | None:
+        """Soft delete de comentário e decrementa contador do post."""
+        comment = await self.get_comment_by_id(comment_id)
+        if comment is None:
+            return None
+
+        stmt = (
+            update(CommunityComment)
+            .where(CommunityComment.id == comment_id)
+            .values(deleted_at=datetime.now(UTC))
+            .returning(CommunityComment)
+        )
+        result = await self._session.execute(stmt)
+        deleted_comment = result.scalar_one_or_none()
+        if deleted_comment is None:
+            return None
+
+        await self._session.execute(
+            update(CommunityPost)
+            .where(CommunityPost.id == comment.post_id)
+            .values(comment_count=func.greatest(CommunityPost.comment_count - 1, 0))
+        )
+        await self._session.flush()
+        return deleted_comment
+
     async def check_comment_ownership(
         self,
         comment_id: UUID,
         user_id: UUID,
     ) -> bool:
         """Verifica se o usuário é dono do comentário via anonymous_id."""
-        anonymous_id = await self.get_or_create_anonymous_id(user_id)
+        anonymous_id = await self.get_anonymous_id(user_id)
+        if anonymous_id is None:
+            return False
         stmt = select(CommunityComment.id).where(
             and_(
                 CommunityComment.id == comment_id,

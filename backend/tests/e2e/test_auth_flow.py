@@ -82,7 +82,7 @@ async def test_registered_user_can_create_identified_community_post(
         json={
             "title": "Minha experiencia",
             "content": "Estou compartilhando minha jornada de tratamento.",
-            "category": "experience",
+            "categories": ["experience"],
             "author_mode": "identified",
         },
     )
@@ -90,7 +90,7 @@ async def test_registered_user_can_create_identified_community_post(
     assert post_response.status_code == 201
     post = post_response.json()
     assert post["author_mode"] == "identified"
-    assert post["author_display_name"] == "Community Author"
+    assert post["author_display_name"] == "communityprofile"
     assert "user_id" not in post
 
 

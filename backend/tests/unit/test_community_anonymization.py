@@ -10,7 +10,7 @@ def test_post_create_title_min_length():
         PostCreate(
             title="ab",
             content="Valid content",
-            category="experience",
+            categories=["experience"],
             author_mode="anonymous",
         )
 
@@ -21,7 +21,7 @@ def test_post_create_title_max_length():
         PostCreate(
             title="a" * 201,
             content="Valid content",
-            category="experience",
+            categories=["experience"],
             author_mode="anonymous",
         )
 
@@ -32,7 +32,7 @@ def test_post_create_content_min_length():
         PostCreate(
             title="Valid title",
             content="short",
-            category="experience",
+            categories=["experience"],
             author_mode="anonymous",
         )
 
@@ -43,41 +43,48 @@ def test_post_create_content_max_length():
         PostCreate(
             title="Valid title",
             content="a" * 5001,
-            category="experience",
+            categories=["experience"],
             author_mode="anonymous",
         )
 
 
-def test_post_create_category_must_be_valid():
-    """Post category must be one of: experience, question, support, news."""
+def test_post_create_categories_must_be_valid():
+    """Post categories must be one of: experience, question, support, news."""
     with pytest.raises(ValidationError):
         PostCreate(
             title="Valid title",
             content="Valid content",
-            category="invalid",
+            categories=["invalid"],
             author_mode="anonymous",
         )
 
-    # Valid categories should pass
     for category in ["experience", "question", "support", "news"]:
         PostCreate(
             title="Valid title",
             content="Valid content",
-            category=category,
+            categories=[category],
             author_mode="anonymous",
         )
+
+    post = PostCreate(
+        title="Valid title",
+        content="Valid content",
+        categories=["experience", "support"],
+        author_mode="anonymous",
+    )
+    assert post.categories == ["experience", "support"]
 
 
 def test_post_create_author_mode_is_required_and_valid():
     """User must explicitly choose anonymous or identified posting."""
     with pytest.raises(ValidationError):
-        PostCreate(title="Valid title", content="Valid content", category="experience")
+        PostCreate(title="Valid title", content="Valid content", categories=["experience"])
 
     with pytest.raises(ValidationError):
         PostCreate(
             title="Valid title",
             content="Valid content",
-            category="experience",
+            categories=["experience"],
             author_mode="invalid",
         )
 
@@ -85,7 +92,7 @@ def test_post_create_author_mode_is_required_and_valid():
         post = PostCreate(
             title="Valid title",
             content="Valid content",
-            category="experience",
+            categories=["experience"],
             author_mode=author_mode,
         )
         assert post.author_mode == author_mode
@@ -137,7 +144,7 @@ def test_post_response_never_exposes_user_id():
         "author_display_name": None,
         "title": "Test Post",
         "content": "Test content",
-        "category": "experience",
+        "categories": ["experience"],
         "is_pinned": False,
         "is_moderated": False,
         "like_count": 0,

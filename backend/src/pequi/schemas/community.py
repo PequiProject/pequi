@@ -1,7 +1,9 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+POST_CATEGORIES = frozenset({"experience", "question", "support", "news"})
 
 
 class PostCreate(BaseModel):
@@ -11,16 +13,29 @@ class PostCreate(BaseModel):
 
     title: str = Field(..., min_length=3, max_length=200, description="Post title")
     content: str = Field(..., min_length=10, max_length=5000, description="Post content")
-    category: str = Field(
+    categories: list[str] = Field(
         ...,
-        pattern="^(experience|question|support|news)$",
-        description="Post category",
+        min_length=1,
+        max_length=4,
+        description="Post categories",
     )
     author_mode: str = Field(
         ...,
         pattern="^(anonymous|identified)$",
         description="Public author mode",
     )
+
+    @field_validator("categories")
+    @classmethod
+    def validate_categories(cls, value: list[str]) -> list[str]:
+        if len(set(value)) != len(value):
+            raise ValueError("Duplicate categories are not allowed")
+
+        invalid = [item for item in value if item not in POST_CATEGORIES]
+        if invalid:
+            raise ValueError(f"Invalid categories: {', '.join(invalid)}")
+
+        return value
 
 
 class CommentCreate(BaseModel):
@@ -45,7 +60,7 @@ class PostResponse(BaseModel):
     author_display_name: str | None = None
     title: str
     content: str
-    category: str
+    categories: list[str]
     is_pinned: bool
     is_moderated: bool
     like_count: int

@@ -11,6 +11,7 @@ from pequi.schemas.community import CommentCreate, PostCreate
 from pequi.use_cases.create_comment import CreateCommentUseCase
 from pequi.use_cases.create_post import CreatePostUseCase
 from pequi.use_cases.deanonymize import DeanonymizeUseCase
+from pequi.use_cases.delete_comment import DeleteCommentUseCase
 from pequi.use_cases.delete_post import DeletePostUseCase
 from pequi.use_cases.get_post import GetPostUseCase
 from pequi.use_cases.list_comments import ListCommentsUseCase
@@ -50,7 +51,7 @@ async def test_patient_creates_post_anonymously(create_tables, db_session):
     data = PostCreate(
         title="Minha experiência com o tratamento",
         content="Estou compartilhando minha jornada...",
-        category="experience",
+        categories=["experience"],
         author_mode="anonymous",
     )
 
@@ -72,7 +73,7 @@ async def test_patient_creates_post_anonymously(create_tables, db_session):
 
 @pytest.mark.asyncio
 async def test_patient_creates_identified_post_without_exposing_user_id(create_tables, db_session):
-    """Identified posts expose chosen display name, never user_id."""
+    """Identified posts expose username, never user_id."""
     health_unit = await _create_health_unit(db_session)
     patient_user = await _create_user(db_session, email="identified@test.com", role="patient")
     await _create_patient(db_session, user=patient_user, health_unit=health_unit)
@@ -80,7 +81,7 @@ async def test_patient_creates_identified_post_without_exposing_user_id(create_t
     data = PostCreate(
         title="Minha experiência identificada",
         content="Quero aparecer com meu nome neste relato.",
-        category="experience",
+        categories=["experience"],
         author_mode="identified",
     )
 
@@ -91,7 +92,7 @@ async def test_patient_creates_identified_post_without_exposing_user_id(create_t
 
     response_dict = result.model_dump()
     assert response_dict["author_mode"] == "identified"
-    assert response_dict["author_display_name"] == patient_user.full_name
+    assert response_dict["author_display_name"] == patient_user.username
     assert "user_id" not in response_dict
 
 
@@ -107,12 +108,12 @@ async def test_anonymous_id_is_stable_for_user(create_tables, db_session):
     use_case = CreatePostUseCase(community_repo, patient_repo)
 
     data1 = PostCreate(
-        title="Post 1", content="Content 123", category="experience", author_mode="anonymous"
+        title="Post 1", content="Content 123", categories=["experience"], author_mode="anonymous"
     )
     post1 = await use_case.execute(patient_user.id, data1)
 
     data2 = PostCreate(
-        title="Post 2", content="Content 456", category="question", author_mode="anonymous"
+        title="Post 2", content="Content 456", categories=["question"], author_mode="anonymous"
     )
     post2 = await use_case.execute(patient_user.id, data2)
 
@@ -134,7 +135,7 @@ async def test_different_users_have_different_anonymous_ids(create_tables, db_se
     use_case = CreatePostUseCase(community_repo, patient_repo)
 
     data = PostCreate(
-        title="Test", content="Test content", category="experience", author_mode="anonymous"
+        title="Test", content="Test content", categories=["experience"], author_mode="anonymous"
     )
     post1 = await use_case.execute(user1.id, data)
     post2 = await use_case.execute(user2.id, data)
@@ -155,7 +156,7 @@ async def test_user_id_never_appears_in_post_response(create_tables, db_session)
     use_case = CreatePostUseCase(community_repo, patient_repo)
 
     data = PostCreate(
-        title="Test", content="Test content", category="experience", author_mode="anonymous"
+        title="Test", content="Test content", categories=["experience"], author_mode="anonymous"
     )
     result = await use_case.execute(patient_user.id, data)
 
@@ -177,7 +178,7 @@ async def test_patient_can_comment_on_post(create_tables, db_session):
 
     # Create post
     post_data = PostCreate(
-        title="Test", content="Test content", category="experience", author_mode="anonymous"
+        title="Test", content="Test content", categories=["experience"], author_mode="anonymous"
     )
     post_use_case = CreatePostUseCase(community_repo, patient_repo)
     post = await post_use_case.execute(patient_user.id, post_data)
@@ -197,10 +198,8 @@ async def test_patient_can_comment_on_post(create_tables, db_session):
 
 
 @pytest.mark.asyncio
-async def test_duplicate_like_returns_409_conflict(create_tables, db_session):
-    """Duplicate like returns 409 Conflict (PEQ-108)."""
-    from pequi.core.exceptions import ConflictError
-
+async def test_toggle_like_adds_and_removes(create_tables, db_session):
+    """Toggle like adds on first call and removes on second call."""
     health_unit = await _create_health_unit(db_session)
     patient_user = await _create_user(db_session, email="patient12@test.com", role="patient")
     await _create_patient(db_session, user=patient_user, health_unit=health_unit)
@@ -208,22 +207,20 @@ async def test_duplicate_like_returns_409_conflict(create_tables, db_session):
     community_repo = CommunityRepository(db_session)
     patient_repo = PatientRepository(db_session)
 
-    # Create post
     post_data = PostCreate(
-        title="Test", content="Test content", category="experience", author_mode="anonymous"
+        title="Test", content="Test content", categories=["experience"], author_mode="anonymous"
     )
     post_use_case = CreatePostUseCase(community_repo, patient_repo)
     post = await post_use_case.execute(patient_user.id, post_data)
 
-    # Like post (should succeed)
     like_use_case = ToggleLikeUseCase(community_repo, patient_repo)
     result1 = await like_use_case.execute(patient_user.id, post.id)
     assert result1["liked"] is True
     assert result1["like_count"] == 1
 
-    # Try to like again (should return 409 Conflict)
-    with pytest.raises(ConflictError):
-        await like_use_case.execute(patient_user.id, post.id)
+    result2 = await like_use_case.execute(patient_user.id, post.id)
+    assert result2["liked"] is False
+    assert result2["like_count"] == 0
 
 
 @pytest.mark.asyncio
@@ -238,7 +235,7 @@ async def test_list_posts_excludes_moderated_content(create_tables, db_session):
 
     # Create two posts
     post_data = PostCreate(
-        title="Test", content="Test content", category="experience", author_mode="anonymous"
+        title="Test", content="Test content", categories=["experience"], author_mode="anonymous"
     )
     post_use_case = CreatePostUseCase(community_repo, patient_repo)
     post1 = await post_use_case.execute(patient_user.id, post_data)
@@ -268,7 +265,7 @@ async def test_user_can_delete_own_post(create_tables, db_session):
 
     # Create post
     post_data = PostCreate(
-        title="Test", content="Test content", category="experience", author_mode="anonymous"
+        title="Test", content="Test content", categories=["experience"], author_mode="anonymous"
     )
     post_use_case = CreatePostUseCase(community_repo, patient_repo)
     post = await post_use_case.execute(patient_user.id, post_data)
@@ -297,7 +294,7 @@ async def test_user_cannot_delete_others_post(create_tables, db_session):
 
     # Create post as user1
     post_data = PostCreate(
-        title="Test", content="Test content", category="experience", author_mode="anonymous"
+        title="Test", content="Test content", categories=["experience"], author_mode="anonymous"
     )
     post_use_case = CreatePostUseCase(community_repo, patient_repo)
     post = await post_use_case.execute(user1.id, post_data)
@@ -306,6 +303,63 @@ async def test_user_cannot_delete_others_post(create_tables, db_session):
     delete_use_case = DeletePostUseCase(community_repo)
     with pytest.raises(ForbiddenError):
         await delete_use_case.execute(user2.id, post.id)
+
+
+@pytest.mark.asyncio
+async def test_user_can_delete_own_comment(create_tables, db_session):
+    """User can delete their own comment (soft delete)."""
+    health_unit = await _create_health_unit(db_session)
+    patient_user = await _create_user(db_session, email="patient-comment-del@test.com", role="patient")
+    await _create_patient(db_session, user=patient_user, health_unit=health_unit)
+
+    community_repo = CommunityRepository(db_session)
+    patient_repo = PatientRepository(db_session)
+
+    post_data = PostCreate(
+        title="Test", content="Test content", categories=["experience"], author_mode="anonymous"
+    )
+    post = await CreatePostUseCase(community_repo, patient_repo).execute(patient_user.id, post_data)
+
+    comment = await CreateCommentUseCase(community_repo, patient_repo).execute(
+        patient_user.id,
+        post.id,
+        CommentCreate(content="Comentário temporário", author_mode="anonymous"),
+    )
+
+    await DeleteCommentUseCase(community_repo).execute(patient_user.id, post.id, comment.id)
+
+    list_use_case = ListCommentsUseCase(community_repo)
+    result = await list_use_case.execute(post.id)
+    assert len(result.items) == 0
+
+    updated_post = await community_repo.get_post_by_id(post.id)
+    assert updated_post.comment_count == 0
+
+
+@pytest.mark.asyncio
+async def test_user_cannot_delete_others_comment(create_tables, db_session):
+    """User cannot delete another user's comment."""
+    health_unit = await _create_health_unit(db_session)
+    user1 = await _create_user(db_session, email="comment-user1@test.com", role="patient")
+    user2 = await _create_user(db_session, email="comment-user2@test.com", role="patient")
+    await _create_patient(db_session, user=user1, health_unit=health_unit)
+    await _create_patient(db_session, user=user2, health_unit=health_unit)
+
+    community_repo = CommunityRepository(db_session)
+    patient_repo = PatientRepository(db_session)
+
+    post_data = PostCreate(
+        title="Test", content="Test content", categories=["experience"], author_mode="anonymous"
+    )
+    post = await CreatePostUseCase(community_repo, patient_repo).execute(user1.id, post_data)
+    comment = await CreateCommentUseCase(community_repo, patient_repo).execute(
+        user1.id,
+        post.id,
+        CommentCreate(content="Comentário do user1", author_mode="anonymous"),
+    )
+
+    with pytest.raises(ForbiddenError):
+        await DeleteCommentUseCase(community_repo).execute(user2.id, post.id, comment.id)
 
 
 @pytest.mark.asyncio
@@ -327,7 +381,7 @@ async def test_admin_can_moderate_post(create_tables, db_session):
 
     # Create post
     post_data = PostCreate(
-        title="Test", content="Test content", category="experience", author_mode="anonymous"
+        title="Test", content="Test content", categories=["experience"], author_mode="anonymous"
     )
     post_use_case = CreatePostUseCase(community_repo, patient_repo)
     post = await post_use_case.execute(patient_user.id, post_data)
@@ -371,7 +425,7 @@ async def test_admin_can_deanonymize_with_audit(create_tables, db_session):
 
     # Create post
     post_data = PostCreate(
-        title="Test", content="Test content", category="experience", author_mode="anonymous"
+        title="Test", content="Test content", categories=["experience"], author_mode="anonymous"
     )
     post_use_case = CreatePostUseCase(community_repo, patient_repo)
     post = await post_use_case.execute(patient_user.id, post_data)
@@ -413,7 +467,7 @@ async def test_soft_deleted_posts_not_visible(create_tables, db_session):
 
     # Create and delete post
     post_data = PostCreate(
-        title="Test", content="Test content", category="experience", author_mode="anonymous"
+        title="Test", content="Test content", categories=["experience"], author_mode="anonymous"
     )
     post_use_case = CreatePostUseCase(community_repo, patient_repo)
     post = await post_use_case.execute(patient_user.id, post_data)
@@ -443,7 +497,7 @@ async def test_list_comments_for_post(create_tables, db_session):
 
     # Create post
     post_data = PostCreate(
-        title="Test", content="Test content", category="experience", author_mode="anonymous"
+        title="Test", content="Test content", categories=["experience"], author_mode="anonymous"
     )
     post_use_case = CreatePostUseCase(community_repo, patient_repo)
     post = await post_use_case.execute(patient_user.id, post_data)

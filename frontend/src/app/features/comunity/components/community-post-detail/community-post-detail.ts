@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, input, output, signal } from '@angular/core';
+import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   LucideAngularModule,
@@ -9,20 +9,23 @@ import {
   LucideTrash2,
   LucideX,
 } from 'lucide-angular';
-import type { CommunityComment, CommunityPost } from '../../models/community.models';
+import type { CommunityAuthorMode, CommunityComment, CommunityPost } from '../../models/community.models';
+import { CommunityProfileService } from '../../services/community-profile.service';
 import { CommunityAuthorAvatar } from '../community-author-avatar/community-author-avatar';
+import { CommunityAuthorModePicker } from '../community-author-mode-picker/community-author-mode-picker';
 import { CommunityDeleteConfirm } from '../community-delete-confirm/community-delete-confirm';
 
 export type AddCommentEvent = {
   postId: string;
   content: string;
+  authorMode: CommunityAuthorMode;
   parentCommentId?: string;
+  replyToAuthorName?: string;
 };
 
 export type DeleteCommentEvent = {
   postId: string;
   commentId: string;
-  parentCommentId?: string;
 };
 
 @Component({
@@ -33,12 +36,15 @@ export type DeleteCommentEvent = {
     FormsModule,
     LucideAngularModule,
     CommunityAuthorAvatar,
+    CommunityAuthorModePicker,
     CommunityDeleteConfirm,
   ],
   templateUrl: './community-post-detail.html',
   styleUrl: './community-post-detail.css',
 })
 export class CommunityPostDetail {
+  private readonly profileService = inject(CommunityProfileService);
+
   readonly post = input.required<CommunityPost>();
 
   readonly close = output<void>();
@@ -48,6 +54,9 @@ export class CommunityPostDetail {
   readonly deletePost = output<string>();
 
   readonly commentDraft = signal('');
+  readonly authorMode = signal<CommunityAuthorMode>(
+    this.profileService.selectedProfile() === 'anonymous' ? 'anonymous' : 'public',
+  );
   readonly replyingTo = signal<CommunityComment | null>(null);
   readonly pendingDelete = signal<DeleteCommentEvent | null>(null);
   readonly pendingPostDelete = signal(false);
@@ -80,6 +89,10 @@ export class CommunityPostDetail {
     this.replyingTo.set(null);
   }
 
+  onAuthorModeChange(mode: CommunityAuthorMode): void {
+    this.authorMode.set(mode);
+  }
+
   submitComment(): void {
     const content = this.commentDraft().trim();
     if (!content) return;
@@ -88,17 +101,18 @@ export class CommunityPostDetail {
     this.addComment.emit({
       postId: this.post().id,
       content,
+      authorMode: this.authorMode(),
       parentCommentId: parent?.id,
+      replyToAuthorName: parent?.authorName,
     });
     this.commentDraft.set('');
     this.replyingTo.set(null);
   }
 
-  requestDelete(commentId: string, parentCommentId?: string): void {
+  requestDelete(commentId: string): void {
     this.pendingDelete.set({
       postId: this.post().id,
       commentId,
-      parentCommentId,
     });
   }
 
@@ -148,9 +162,5 @@ export class CommunityPostDetail {
 
   trackComment(_index: number, comment: CommunityComment): string {
     return comment.id;
-  }
-
-  trackReply(_index: number, reply: CommunityComment): string {
-    return reply.id;
   }
 }

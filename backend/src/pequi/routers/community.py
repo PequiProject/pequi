@@ -26,6 +26,7 @@ from pequi.schemas.community import (
 from pequi.use_cases.create_comment import CreateCommentUseCase
 from pequi.use_cases.create_post import CreatePostUseCase
 from pequi.use_cases.deanonymize import DeanonymizeUseCase
+from pequi.use_cases.delete_comment import DeleteCommentUseCase
 from pequi.use_cases.delete_post import DeletePostUseCase
 from pequi.use_cases.get_post import GetPostUseCase
 from pequi.use_cases.list_comments import ListCommentsUseCase
@@ -145,6 +146,22 @@ async def list_comments(
     return await use_case.execute(post_id, limit=limit, offset=offset)
 
 
+@router.delete("/posts/{post_id}/comments/{comment_id}", response_model=CommentResponse)
+@user_limiter.limit("30/hour")
+async def delete_comment(
+    request: Request,
+    post_id: UUID,
+    comment_id: UUID,
+    actor: tuple[UUID, str] = Depends(get_actor_from_token),
+    session: AsyncSession = Depends(get_db),
+) -> CommentResponse:
+    """Soft delete de comentário — próprio autor ou admin."""
+    user_id, role = actor
+    community_repo, _ = _community_repos(session)
+    use_case = DeleteCommentUseCase(community_repo)
+    return await use_case.execute(user_id, post_id, comment_id, is_admin=(role == "admin"))
+
+
 @router.post("/posts/{post_id}/like")
 @user_limiter.limit("60/hour")
 async def toggle_like(
@@ -153,7 +170,7 @@ async def toggle_like(
     user_id: UUID = Depends(get_current_patient),
     session: AsyncSession = Depends(get_db),
 ) -> dict:
-    """Toggle like em post — apenas pacientes."""
+    """Toggle like em post — adiciona ou remove like do paciente autenticado."""
     community_repo, patient_repo = _community_repos(session)
     use_case = ToggleLikeUseCase(community_repo, patient_repo)
     return await use_case.execute(user_id, post_id)

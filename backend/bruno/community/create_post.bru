@@ -22,7 +22,7 @@ body:json {
   {
     "title": "Minha experiencia com o tratamento",
     "content": "Estou compartilhando minha jornada de tratamento...",
-    "category": "experience",
+    "categories": ["experience", "support"],
     "author_mode": "anonymous"
   }
 }
@@ -35,7 +35,7 @@ assert {
   res.body.author_display_name: isNull
   res.body.title: isDefined
   res.body.content: isDefined
-  res.body.category: isDefined
+  res.body.categories: isDefined
   res.body.user_id: isNotDefined
 }
 
@@ -43,7 +43,7 @@ docs {
   Cria post na comunidade (PEQ-106).
 
   - Apenas pacientes podem criar posts.
-  - category: experience | question | support | news
+  - categories: experience | question | support | news (1 a 4 tags)
   - author_mode: anonymous | identified
   - Sistema gera anonymous_id automaticamente.
   - Nunca expoe user_id na resposta.

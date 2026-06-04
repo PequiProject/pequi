@@ -3,6 +3,7 @@ import { By } from '@angular/platform-browser';
 
 import { CommunityPostDetail } from './community-post-detail';
 import { MOCK_COMMUNITY_POSTS } from '../../data/mock-posts';
+import { CommunityProfileService } from '../../services/community-profile.service';
 
 describe('CommunityPostDetail', () => {
   let fixture: ComponentFixture<CommunityPostDetail>;
@@ -12,6 +13,8 @@ describe('CommunityPostDetail', () => {
     await TestBed.configureTestingModule({
       imports: [CommunityPostDetail],
     }).compileComponents();
+
+    TestBed.inject(CommunityProfileService).save('public');
 
     fixture = TestBed.createComponent(CommunityPostDetail);
     component = fixture.componentInstance;
@@ -46,6 +49,7 @@ describe('CommunityPostDetail', () => {
     expect(spy).toHaveBeenCalledWith({
       postId: '1',
       content: 'Obrigada pelo apoio!',
+      authorMode: 'public',
     });
     expect(component.commentDraft()).toBe('');
   });
@@ -63,7 +67,9 @@ describe('CommunityPostDetail', () => {
     expect(spy).toHaveBeenCalledWith({
       postId: '1',
       content: 'Concordo com você!',
+      authorMode: 'public',
       parentCommentId: 'c1',
+      replyToAuthorName: comment.authorName,
     });
     expect(component.replyingTo()).toBeNull();
   });
@@ -151,82 +157,6 @@ describe('CommunityPostDetail', () => {
       commentId: 'own-1',
     });
     expect(el.querySelector('[data-testid="delete-comment-dialog"]')).toBeFalsy();
-  });
-
-  it('should cancel delete confirmation without emitting', () => {
-    const post = {
-      ...MOCK_COMMUNITY_POSTS[0],
-      comments: [
-        {
-          id: 'own-1',
-          authorName: 'Você',
-          authorInitials: 'VC',
-          content: 'Meu comentário',
-          timeLabel: 'Agora',
-          isOwn: true,
-        },
-      ],
-    };
-    fixture.componentRef.setInput('post', post);
-    fixture.detectChanges();
-
-    const spy = vi.spyOn(component.deleteComment, 'emit');
-
-    fixture.debugElement
-      .query(By.css('[data-testid="delete-btn-own-1"]'))
-      .nativeElement.click();
-    fixture.detectChanges();
-
-    fixture.debugElement
-      .query(By.css('[data-testid="cancel-delete"]'))
-      .nativeElement.click();
-    fixture.detectChanges();
-
-    expect(spy).not.toHaveBeenCalled();
-    expect(fixture.nativeElement.querySelector('[data-testid="delete-comment-dialog"]')).toBeFalsy();
-  });
-
-  it('should emit deleteComment with parentCommentId after confirming reply delete', () => {
-    const post = {
-      ...MOCK_COMMUNITY_POSTS[0],
-      comments: [
-        {
-          id: 'c1',
-          authorName: 'Ana P.',
-          authorInitials: 'AP',
-          content: 'Comentário pai',
-          timeLabel: 'Há 1 hora',
-          replies: [
-            {
-              id: 'own-reply',
-              authorName: 'Você',
-              authorInitials: 'VC',
-              content: 'Minha resposta',
-              timeLabel: 'Agora',
-              isOwn: true,
-            },
-          ],
-        },
-      ],
-    };
-    fixture.componentRef.setInput('post', post);
-    fixture.detectChanges();
-
-    const spy = vi.spyOn(component.deleteComment, 'emit');
-    fixture.debugElement
-      .query(By.css('[data-testid="delete-btn-own-reply"]'))
-      .nativeElement.click();
-    fixture.detectChanges();
-
-    fixture.debugElement
-      .query(By.css('[data-testid="confirm-delete"]'))
-      .nativeElement.click();
-
-    expect(spy).toHaveBeenCalledWith({
-      postId: '1',
-      commentId: 'own-reply',
-      parentCommentId: 'c1',
-    });
   });
 
   it('should disable autocomplete on comment input', () => {

@@ -24,6 +24,7 @@
         <app-community-author-avatar
           [initials]="post().authorInitials"
           [anonymous]="post().isAnonymous ?? false"
+          [imageUrl]="post().authorAvatarUrl ?? null"
         />
         <div>
           <p class="font-semibold text-[#373831]">{{ post().authorName }}</p>
@@ -43,7 +44,7 @@
             type="button"
             data-testid="delete-post-detail-btn"
             (click)="requestPostDelete()"
-            class="rounded-full p-2 text-[#B91C1C] transition hover:bg-[#FEE2E2] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#B91C1C]"
+            class="cursor-pointer rounded-full p-2 text-[#B91C1C] transition hover:bg-[#FEE2E2] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#B91C1C]"
             aria-label="Excluir post"
           >
             <lucide-icon [name]="LucideTrash2" [size]="16" [strokeWidth]="2" aria-hidden="true" />
@@ -102,6 +103,7 @@
                 size="sm"
                 [initials]="comment.authorInitials"
                 [anonymous]="comment.isAnonymous ?? false"
+                [imageUrl]="comment.authorAvatarUrl ?? null"
               />
               <div class="min-w-0 flex-1">
                 <p class="font-semibold text-[#373831]">{{ comment.authorName }}</p>
@@ -110,7 +112,7 @@
               @if (comment.isOwn) {
                 <button
                   type="button"
-                  class="shrink-0 rounded-full p-2 text-[#B91C1C] transition hover:bg-[#FEE2E2] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#B91C1C]"
+                  class="cursor-pointer shrink-0 rounded-full p-2 text-[#B91C1C] transition hover:bg-[#FEE2E2] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#B91C1C]"
                   [attr.data-testid]="'delete-btn-' + comment.id"
                   (click)="requestDelete(comment.id)"
                   aria-label="Excluir comentário"
@@ -129,43 +131,6 @@
             >
               Responder
             </button>
-
-            @if (comment.replies?.length) {
-              <ul class="mt-3 space-y-3 border-l-2 border-[#E0E7FF] pl-4">
-                @for (reply of comment.replies; track trackReply($index, reply)) {
-                  <li
-                    class="rounded-xl bg-[#FAFAF9] p-3"
-                    [attr.data-testid]="'reply-' + reply.id"
-                  >
-                    <div class="mb-1 flex items-start gap-2">
-                      <div class="min-w-0 flex-1">
-                        <span class="text-sm font-semibold text-[#373831]">{{
-                          reply.authorName
-                        }}</span>
-                        <span class="ml-2 text-xs text-[#64655C]">{{ reply.timeLabel }}</span>
-                      </div>
-                      @if (reply.isOwn) {
-                        <button
-                          type="button"
-                          class="shrink-0 rounded-full p-1.5 text-[#B91C1C] transition hover:bg-[#FEE2E2] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#B91C1C]"
-                          [attr.data-testid]="'delete-btn-' + reply.id"
-                          (click)="requestDelete(reply.id, comment.id)"
-                          aria-label="Excluir resposta"
-                        >
-                          <lucide-icon
-                            [name]="LucideTrash2"
-                            [size]="14"
-                            [strokeWidth]="2"
-                            aria-hidden="true"
-                          />
-                        </button>
-                      }
-                    </div>
-                    <p class="text-sm text-[#64655C]">{{ reply.content }}</p>
-                  </li>
-                }
-              </ul>
-            }
           </li>
         }
       </ul>
@@ -196,37 +161,44 @@
     }
 
     <form
-      class="mx-auto flex w-full max-w-lg items-center gap-2 sm:max-w-2xl"
+      class="mx-auto flex w-full max-w-lg flex-col gap-2 sm:max-w-2xl"
       autocomplete="off"
       (submit)="$event.preventDefault(); submitComment()"
     >
-      <label class="sr-only" for="comment-input">{{ commentPlaceholder() }}</label>
-      <input
-        id="comment-input"
-        type="text"
-        name="pequi-community-comment"
-        autocomplete="off"
-        autocorrect="on"
-        autocapitalize="sentences"
-        spellcheck="true"
-        data-lpignore="true"
-        data-1p-ignore
-        data-form-type="other"
-        data-testid="comment-input"
-        [value]="commentDraft()"
-        (input)="onCommentInput($event)"
-        [placeholder]="commentPlaceholder()"
-        class="min-w-0 flex-1 rounded-full border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] placeholder:text-[#A8A29E] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[#4338CA]/30 sm:text-base"
+      <app-community-author-mode-picker
+        [selected]="authorMode()"
+        (modeChange)="onAuthorModeChange($event)"
       />
-      <button
-        type="submit"
-        data-testid="submit-comment"
-        class="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-[#4338CA] text-white transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4338CA] disabled:cursor-not-allowed disabled:opacity-50"
-        [disabled]="!commentDraft().trim()"
-        aria-label="Enviar comentário"
-      >
-        <lucide-icon [name]="LucideSend" [size]="18" [strokeWidth]="2" />
-      </button>
+
+      <div class="flex items-center gap-2">
+        <label class="sr-only" for="comment-input">{{ commentPlaceholder() }}</label>
+        <input
+          id="comment-input"
+          type="text"
+          name="pequi-community-comment"
+          autocomplete="off"
+          autocorrect="on"
+          autocapitalize="sentences"
+          spellcheck="true"
+          data-lpignore="true"
+          data-1p-ignore
+          data-form-type="other"
+          data-testid="comment-input"
+          [value]="commentDraft()"
+          (input)="onCommentInput($event)"
+          [placeholder]="commentPlaceholder()"
+          class="min-w-0 flex-1 rounded-full border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] placeholder:text-[#A8A29E] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[#4338CA]/30 sm:text-base"
+        />
+        <button
+          type="submit"
+          data-testid="submit-comment"
+          class="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-[#4338CA] text-white transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4338CA] disabled:cursor-not-allowed disabled:opacity-50"
+          [disabled]="!commentDraft().trim()"
+          aria-label="Enviar comentário"
+        >
+          <lucide-icon [name]="LucideSend" [size]="18" [strokeWidth]="2" />
+        </button>
+      </div>
     </form>
   </footer>
 
