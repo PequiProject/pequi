@@ -201,7 +201,7 @@ jobs:
           sleep 15
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
             --max-time 60 --retry 5 --retry-delay 15 \
-            "http://${{ secrets.EC2_HOST }}/health")
+            "http://${{ secrets.EC2_HOST_PROD }}/health")
           echo "HTTP status: $STATUS"
           if [ "$STATUS" != "200" ]; then
             echo "::error::Health check falhou — HTTP $STATUS"
