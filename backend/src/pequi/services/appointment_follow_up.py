@@ -83,8 +83,7 @@ def _build_neurological_record(
     raw: NeurologicalAssessmentDraftIn,
 ) -> dict[str, Any] | None:
     has_gif = any(
-        value != ""
-        for value in (raw.gif_eye, raw.gif_hand, raw.gif_foot, raw.highest_gif)
+        value != "" for value in (raw.gif_eye, raw.gif_hand, raw.gif_foot, raw.highest_gif)
     )
     has_details = (
         raw.assessment_date != ""

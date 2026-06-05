@@ -64,9 +64,7 @@ class SavePatientTreatmentRecordUseCase:
             raise ValidationFailedError("Perfil do paciente não encontrado após atualização.")
 
         stored = (
-            refreshed.treatment_record
-            if isinstance(refreshed.treatment_record, dict)
-            else None
+            refreshed.treatment_record if isinstance(refreshed.treatment_record, dict) else None
         )
         return storage_to_treatment_record(
             stored,

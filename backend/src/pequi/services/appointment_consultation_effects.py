@@ -61,9 +61,7 @@ class AppointmentConsultationEffects:
         user_id: UUID,
         follow_up: AppointmentFollowUpDraftIn,
     ) -> None:
-        update_dose = (
-            follow_up.register_supervised_dose and follow_up.update_dose_from_consultation
-        )
+        update_dose = follow_up.register_supervised_dose and follow_up.update_dose_from_consultation
         update_instituted = follow_up.update_instituted_meds_from_consultation
         if not update_dose and not update_instituted:
             return

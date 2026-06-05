@@ -44,7 +44,5 @@ class SavePatientPersonalRecordUseCase:
         if refreshed is None:
             raise ValidationFailedError("Perfil do paciente não encontrado após atualização.")
 
-        stored = (
-            refreshed.personal_record if isinstance(refreshed.personal_record, dict) else None
-        )
+        stored = refreshed.personal_record if isinstance(refreshed.personal_record, dict) else None
         return storage_to_personal_record(stored)

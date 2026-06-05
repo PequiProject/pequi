@@ -34,10 +34,6 @@ class HealthProfessionalRepository:
 
     async def get_first_available(self) -> HealthProfessional | None:
         """Profissional de referência para tratamentos autodeclarados (MVP)."""
-        stmt = (
-            select(HealthProfessional)
-            .where(HealthProfessional.deleted_at.is_(None))
-            .limit(1)
-        )
+        stmt = select(HealthProfessional).where(HealthProfessional.deleted_at.is_(None)).limit(1)
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()

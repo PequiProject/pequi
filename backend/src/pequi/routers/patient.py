@@ -47,7 +47,9 @@ from pequi.use_cases.update_patient_profile import UpdatePatientProfileUseCase
 router = APIRouter()
 
 
-def _treatment_repos(session: AsyncSession) -> tuple[
+def _treatment_repos(
+    session: AsyncSession,
+) -> tuple[
     PatientRepository,
     TreatmentRepository,
     HealthProfessionalRepository,
