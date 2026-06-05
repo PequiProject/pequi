@@ -43,8 +43,9 @@ docs {
   Registra uma dose (tomada, pulada ou supervisionada) para o tratamento.
 
   Regras de negócio:
-  - Paciente: só pode registrar doses NÃO supervisionadas (`supervised: false`)
-    do próprio tratamento ativo.
+  - Paciente: doses diárias com `supervised: false`.
+  - Paciente: dose supervisionada somente com `supervised: true` e `via_consultation: true`
+    (após registrar consulta realizada no app).
   - Profissional: pode registrar doses supervisionadas (`supervised: true`)
     com `registered_by` preenchido automaticamente.
   - Dose duplicada (mesmo `drug_name` + `expected_at` + tratamento) retorna 409.

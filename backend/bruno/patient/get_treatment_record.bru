@@ -1,0 +1,14 @@
+meta {
+  name: Get Treatment Record
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/v1/patients/me/treatment-record
+  auth: bearer
+}
+
+assert {
+  res.status: eq 200
+}

@@ -1,0 +1,16 @@
+meta {
+  name: Get Medication Checklist
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/v1/patients/me/medication-checklist
+  auth: bearer
+}
+
+assert {
+  res.status: eq 200
+  res.body.instituted_medications: isDefined
+  res.body.treatment_start_date: isDefined
+}

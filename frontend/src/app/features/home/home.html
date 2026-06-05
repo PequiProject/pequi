@@ -91,15 +91,29 @@
 
   <section class="summary-section">
     <div class="summary-grid">
-      @for (card of summaryCards; track $index) {
-        <article class="summary-card" [ngClass]="card.backgroundClass">
-          <span class="summary-card__value">{{ card.value }}</span>
-          <span class="summary-card__title">{{ card.title }}</span>
-          @if (card.subtitle) {
-            <span class="summary-card__subtitle">{{ card.subtitle }}</span>
-          }
-        </article>
-      }
+      <article class="summary-card" [ngClass]="medicationSummaryCard.backgroundClass">
+        <span class="summary-card__value">{{ medicationSummaryCard.value }}</span>
+        <span class="summary-card__title">{{ medicationSummaryCard.title }}</span>
+      </article>
+
+      <article
+        class="summary-card summary-card--clickable"
+        [ngClass]="nextAppointmentCard().backgroundClass"
+        [class.summary-card--empty]="!nextAppointmentCard().hasNext"
+        data-testid="next-appointment-card"
+        role="button"
+        tabindex="0"
+        aria-label="Registrar ou atualizar próxima consulta"
+        (click)="openNextAppointment()"
+        (keydown.enter)="openNextAppointment()"
+        (keydown.space)="$event.preventDefault(); openNextAppointment()"
+      >
+        <span class="summary-card__value">{{ nextAppointmentCard().value }}</span>
+        @if (nextAppointmentCard().title) {
+          <span class="summary-card__title">{{ nextAppointmentCard().title }}</span>
+        }
+        <span class="summary-card__subtitle">{{ nextAppointmentCard().subtitle }}</span>
+      </article>
     </div>
   </section>
 

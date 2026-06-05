@@ -1,0 +1,32 @@
+meta {
+  name: Save Personal Record
+  type: http
+  seq: 6
+}
+
+put {
+  url: {{baseUrl}}/v1/patients/me/personal-record
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "cpf": "123.456.789-00",
+    "phone": "62999998888",
+    "email": "contato@exemplo.com",
+    "birth_date": "1990-05-20",
+    "sex": "F",
+    "health_unit": "UBS Centro",
+    "blood_type": "O+"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.phone: eq 62999998888
+}

@@ -289,6 +289,24 @@
   background: #d9eaf0;
 }
 
+.summary-card--clickable {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.summary-card--clickable:hover,
+.summary-card--clickable:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(63, 95, 115, 0.18);
+  outline: none;
+}
+
+.summary-card--empty .summary-card__value {
+  font-size: 0.95rem;
+  line-height: 1.25;
+  max-width: none;
+}
+
 .summary-card__value {
   font-size: 28px;
   line-height: 1.1;

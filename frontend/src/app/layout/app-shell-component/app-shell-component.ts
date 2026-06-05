@@ -6,6 +6,7 @@ import { CommonModule } from '@angular/common';
 import { filter } from 'rxjs/operators';
 import { Menu } from '../../components/menu/menu';
 import { AppHeader, type AppHeaderLayout } from '../../components/app-header/app-header';
+import { PatientProfileService } from '../../features/profile/services/patient-profile.service';
 
 @Component({
   selector: 'app-shell',
@@ -15,6 +16,7 @@ import { AppHeader, type AppHeaderLayout } from '../../components/app-header/app
 })
 export class AppShellComponent {
   private readonly router = inject(Router);
+  private readonly profileService = inject(PatientProfileService);
 
   isMenuCollapsed = false;
 
@@ -23,6 +25,10 @@ export class AppShellComponent {
   readonly quietNotificationBell = signal(false);
 
   constructor() {
+    this.profileService.syncLoginEmailFromAuth();
+    this.profileService.syncPersonalFromApi().subscribe({ error: () => undefined });
+    this.profileService.syncTreatmentFromApi().subscribe({ error: () => undefined });
+
     this.router.events
       .pipe(
         filter((e): e is NavigationEnd => e instanceof NavigationEnd),

@@ -19,6 +19,13 @@ class DoseLogCreate(BaseModel):
     skipped: bool = False
     skip_reason: str | None = Field(default=None, max_length=500)
     supervised: bool = False
+    via_consultation: bool = Field(
+        default=False,
+        description=(
+            "Quando true, paciente pode registrar dose supervisionada "
+            "apenas após consulta na unidade (autodeclaração no app)."
+        ),
+    )
 
     @model_validator(mode="after")
     def validate_skip_and_taken(self) -> "DoseLogCreate":
