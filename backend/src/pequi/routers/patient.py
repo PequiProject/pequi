@@ -10,15 +10,15 @@ from pequi.repositories.health_appointment_repo import HealthAppointmentReposito
 from pequi.repositories.health_professional_repo import HealthProfessionalRepository
 from pequi.repositories.patient_repo import PatientRepository
 from pequi.repositories.treatment_repo import TreatmentRepository
-from pequi.schemas.patient import PatientProfileRead, PatientProfileUpdate
-from pequi.schemas.patient_personal import (
-    PatientPersonalRecordRead,
-    PatientPersonalRecordSave,
-)
 from pequi.schemas.health_appointment import (
     HealthAppointmentCreate,
     HealthAppointmentResponse,
     HealthAppointmentUpdate,
+)
+from pequi.schemas.patient import PatientProfileRead, PatientProfileUpdate
+from pequi.schemas.patient_personal import (
+    PatientPersonalRecordRead,
+    PatientPersonalRecordSave,
 )
 from pequi.schemas.patient_treatment import (
     MedicationChecklistResponse,
@@ -27,14 +27,14 @@ from pequi.schemas.patient_treatment import (
 )
 from pequi.schemas.treatment import TreatmentResponse
 from pequi.use_cases.get_patient_profile import GetPatientProfileUseCase
-from pequi.use_cases.patient_personal_record import (
-    GetPatientPersonalRecordUseCase,
-    SavePatientPersonalRecordUseCase,
-)
 from pequi.use_cases.patient_health_appointment import (
     CreatePatientHealthAppointmentUseCase,
     ListPatientHealthAppointmentsUseCase,
     UpdatePatientHealthAppointmentUseCase,
+)
+from pequi.use_cases.patient_personal_record import (
+    GetPatientPersonalRecordUseCase,
+    SavePatientPersonalRecordUseCase,
 )
 from pequi.use_cases.patient_treatment_record import (
     GetMedicationChecklistUseCase,

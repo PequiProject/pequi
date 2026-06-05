@@ -18,7 +18,11 @@ from pequi.services.appointment_follow_up import build_follow_up_payload
 
 
 class ListPatientHealthAppointmentsUseCase:
-    def __init__(self, patient_repo: PatientRepository, appointment_repo: HealthAppointmentRepository) -> None:
+    def __init__(
+        self,
+        patient_repo: PatientRepository,
+        appointment_repo: HealthAppointmentRepository,
+    ) -> None:
         self._patient_repo = patient_repo
         self._appointment_repo = appointment_repo
 
@@ -81,7 +85,11 @@ class CreatePatientHealthAppointmentUseCase:
             dose_repo,
         )
 
-    async def execute(self, user_id: UUID, data: HealthAppointmentCreate) -> HealthAppointmentResponse:
+    async def execute(
+        self,
+        user_id: UUID,
+        data: HealthAppointmentCreate,
+    ) -> HealthAppointmentResponse:
         patient = await self._patient_repo.get_or_create_by_user_id(user_id)
 
         appointment = PatientHealthAppointment(

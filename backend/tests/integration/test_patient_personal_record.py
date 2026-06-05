@@ -3,18 +3,18 @@ from uuid import uuid4
 
 import pytest
 
+from pequi.core.auth import hash_password, verify_password
+from pequi.core.exceptions import UnauthorizedError
 from pequi.models.user import User
 from pequi.repositories.patient_repo import PatientRepository
 from pequi.repositories.user_repo import UserRepository
+from pequi.schemas.account import ChangePasswordRequest
 from pequi.schemas.patient_personal import PatientPersonalRecordSave
 from pequi.use_cases.change_password import ChangePasswordUseCase
 from pequi.use_cases.patient_personal_record import (
     GetPatientPersonalRecordUseCase,
     SavePatientPersonalRecordUseCase,
 )
-from pequi.schemas.account import ChangePasswordRequest
-from pequi.core.auth import hash_password, verify_password
-from pequi.core.exceptions import UnauthorizedError
 
 
 @pytest.mark.asyncio

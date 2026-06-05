@@ -1,6 +1,6 @@
 """Efeitos colaterais ao concluir uma consulta (tratamento + doses supervisionadas)."""
 
-from datetime import date, datetime, time, timezone
+from datetime import UTC, date, datetime, time
 from uuid import UUID
 
 from pequi.models.treatment import TreatmentStatus
@@ -117,9 +117,9 @@ class AppointmentConsultationEffects:
         expected_at = datetime.combine(
             appointment_date,
             time(8, 0),
-            tzinfo=timezone.utc,
+            tzinfo=UTC,
         )
-        taken_at = datetime.now(timezone.utc)
+        taken_at = datetime.now(UTC)
 
         for drug_name in drug_names:
             try:

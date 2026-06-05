@@ -1,5 +1,4 @@
 import uuid
-from datetime import date
 from uuid import UUID
 
 from pequi.core.exceptions import ValidationFailedError
@@ -64,7 +63,11 @@ class SavePatientTreatmentRecordUseCase:
         if refreshed is None:
             raise ValidationFailedError("Perfil do paciente não encontrado após atualização.")
 
-        stored = refreshed.treatment_record if isinstance(refreshed.treatment_record, dict) else None
+        stored = (
+            refreshed.treatment_record
+            if isinstance(refreshed.treatment_record, dict)
+            else None
+        )
         return storage_to_treatment_record(
             stored,
             diagnosis_date=refreshed.diagnosis_date,

@@ -93,9 +93,7 @@ export class Profile implements OnInit {
   readonly showAvatarMenu = signal(false);
   readonly accountPasswordError = signal<ChangePasswordError | null>(null);
 
-  readonly personalSavedToast = signal(false);
   readonly usernameSavedToast = signal(false);
-  readonly treatmentSavedToast = signal(false);
   readonly accountSavedToast = signal(false);
   readonly avatarRemovedToast = signal(false);
   readonly hasReactionEpisodeAtDiagnosis = signal<YesNoChoice>('');
@@ -310,7 +308,7 @@ export class Profile implements OnInit {
     this.profileService.savePersonal(data).subscribe({
       next: () => {
         this.showEditPersonal.set(false);
-        this.showToast(this.personalSavedToast);
+        this.toastService.success('Dados pessoais salvos.');
       },
       error: (error) => {
         this.toastService.error(
@@ -448,7 +446,7 @@ export class Profile implements OnInit {
 
     if (!this.authService.isAuthenticated()) {
       this.profileService.updateTreatment(treatment);
-      this.showToast(this.treatmentSavedToast);
+      this.toastService.success('Dados de tratamento salvos.');
       return;
     }
 
@@ -457,7 +455,7 @@ export class Profile implements OnInit {
       next: (saved) => {
         this.savingTreatment.set(false);
         this.syncTreatmentForm(saved);
-        this.showToast(this.treatmentSavedToast);
+        this.toastService.success('Dados de tratamento salvos.');
       },
       error: () => {
         this.savingTreatment.set(false);

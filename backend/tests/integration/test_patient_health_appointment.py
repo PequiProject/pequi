@@ -34,7 +34,11 @@ from tests.integration.test_dose_flow import (
 async def test_create_appointment_with_supervised_dose(create_tables, db_session):
     health_unit = await _create_health_unit(db_session)
     patient_user = await _create_user(db_session, email=f"appt-{uuid4()}@test.com", role="patient")
-    prof_user = await _create_user(db_session, email=f"prof-{uuid4()}@test.com", role="health_professional")
+    prof_user = await _create_user(
+        db_session,
+        email=f"prof-{uuid4()}@test.com",
+        role="health_professional",
+    )
     patient = await _create_patient(db_session, user=patient_user, health_unit=health_unit)
     professional = await _create_professional(db_session, user=prof_user, health_unit=health_unit)
     await _create_treatment(db_session, patient=patient, professional=professional)
@@ -94,7 +98,11 @@ async def test_create_appointment_with_supervised_dose(create_tables, db_session
 async def test_complete_scheduled_appointment_updates_same_row(create_tables, db_session):
     health_unit = await _create_health_unit(db_session)
     patient_user = await _create_user(db_session, email=f"upd-{uuid4()}@test.com", role="patient")
-    prof_user = await _create_user(db_session, email=f"prof-u-{uuid4()}@test.com", role="health_professional")
+    prof_user = await _create_user(
+        db_session,
+        email=f"prof-u-{uuid4()}@test.com",
+        role="health_professional",
+    )
     patient = await _create_patient(db_session, user=patient_user, health_unit=health_unit)
     professional = await _create_professional(db_session, user=prof_user, health_unit=health_unit)
     await _create_treatment(db_session, patient=patient, professional=professional)

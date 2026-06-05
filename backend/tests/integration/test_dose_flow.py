@@ -189,7 +189,10 @@ async def test_professional_from_another_unit_cannot_access(create_tables, db_se
 
 
 @pytest.mark.asyncio
-async def test_patient_cannot_register_supervised_dose_without_consultation(create_tables, db_session):
+async def test_patient_cannot_register_supervised_dose_without_consultation(
+    create_tables,
+    db_session,
+):
     """Paciente não pode registrar dose supervisionada fora do fluxo de consulta."""
     health_unit = await _create_health_unit(db_session)
     patient_user = await _create_user(db_session, email="patient4@test.com", role="patient")
