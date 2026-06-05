@@ -1,9 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
-import { vi, describe, beforeEach, it, expect, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { Register } from './register';
 import { AuthService } from '../auth/services/auth-service';
+import { ToastService } from '../../components/toast/toast.service';
 
 describe('Register', () => {
   let component: Register;
@@ -15,19 +17,31 @@ describe('Register', () => {
     register: vi.fn(),
   };
 
+  const toastServiceMock = {
+    success: vi.fn(),
+    warning: vi.fn(),
+    error: vi.fn(),
+  };
+
   beforeEach(async () => {
     authServiceMock.register.mockReset();
+
+    toastServiceMock.success.mockReset();
+    toastServiceMock.warning.mockReset();
+    toastServiceMock.error.mockReset();
 
     await TestBed.configureTestingModule({
       imports: [Register],
       providers: [
         provideRouter([]),
         { provide: AuthService, useValue: authServiceMock },
+        { provide: ToastService, useValue: toastServiceMock },
       ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(Register);
     component = fixture.componentInstance;
+
     router = TestBed.inject(Router);
     navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
 
@@ -53,7 +67,12 @@ describe('Register', () => {
     component.submit();
 
     expect(authServiceMock.register).not.toHaveBeenCalled();
-    expect(component.form.touched).toBe(true);
+
+    expect(toastServiceMock.warning).toHaveBeenCalledWith(
+      'Formulário inválido',
+      'Informe seu nome completo.'
+    );
+
     expect(component.isSubmitting).toBe(false);
   });
 
@@ -69,7 +88,7 @@ describe('Register', () => {
     expect(component.form.get('password')?.invalid).toBe(true);
   });
 
-  it('should show error when passwords do not match', () => {
+  it('should show warning when passwords do not match', () => {
     component.form.setValue({
       full_name: 'Sarah',
       email: 'sarah@test.com',
@@ -79,25 +98,17 @@ describe('Register', () => {
 
     component.submit();
 
-    expect(component.errorMessage).toBe('As senhas não coincidem.');
-    expect(component.successMessage).toBe('');
-    expect(component.isSubmitting).toBe(false);
+    expect(toastServiceMock.warning).toHaveBeenCalledWith(
+      'Senhas diferentes',
+      'As senhas informadas não coincidem.'
+    );
+
     expect(authServiceMock.register).not.toHaveBeenCalled();
+    expect(component.isSubmitting).toBe(false);
   });
 
-  it('should call authService.register with the correct payload', () => {
-    authServiceMock.register.mockReturnValue(
-      of({
-        id: '1',
-        email: 'sarah@test.com',
-        full_name: 'Sarah',
-        role: 'patient',
-        is_active: true,
-        is_verified: false,
-        created_at: '2026-05-28T00:00:00Z',
-        updated_at: '2026-05-28T00:00:00Z',
-      })
-    );
+  it('should call authService.register with correct payload', () => {
+    authServiceMock.register.mockReturnValue(of({}));
 
     component.form.setValue({
       full_name: 'Sarah',
@@ -115,19 +126,8 @@ describe('Register', () => {
     });
   });
 
-  it('should navigate to /login and set success message on successful register', () => {
-    authServiceMock.register.mockReturnValue(
-      of({
-        id: '1',
-        email: 'sarah@test.com',
-        full_name: 'Sarah',
-        role: 'patient',
-        is_active: true,
-        is_verified: false,
-        created_at: '2026-05-28T00:00:00Z',
-        updated_at: '2026-05-28T00:00:00Z',
-      })
-    );
+  it('should navigate to login with registered=true on successful register', () => {
+    authServiceMock.register.mockReturnValue(of({}));
 
     component.form.setValue({
       full_name: 'Sarah',
@@ -138,15 +138,31 @@ describe('Register', () => {
 
     component.submit();
 
-    expect(component.successMessage).toBe('Cadastro realizado com sucesso.');
-    expect(component.errorMessage).toBe('');
-    expect(navigateSpy).toHaveBeenCalledWith(['/login']);
+    expect(navigateSpy).toHaveBeenCalledWith(['/login'], {
+      queryParams: {
+        registered: 'true',
+      },
+    });
+
     expect(component.isSubmitting).toBe(false);
   });
 
-  it('should show error detail from API when register fails', () => {
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+  it('should reset isSubmitting after successful register', () => {
+    authServiceMock.register.mockReturnValue(of({}));
 
+    component.form.setValue({
+      full_name: 'Sarah',
+      email: 'sarah@test.com',
+      password: '12345678',
+      confirmPassword: '12345678',
+    });
+
+    component.submit();
+
+    expect(component.isSubmitting).toBe(false);
+  });
+
+  it('should show API detail message when register fails', () => {
     authServiceMock.register.mockReturnValue(
       throwError(() => ({
         error: {
@@ -164,17 +180,16 @@ describe('Register', () => {
 
     component.submit();
 
-    expect(component.errorMessage).toBe('E-mail já cadastrado.');
-    expect(component.successMessage).toBe('');
+    expect(toastServiceMock.error).toHaveBeenCalledWith(
+      'Erro no cadastro',
+      'E-mail já cadastrado.'
+    );
+
     expect(component.isSubmitting).toBe(false);
     expect(navigateSpy).not.toHaveBeenCalled();
-
-    consoleErrorSpy.mockRestore();
   });
 
-  it('should show error message from API when detail is not available', () => {
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
+  it('should show API message when detail is not available', () => {
     authServiceMock.register.mockReturnValue(
       throwError(() => ({
         error: {
@@ -192,16 +207,16 @@ describe('Register', () => {
 
     component.submit();
 
-    expect(component.errorMessage).toBe('Falha no cadastro.');
+    expect(toastServiceMock.error).toHaveBeenCalledWith(
+      'Erro no cadastro',
+      'Falha no cadastro.'
+    );
+
     expect(component.isSubmitting).toBe(false);
     expect(navigateSpy).not.toHaveBeenCalled();
-
-    consoleErrorSpy.mockRestore();
   });
 
   it('should show default error message when API returns no detail or message', () => {
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
     authServiceMock.register.mockReturnValue(
       throwError(() => ({
         error: {},
@@ -217,10 +232,60 @@ describe('Register', () => {
 
     component.submit();
 
-    expect(component.errorMessage).toBe('Não foi possível cadastrar.');
+    expect(toastServiceMock.error).toHaveBeenCalledWith(
+      'Erro no cadastro',
+      'Não foi possível cadastrar.'
+    );
+
     expect(component.isSubmitting).toBe(false);
     expect(navigateSpy).not.toHaveBeenCalled();
+  });
 
-    consoleErrorSpy.mockRestore();
+  it('should show correct message when full_name is too short', () => {
+    component.form.setValue({
+      full_name: 'A',
+      email: 'sarah@test.com',
+      password: '12345678',
+      confirmPassword: '12345678',
+    });
+
+    component.submit();
+
+    expect(toastServiceMock.warning).toHaveBeenCalledWith(
+      'Formulário inválido',
+      'O nome completo deve ter pelo menos 2 caracteres.'
+    );
+  });
+
+  it('should show correct message when email is invalid', () => {
+    component.form.setValue({
+      full_name: 'Sarah',
+      email: 'email-invalido',
+      password: '12345678',
+      confirmPassword: '12345678',
+    });
+
+    component.submit();
+
+    expect(toastServiceMock.warning).toHaveBeenCalledWith(
+      'Formulário inválido',
+      'Informe um e-mail válido.'
+    );
+  });
+
+  it('should show correct message when password is too short', () => {
+    component.form.setValue({
+      full_name: 'Sarah',
+      email: 'sarah@test.com',
+      password: '123',
+      confirmPassword: '123',
+    });
+
+    component.submit();
+
+    expect(toastServiceMock.warning).toHaveBeenCalledWith(
+      'Formulário inválido',
+      'A senha deve ter pelo menos 8 caracteres.'
+    );
   });
 });

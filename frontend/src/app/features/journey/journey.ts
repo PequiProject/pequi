@@ -59,7 +59,7 @@ export interface JourneyMonth {
 })
 export class Journey {
   readonly journeyService = inject(JourneyService);
-  readonly patient = this.journeyService.patient;  // Keep the signal
+  readonly patient = this.journeyService.patient;
 
   readonly patientName = computed(() => this.patient().name);
   readonly leprosyType = computed(() => this.patient().leprosyType);
@@ -183,7 +183,7 @@ export class Journey {
 
     return `Faltam aproximadamente ${this.remainingDays()} dias (${remainingMonths} ${
       remainingMonths === 1 ? 'mês' : 'meses'
-    }) para a estimativa final.`;
+    }) para a estimativa final. Continue com o ótimo trabalho!`;
   });
 
   toggleMonth(month: JourneyMonth): void {

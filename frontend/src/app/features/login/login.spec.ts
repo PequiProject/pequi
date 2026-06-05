@@ -1,10 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { of, throwError } from 'rxjs';
-import { vi, describe, beforeEach, it, expect } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Login } from './login';
 import { AuthService } from '../auth/services/auth-service';
+import { ToastService } from '../../components/toast/toast.service';
 
 describe('Login', () => {
   let component: Login;
@@ -18,6 +19,12 @@ describe('Login', () => {
     navigateByUrl: vi.fn(),
   };
 
+  const toastServiceMock = {
+    success: vi.fn(),
+    warning: vi.fn(),
+    error: vi.fn(),
+  };
+
   const activatedRouteMock = {
     snapshot: {
       queryParamMap: convertToParamMap({}),
@@ -26,8 +33,14 @@ describe('Login', () => {
 
   beforeEach(async () => {
     authServiceMock.login.mockReset();
+
     routerMock.navigateByUrl.mockReset();
     routerMock.navigateByUrl.mockResolvedValue(true);
+
+    toastServiceMock.success.mockReset();
+    toastServiceMock.warning.mockReset();
+    toastServiceMock.error.mockReset();
+
     activatedRouteMock.snapshot.queryParamMap = convertToParamMap({});
 
     await TestBed.configureTestingModule({
@@ -36,6 +49,7 @@ describe('Login', () => {
         { provide: AuthService, useValue: authServiceMock },
         { provide: Router, useValue: routerMock },
         { provide: ActivatedRoute, useValue: activatedRouteMock },
+        { provide: ToastService, useValue: toastServiceMock },
       ],
     }).compileComponents();
 
@@ -48,6 +62,22 @@ describe('Login', () => {
     expect(component).toBeTruthy();
   });
 
+  it('should show success toast when registered=true', () => {
+    activatedRouteMock.snapshot.queryParamMap = convertToParamMap({
+      registered: 'true',
+    });
+
+    fixture = TestBed.createComponent(Login);
+    component = fixture.componentInstance;
+
+    fixture.detectChanges();
+
+    expect(toastServiceMock.success).toHaveBeenCalledWith(
+      'Cadastro realizado com sucesso.',
+      'Agora faça login para continuar.'
+    );
+  });
+
   it('should not submit when form is invalid', () => {
     component.form.setValue({
       email: '',
@@ -57,7 +87,12 @@ describe('Login', () => {
     component.submit();
 
     expect(authServiceMock.login).not.toHaveBeenCalled();
-    expect(component.form.touched).toBe(true);
+
+    expect(toastServiceMock.warning).toHaveBeenCalledWith(
+      'Formulário inválido',
+      'Preencha e-mail e senha corretamente.'
+    );
+
     expect(component.isSubmitting).toBe(false);
   });
 
@@ -71,23 +106,11 @@ describe('Login', () => {
     expect(component.form.get('email')?.invalid).toBe(true);
   });
 
-  it('should call authService.login with the correct payload', () => {
+  it('should call authService.login with correct payload', () => {
     authServiceMock.login.mockReturnValue(
       of({
-        access_token: 'access-token',
-        refresh_token: 'refresh-token',
-        expires_in: 1800,
-        token_type: 'bearer',
-        user: {
-          id: '1',
-          email: 'sarah@test.com',
-          full_name: 'Sarah',
-          role: 'patient',
-          is_active: true,
-          is_verified: true,
-          created_at: '2026-05-28T00:00:00Z',
-          updated_at: '2026-05-28T00:00:00Z',
-        },
+        access_token: 'token',
+        refresh_token: 'refresh',
       })
     );
 
@@ -109,24 +132,7 @@ describe('Login', () => {
       returnUrl: '/checkin',
     });
 
-    authServiceMock.login.mockReturnValue(
-      of({
-        access_token: 'access-token',
-        refresh_token: 'refresh-token',
-        expires_in: 1800,
-        token_type: 'bearer',
-        user: {
-          id: '1',
-          email: 'sarah@test.com',
-          full_name: 'Sarah',
-          role: 'patient',
-          is_active: true,
-          is_verified: true,
-          created_at: '2026-05-28T00:00:00Z',
-          updated_at: '2026-05-28T00:00:00Z',
-        },
-      })
-    );
+    authServiceMock.login.mockReturnValue(of({}));
 
     component.form.setValue({
       email: 'sarah@test.com',
@@ -135,30 +141,17 @@ describe('Login', () => {
 
     component.submit();
 
+    expect(toastServiceMock.success).toHaveBeenCalledWith(
+      'Login realizado com sucesso.'
+    );
+
     expect(routerMock.navigateByUrl).toHaveBeenCalledWith('/checkin');
-    expect(component.errorMessage).toBe('');
+
     expect(component.isSubmitting).toBe(false);
   });
 
   it('should navigate to /home when returnUrl is not provided', () => {
-    authServiceMock.login.mockReturnValue(
-      of({
-        access_token: 'access-token',
-        refresh_token: 'refresh-token',
-        expires_in: 1800,
-        token_type: 'bearer',
-        user: {
-          id: '1',
-          email: 'sarah@test.com',
-          full_name: 'Sarah',
-          role: 'patient',
-          is_active: true,
-          is_verified: true,
-          created_at: '2026-05-28T00:00:00Z',
-          updated_at: '2026-05-28T00:00:00Z',
-        },
-      })
-    );
+    authServiceMock.login.mockReturnValue(of({}));
 
     component.form.setValue({
       email: 'sarah@test.com',
@@ -170,25 +163,8 @@ describe('Login', () => {
     expect(routerMock.navigateByUrl).toHaveBeenCalledWith('/home');
   });
 
-  it('should set isSubmitting to true while submitting', () => {
-    authServiceMock.login.mockReturnValue(
-      of({
-        access_token: 'access-token',
-        refresh_token: 'refresh-token',
-        expires_in: 1800,
-        token_type: 'bearer',
-        user: {
-          id: '1',
-          email: 'sarah@test.com',
-          full_name: 'Sarah',
-          role: 'patient',
-          is_active: true,
-          is_verified: true,
-          created_at: '2026-05-28T00:00:00Z',
-          updated_at: '2026-05-28T00:00:00Z',
-        },
-      })
-    );
+  it('should reset isSubmitting after successful login', () => {
+    authServiceMock.login.mockReturnValue(of({}));
 
     component.form.setValue({
       email: 'sarah@test.com',
@@ -216,14 +192,21 @@ describe('Login', () => {
 
     component.submit();
 
-    expect(component.errorMessage).toBe('Credenciais inválidas.');
+    expect(toastServiceMock.error).toHaveBeenCalledWith(
+      'Falha no login',
+      'Credenciais inválidas.'
+    );
+
     expect(component.isSubmitting).toBe(false);
+
     expect(routerMock.navigateByUrl).not.toHaveBeenCalled();
   });
 
   it('should show default error message when API does not return message', () => {
     authServiceMock.login.mockReturnValue(
-      throwError(() => ({ error: {} }))
+      throwError(() => ({
+        error: {},
+      }))
     );
 
     component.form.setValue({
@@ -233,7 +216,11 @@ describe('Login', () => {
 
     component.submit();
 
-    expect(component.errorMessage).toBe('E-mail ou senha inválidos.');
+    expect(toastServiceMock.error).toHaveBeenCalledWith(
+      'Falha no login',
+      'E-mail ou senha inválidos.'
+    );
+
     expect(component.isSubmitting).toBe(false);
   });
 });

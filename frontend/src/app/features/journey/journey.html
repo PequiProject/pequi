@@ -54,22 +54,12 @@
           </p>
         </div>
 
-        <div class="flex items-center justify-between gap-4">
+        <div class="flex items-center justify-center gap-4">
           <div
             class="flex h-24 w-24 shrink-0 items-center justify-center rounded-full border-4 border-white text-lg font-bold"
             data-testid="progress-circle"
           >
             {{ progressPercent() }}%
-          </div>
-
-          <div class="space-y-1 text-right text-xs leading-5 text-white/85">
-            <p data-testid="progress-type">Tipo: {{ leprosyType() }}</p>
-            <p data-testid="progress-month">
-              Mês atual: {{ currentMonth() }} de {{ totalMonths() }}
-            </p>
-            <p data-testid="progress-days">
-              {{ elapsedDays() }} / {{ totalDays() }} dias
-            </p>
           </div>
         </div>
 

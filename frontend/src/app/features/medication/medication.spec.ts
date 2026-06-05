@@ -8,6 +8,32 @@ import {
   type MedicationChecklistResponse,
 } from './services/medication-data.service';
 
+type WeekdayKey =
+  | 'monday'
+  | 'tuesday'
+  | 'wednesday'
+  | 'thursday'
+  | 'friday'
+  | 'saturday'
+  | 'sunday';
+  
+export interface MedicationAlarmConfig {
+  days: WeekdayKey[];
+  time: string;
+}
+
+type MedicationSection = 'unsupervised' | 'supervised';
+interface MedicationCardItem {
+  id: string;
+  title: string;
+  subtitle: string;
+  checked: boolean;
+  section: MedicationSection;
+  doseLabel: string;
+  alarmEnabled: boolean;
+  alarmConfig: MedicationAlarmConfig;
+}
+
 describe('Medication', () => {
   let component: Medication;
   let fixture: ComponentFixture<Medication>;
@@ -34,6 +60,7 @@ describe('Medication', () => {
   beforeEach(async () => {
     medicationDataServiceSpy = {
       getMedicationChecklist: vi.fn().mockReturnValue(of(mockResponse)),
+      saveMedicationAlarm: vi.fn().mockReturnValue(of(void 0)),
     } as Mocked<MedicationDataService>;
 
     await TestBed.configureTestingModule({
@@ -167,14 +194,20 @@ describe('Medication', () => {
   });
 
   it('should return item id in trackById', () => {
-    const item = {
+    const item: MedicationCardItem = {
       id: 'abc123',
       title: 'Teste',
       subtitle: 'Sub',
       checked: false,
       section: 'unsupervised' as const,
+      doseLabel: '500 mg',
+      alarmEnabled: true,
+      alarmConfig: {
+        days: ['monday'],
+        time: '08:00',
+      },
     };
 
-    expect(component.trackById(0, item)).toBe('abc123');
+expect(component.trackById(0, item)).toBe('abc123');
   });
 });
