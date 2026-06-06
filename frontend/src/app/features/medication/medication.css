@@ -71,6 +71,7 @@
 }
 
 .medication-card--checked {
+  background: #ecfdf5;
   opacity: 0.58;
 }
 
@@ -95,8 +96,8 @@
 }
 
 .medication-card__icon--checked {
-  background: #ededea;
-  color: #8da0aa;
+  background: #d1fae5;
+  color: #d9c148;
 }
 
 .medication-card__text {

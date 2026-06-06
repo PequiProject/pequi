@@ -31,4 +31,14 @@ describe('CommunityAuthorAvatar', () => {
     expect(el.querySelector('lucide-icon')).toBeTruthy();
     expect(el.textContent?.trim()).not.toContain('VC');
   });
+
+  it('should render profile image when imageUrl is provided', () => {
+    fixture.componentRef.setInput('anonymous', false);
+    fixture.componentRef.setInput('imageUrl', 'data:image/png;base64,abc');
+    fixture.detectChanges();
+
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('[data-testid="author-avatar-image"]')).toBeTruthy();
+    expect(el.textContent?.trim()).not.toContain('VC');
+  });
 });

@@ -4,6 +4,7 @@ import {
   computed,
   effect,
   inject,
+  OnInit,
   signal,
   WritableSignal,
 } from '@angular/core';
@@ -13,12 +14,15 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { Router } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Router, RouterLink } from '@angular/router';
 import { CheckinStepFeelingComponent } from '../../components/checkin-step-feeling-component/checkin-step-feeling-component';
 import { CheckinStepSymptomsComponent } from '../../components/checkin-step-symptoms-component/checkin-step-symptoms-component';
 import { CheckinStepIntensityComponent } from '../../components/checkin-step-intensity-component/checkin-step-intensity-component';
 import { CheckinStepDetailsComponent } from '../../components/checkin-step-details-component/checkin-step-details-component';
+import { ToastService } from '../../components/toast/toast.service';
+import type { SymptomResponse } from './models/checkin.models';
+import { CheckinService } from './services/checkin.service';
+import { MedicationDataService } from '../medication/services/medication-data.service';
 
 type StepItem = {
   id: number;
@@ -35,18 +39,23 @@ type StepItem = {
     CheckinStepSymptomsComponent,
     CheckinStepIntensityComponent,
     CheckinStepDetailsComponent,
+    RouterLink,
   ],
   templateUrl: './checkin.html',
   styleUrl: './checkin.css',
 })
-export class CheckinComponent {
+export class CheckinComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
-
-  private stepStatusSubscription?: Subscription;
-  private symptomsSelectionSubscription?: Subscription;
+  private readonly checkinService = inject(CheckinService);
+  private readonly medicationData = inject(MedicationDataService);
+  private readonly toast = inject(ToastService);
 
   private readonly NO_SYMPTOM_VALUE = 'nenhum sintoma';
+
+  readonly symptomCatalog = signal<SymptomResponse[]>([]);
+  readonly submitting = signal(false);
+  readonly medicationReminder = signal<string | null>(null);
 
   steps: StepItem[] = [
     { id: 1, label: 'Ranking de Sentimentos' },
@@ -71,6 +80,7 @@ export class CheckinComponent {
     }),
     details: this.fb.group({
       notes: [''],
+      images: [[] as File[]],
     }),
   });
 
@@ -78,10 +88,38 @@ export class CheckinComponent {
     const step = this.currentStep();
     return (step / this.steps.length) * 100;
   });
+  stepStatusSubscription: any;
+  symptomsSelectionSubscription: import("rxjs").Subscription | undefined;
 
-  constructor() {
-    this.setupCurrentStepValidationWatcher();
-    this.setupIntensityConditionalValidation();
+  constructor() {}
+
+  ngOnInit(): void {
+    this.checkinService.listSymptoms().subscribe({
+      next: symptoms => this.symptomCatalog.set(symptoms),
+      error: () => {
+        this.toast.error(
+          'Erro ao carregar sintomas',
+          'Verifique sua conexão e tente novamente.',
+        );
+      },
+    });
+
+    this.medicationData.getMedicationChecklist().subscribe({
+      next: (checklist) => {
+        const total =
+          checklist.institutedMedications.length + (checklist.currentDoseMedication ? 1 : 0);
+        if (total === 0) {
+          this.medicationReminder.set(
+            'Cadastre medicamentos e frequência em Meu tratamento para ver os lembretes em Remédios.',
+          );
+          return;
+        }
+        this.medicationReminder.set(
+          `Você tem ${total} medicamento(s) no plano. Em Remédios, os avisos seguem a frequência de cada um.`,
+        );
+      },
+      error: () => undefined,
+    });
   }
 
   get currentStepNumber(): WritableSignal<number> {
@@ -181,15 +219,51 @@ export class CheckinComponent {
     }
 
     const rawValue = this.form.getRawValue();
+    const selectedSymptoms = rawValue.symptoms.selectedSymptoms ?? [];
+    const noSymptomsSelected = selectedSymptoms.includes(this.NO_SYMPTOM_VALUE);
+    const symptomIds = this.checkinService.resolveSymptomIds(
+      selectedSymptoms,
+      this.symptomCatalog(),
+    );
+
+    if (symptomIds.length === 0) {
+      this.toast.error(
+        'Não foi possível identificar os sintomas',
+        'Aguarde o carregamento do catálogo ou selecione outra opção.',
+      );
+      return;
+    }
+
+    if (!rawValue.feeling.mood) {
+      this.form.markAllAsTouched();
+      return;
+    }
+
     const payload = {
-      ...rawValue,
-      symptoms: {
-        selectedSymptoms: rawValue.symptoms.selectedSymptoms,
-      },
+      mood: rawValue.feeling.mood,
+      symptom_intensity: noSymptomsSelected ? 0 : (rawValue.intensity.scale ?? 0),
+      symptom_ids: symptomIds,
+      general_notes: rawValue.details.notes?.trim() || null,
     };
 
-    console.log('Payload final do check-in:', payload);
-    this.router.navigate(['home']);
+    this.submitting.set(true);
+    this.checkinService.submit(payload).subscribe({
+      next: () => {
+        this.submitting.set(false);
+        this.toast.success(
+          'Check-in registrado com sucesso!',
+          'Não esqueça de registrar seus remédios do dia.',
+        );
+        void this.router.navigate(['/medication']);
+      },
+      error: () => {
+        this.submitting.set(false);
+        this.toast.error(
+          'Erro ao enviar check-in',
+          'Tente novamente em instantes.',
+        );
+      },
+    });
   }
 
   private getCurrentStepForm(): FormGroup {

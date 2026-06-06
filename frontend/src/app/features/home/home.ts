@@ -1,7 +1,21 @@
-import { Component, inject, OnInit, signal, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import {
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+  ViewChild,
+  ElementRef,
+  AfterViewInit,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LucideAngularModule, ImagePlus, CirclePlus, Calendar, Stethoscope, Pill, ChevronLeft, ChevronRight } from 'lucide-angular';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
+import { HealthAppointmentService } from '../appointments/services/health-appointment.service';
+import {
+  formatAppointmentDatePt,
+  resolveNextAppointment,
+} from '../appointments/utils/next-appointment.utils';
 
 interface QuickAction {
   title: string;
@@ -43,6 +57,7 @@ interface HomeHighlightCard {
 })
 export class HomeComponent implements OnInit, AfterViewInit {
   private readonly router = inject(Router);
+  private readonly appointmentService = inject(HealthAppointmentService);
   readonly ImagePlus = ImagePlus;
   readonly CirclePlus = CirclePlus;
   readonly CalendarIcon = Calendar;
@@ -59,19 +74,34 @@ export class HomeComponent implements OnInit, AfterViewInit {
   calendarMonth: (CalendarDay | null)[] = [];
   selectedDate: Date = new Date();
 
-  summaryCards: HomeHighlightCard[] = [
-    {
-      value: '2/4',
-      title: 'Medicações tomadas',
-      backgroundClass: 'summary-card--purple',
-    },
-    {
-      value: '27/06/2026',
-      title: '15:30',
+  readonly medicationSummaryCard: HomeHighlightCard = {
+    value: '2/4',
+    title: 'Medicações tomadas',
+    backgroundClass: 'summary-card--purple',
+  };
+
+  readonly nextAppointmentCard = computed(() => {
+    const next = resolveNextAppointment(this.appointmentService.appointments());
+    if (!next) {
+      return {
+        value: 'Próxima consulta ainda não registrada',
+        title: '',
+        subtitle: 'Próxima consulta',
+        backgroundClass: 'summary-card--blue',
+        hasNext: false as const,
+        info: null,
+      };
+    }
+
+    return {
+      value: formatAppointmentDatePt(next.dateIso),
+      title: next.time ?? 'Horário não informado',
       subtitle: 'Próxima consulta',
       backgroundClass: 'summary-card--blue',
-    },
-  ];
+      hasNext: true as const,
+      info: next,
+    };
+  });
 
   QuickAction = [
     {
@@ -117,6 +147,28 @@ export class HomeComponent implements OnInit, AfterViewInit {
   executeAction(path: string) {
     if (!path) return;
     void this.router.navigate([path]);
+  }
+
+  openNextAppointment(): void {
+    const card = this.nextAppointmentCard();
+    const queryParams: Record<string, string> = {};
+
+    if (card.info?.appointmentId) {
+      queryParams['appointmentId'] = card.info.appointmentId;
+    } else if (card.info) {
+      queryParams['date'] = card.info.dateIso;
+      if (card.info.time) {
+        queryParams['time'] = card.info.time;
+      }
+      if (card.info.location) {
+        queryParams['location'] = card.info.location;
+      }
+      if (card.info.appointmentType) {
+        queryParams['type'] = card.info.appointmentType;
+      }
+    }
+
+    void this.router.navigate(['/appointments/register'], { queryParams });
   }
 
   ngOnInit(): void {

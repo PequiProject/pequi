@@ -13,7 +13,7 @@
   >
     <header class="flex shrink-0 items-center justify-between border-b border-[#E7E5E4] px-5 py-4">
       <h2 id="edit-account-title" class="text-base font-bold text-[#4338CA] sm:text-lg">
-        E-mail e senha
+        Senha de acesso
       </h2>
       <button
         type="button"
@@ -33,8 +33,8 @@
       (ngSubmit)="submit()"
     >
       <p class="text-sm text-[#64655C]" data-testid="account-hint">
-        Use estes dados para entrar no Pequi. O e-mail de contato na caderneta pode ser diferente
-        e é editado em <strong class="font-semibold text-[#373831]">Dados pessoais</strong>.
+        O e-mail de login não pode ser alterado por enquanto. O e-mail de contato na caderneta fica em
+        <strong class="font-semibold text-[#373831]">Dados pessoais</strong>.
       </p>
 
       <div>
@@ -47,11 +47,9 @@
           formControlName="loginEmail"
           data-testid="login-email-input"
           autocomplete="username"
-          class="w-full rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] px-4 py-3 text-sm text-[#373831] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
+          readonly
+          class="w-full cursor-not-allowed rounded-xl border border-[#E7E5E4] bg-[#F5F5F4] px-4 py-3 text-sm text-[#64655C] focus-visible:outline-none"
         />
-        @if (showValidation() && form.controls.loginEmail.invalid) {
-          <p class="mt-1 text-xs text-[#B91C1C]">Informe um e-mail válido.</p>
-        }
       </div>
 
       <div class="rounded-xl border border-[#E7E5E4] bg-[#FAFAF9] p-4">
@@ -96,7 +94,7 @@
               formControlName="newPassword"
               data-testid="new-password-input"
               autocomplete="new-password"
-              placeholder="Mínimo 6 caracteres"
+              placeholder="Mínimo 8 caracteres"
               class="w-full rounded-xl border border-[#E7E5E4] bg-white px-4 py-3 text-sm text-[#373831] placeholder:text-[#A8A29E] focus-visible:border-[#4338CA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338CA]/30"
             />
           </div>
@@ -136,9 +134,10 @@
         type="submit"
         data-testid="save-edit-account"
         (click)="submit()"
-        class="flex-1 rounded-xl bg-[#4338CA] px-4 py-3 text-sm font-semibold text-white"
+        [disabled]="isSaving()"
+        class="flex-1 rounded-xl bg-[#4338CA] px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
       >
-        Salvar
+        {{ isSaving() ? 'Salvando…' : 'Salvar' }}
       </button>
     </footer>
   </div>

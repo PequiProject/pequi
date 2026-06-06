@@ -1,4 +1,11 @@
-@if (post(); as currentPost) {
+@if (loading()) {
+  <p
+    class="mx-auto max-w-lg rounded-2xl bg-white p-6 text-center text-sm text-[#64655C] ring-1 ring-[#E7E5E4] lg:max-w-2xl"
+    data-testid="post-loading"
+  >
+    Carregando post...
+  </p>
+} @else if (post(); as currentPost) {
   <app-community-post-detail
     [post]="currentPost"
     (close)="back()"

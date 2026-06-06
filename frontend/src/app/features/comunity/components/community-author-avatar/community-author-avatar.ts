@@ -13,6 +13,7 @@ export type CommunityAuthorAvatarSize = 'sm' | 'md';
 export class CommunityAuthorAvatar {
   readonly initials = input.required<string>();
   readonly anonymous = input(false);
+  readonly imageUrl = input<string | null>(null);
   readonly size = input<CommunityAuthorAvatarSize>('md');
 
   readonly LucideVenetianMask = LucideVenetianMask;
@@ -25,7 +26,8 @@ export class CommunityAuthorAvatar {
       this.size() === 'sm'
         ? 'h-9 w-9 text-xs'
         : 'h-10 w-10 text-sm sm:h-11 sm:w-11';
-    return `flex shrink-0 items-center justify-center rounded-full font-semibold ${palette} ${dimensions}`;
+    const overflow = this.imageUrl() ? 'overflow-hidden' : '';
+    return `flex shrink-0 items-center justify-center rounded-full font-semibold ${palette} ${dimensions} ${overflow}`;
   });
 
   readonly iconSize = computed(() => (this.size() === 'sm' ? 16 : 18));

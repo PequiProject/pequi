@@ -23,6 +23,7 @@ async def test_get_me_wrong_role(
     # Create an admin user directly in DB
     admin_user = User(
         email="admin@example.com",
+        username="adminuser",
         hashed_password=hash_password("adminpassword"),
         full_name="Admin User",
         role="admin",
@@ -33,7 +34,7 @@ async def test_get_me_wrong_role(
     # Log in
     login_response = await async_client.post(
         "/v1/auth/login",
-        json={"email": "admin@example.com", "password": "adminpassword"},
+        json={"identifier": "admin@example.com", "password": "adminpassword"},
     )
     assert login_response.status_code == 200
     token = login_response.json()["access_token"]
@@ -50,6 +51,7 @@ async def test_get_me_success(create_tables, async_client: AsyncClient, db_sessi
     # Create a patient user directly in DB
     patient_user = User(
         email="patient@example.com",
+        username="patientuser",
         hashed_password=hash_password("patientpassword"),
         full_name="Patient User",
         role="patient",
@@ -79,7 +81,7 @@ async def test_get_me_success(create_tables, async_client: AsyncClient, db_sessi
     # Log in
     login_response = await async_client.post(
         "/v1/auth/login",
-        json={"email": "patient@example.com", "password": "patientpassword"},
+        json={"identifier": "patient@example.com", "password": "patientpassword"},
     )
     assert login_response.status_code == 200
     token = login_response.json()["access_token"]
@@ -98,6 +100,7 @@ async def test_patch_me_success(create_tables, async_client: AsyncClient, db_ses
     # Create a patient user directly in DB
     patient_user = User(
         email="patient2@example.com",
+        username="patientuser2",
         hashed_password=hash_password("patientpassword"),
         full_name="Patient User 2",
         role="patient",
@@ -127,7 +130,7 @@ async def test_patch_me_success(create_tables, async_client: AsyncClient, db_ses
     # Log in
     login_response = await async_client.post(
         "/v1/auth/login",
-        json={"email": "patient2@example.com", "password": "patientpassword"},
+        json={"identifier": "patient2@example.com", "password": "patientpassword"},
     )
     token = login_response.json()["access_token"]
 

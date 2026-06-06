@@ -1,4 +1,5 @@
-import { Component, inject, signal, type WritableSignal } from '@angular/core';
+import { Component, inject, OnInit, signal, type WritableSignal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { FormArray, FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import {
   LucideAngularModule,
@@ -7,9 +8,9 @@ import {
   LucidePencil,
   LucideUser,
 } from 'lucide-angular';
-import type { AccountSavePayload } from './components/profile-edit-account/profile-edit-account';
 import { ProfileEditAccount } from './components/profile-edit-account/profile-edit-account';
 import { ProfileEditPersonal } from './components/profile-edit-personal/profile-edit-personal';
+import { ProfileEditUsername } from './components/profile-edit-username/profile-edit-username';
 import {
   CLASSIFICATION_OPTIONS,
   BLOOD_TYPE_OPTIONS,
@@ -35,16 +36,20 @@ import {
   type ChangePasswordError,
 } from './services/patient-profile.service';
 import { PatientMedicationService } from '../appointments/services/patient-medication.service';
+import { AuthService } from '../auth/services/auth-service';
+import { getApiErrorMessage } from '../../core/api-error.utils';
+import { ToastService } from '../../components/toast/toast.service';
+import { PatientBookletExportService } from './services/patient-booklet-export.service';
 
 export type ProfileTab = 'overview' | 'treatment';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [ReactiveFormsModule, LucideAngularModule, ProfileEditPersonal, ProfileEditAccount],
+  imports: [ReactiveFormsModule, LucideAngularModule, ProfileEditPersonal, ProfileEditAccount, ProfileEditUsername],
   templateUrl: './profile.html',
 })
-export class Profile {
+export class Profile implements OnInit {
   readonly institutedMedicationNameOptions = INSTITUTED_MEDICATION_NAME_OPTIONS;
   readonly institutedMedicationUnitOptions = INSTITUTED_MEDICATION_UNIT_OPTIONS;
   readonly institutedMedicationFrequencyOptions = INSTITUTED_MEDICATION_FREQUENCY_OPTIONS;
@@ -52,6 +57,13 @@ export class Profile {
   private readonly fb = inject(FormBuilder);
   private readonly profileService = inject(PatientProfileService);
   private readonly medicationService = inject(PatientMedicationService);
+  private readonly authService = inject(AuthService);
+  private readonly toastService = inject(ToastService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly bookletExport = inject(PatientBookletExportService);
+
+  readonly savingTreatment = signal(false);
+  readonly exportingBooklet = signal(false);
 
   readonly LucideDownload = LucideDownload;
   readonly LucideKeyRound = LucideKeyRound;
@@ -69,21 +81,21 @@ export class Profile {
 
   readonly profile = this.profileService.profile;
   readonly displayName = this.profileService.displayName;
+  readonly legalFullName = this.profileService.legalFullName;
   readonly initials = this.profileService.initials;
   readonly hasAvatar = this.profileService.hasAvatar;
   readonly hasPersonalData = this.profileService.hasPersonalData;
 
   readonly activeTab = signal<ProfileTab>('overview');
   readonly showEditPersonal = signal(false);
+  readonly showEditUsername = signal(false);
   readonly showEditAccount = signal(false);
   readonly showAvatarMenu = signal(false);
   readonly accountPasswordError = signal<ChangePasswordError | null>(null);
 
-  readonly personalSavedToast = signal(false);
-  readonly treatmentSavedToast = signal(false);
+  readonly usernameSavedToast = signal(false);
   readonly accountSavedToast = signal(false);
   readonly avatarRemovedToast = signal(false);
-  readonly exportPdfHint = signal(false);
   readonly hasReactionEpisodeAtDiagnosis = signal<YesNoChoice>('');
   readonly hasReactionEpisodeAtDischarge = signal<YesNoChoice>('');
 
@@ -221,6 +233,28 @@ export class Profile {
     this.syncTreatmentForm(this.profileService.profile().treatment);
   }
 
+  ngOnInit(): void {
+    this.profileService.syncLoginEmailFromAuth();
+
+    this.profileService.syncPersonalFromApi().subscribe({
+      error: () => undefined,
+    });
+
+    this.profileService.syncTreatmentFromApi().subscribe({
+      next: (treatment) => {
+        if (treatment) {
+          this.syncTreatmentForm(treatment);
+        }
+      },
+      error: () => undefined,
+    });
+
+    const tab = this.route.snapshot.queryParamMap.get('tab');
+    if (tab === 'treatment') {
+      this.setTab('treatment');
+    }
+  }
+
   setTab(tab: ProfileTab): void {
     this.activeTab.set(tab);
     if (tab === 'treatment') {
@@ -236,6 +270,30 @@ export class Profile {
     this.showEditPersonal.set(false);
   }
 
+  openEditUsername(): void {
+    this.showEditUsername.set(true);
+  }
+
+  closeEditUsername(): void {
+    this.showEditUsername.set(false);
+  }
+
+  onUsernameSaved(username: string): void {
+    this.authService.updateUsername(username).subscribe({
+      next: () => {
+        this.showEditUsername.set(false);
+        this.showToast(this.usernameSavedToast);
+      },
+      error: (error) => {
+        const message = getApiErrorMessage(
+          error,
+          'Não foi possível atualizar o nome de usuário.'
+        );
+        this.toastService.error('Erro ao salvar', message);
+      },
+    });
+  }
+
   openEditAccount(): void {
     this.accountPasswordError.set(null);
     this.showEditAccount.set(true);
@@ -247,29 +305,21 @@ export class Profile {
   }
 
   onPersonalSaved(data: PatientPersonalData): void {
-    this.profileService.updatePersonal(data);
-    this.showEditPersonal.set(false);
-    this.showToast(this.personalSavedToast);
+    this.profileService.savePersonal(data).subscribe({
+      next: () => {
+        this.showEditPersonal.set(false);
+        this.toastService.success('Dados pessoais salvos.');
+      },
+      error: (error) => {
+        this.toastService.error(
+          'Erro ao salvar',
+          getApiErrorMessage(error, 'Não foi possível salvar os dados pessoais.')
+        );
+      },
+    });
   }
 
-  onAccountSaved(payload: AccountSavePayload): void {
-    this.profileService.updateLoginEmail(payload.loginEmail);
-
-    const changingPassword =
-      payload.newPassword.length > 0 || payload.confirmPassword.length > 0;
-
-    if (changingPassword) {
-      const result = this.profileService.changePassword(
-        payload.currentPassword,
-        payload.newPassword,
-        payload.confirmPassword
-      );
-      if (!result.ok) {
-        this.accountPasswordError.set(result.error);
-        return;
-      }
-    }
-
+  onPasswordChanged(): void {
     this.accountPasswordError.set(null);
     this.showEditAccount.set(false);
     this.showToast(this.accountSavedToast);
@@ -392,18 +442,56 @@ export class Profile {
       dischargeOtherConducts:
         raw.reactionEpisodeAtDischarge === 'sim' ? (raw.dischargeOtherConducts ?? '') : '',
     };
-    this.profileService.updateTreatment(treatment);
     this.medicationService.setCurrentDoseMedication(treatment.currentDoseMedication);
-    this.showToast(this.treatmentSavedToast);
+
+    if (!this.authService.isAuthenticated()) {
+      this.profileService.updateTreatment(treatment);
+      this.toastService.success('Dados de tratamento salvos.');
+      return;
+    }
+
+    this.savingTreatment.set(true);
+    this.profileService.saveTreatment(treatment).subscribe({
+      next: (saved) => {
+        this.savingTreatment.set(false);
+        this.syncTreatmentForm(saved);
+        this.toastService.success('Dados de tratamento salvos.');
+      },
+      error: () => {
+        this.savingTreatment.set(false);
+        this.profileService.updateTreatment(treatment);
+        this.toastService.error(
+          'Erro ao salvar tratamento',
+          'Dados guardados localmente. Tente novamente quando estiver online.',
+        );
+      },
+    });
   }
 
-  onExportPdf(): void {
-    this.exportPdfHint.set(true);
-    setTimeout(() => this.exportPdfHint.set(false), 4000);
+  onExportBooklet(): void {
+    if (this.exportingBooklet()) return;
+
+    this.exportingBooklet.set(true);
+    this.bookletExport.exportAndDownload().subscribe({
+      next: () => {
+        this.exportingBooklet.set(false);
+        this.toastService.success(
+          'Cartilha exportada',
+          'Arquivo baixado. Leia o aviso no documento: cópia do Pequi, não é documento médico oficial.'
+        );
+      },
+      error: () => {
+        this.exportingBooklet.set(false);
+        this.toastService.error(
+          'Exportação',
+          'Não foi possível gerar a cartilha. Verifique sua conexão e tente novamente.'
+        );
+      },
+    });
   }
 
   hasAccountPassword(): boolean {
-    return this.profile().account.password.length > 0;
+    return this.authService.isAuthenticated() || this.profile().account.password.length > 0;
   }
 
   maskedLoginEmail(): string {

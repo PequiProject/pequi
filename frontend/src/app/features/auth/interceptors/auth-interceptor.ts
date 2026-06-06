@@ -12,6 +12,11 @@ const isAuthRoute = (url: string): boolean => {
   return url.includes('/v1/auth/login') || url.includes('/v1/auth/register') || url.includes('/v1/auth/refresh');
 };
 
+/** 401 esperado por regra de negócio — não renovar token nem repetir a requisição. */
+const skipsTokenRefreshOn401 = (url: string): boolean => {
+  return isAuthRoute(url) || url.includes('/v1/account/password');
+};
+
 export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, next: HttpHandlerFn) => {
   const authService = inject(AuthService);
 
@@ -31,8 +36,8 @@ export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
     catchError((error: HttpErrorResponse) => {
       const refreshToken = authService.getRefreshToken();
 
-    if (error.status !== 401 || !refreshToken || isAuthRoute(req.url)) {
-    return throwError(() => error);
+    if (error.status !== 401 || !refreshToken || skipsTokenRefreshOn401(req.url)) {
+      return throwError(() => error);
     }
       return authService.refreshToken().pipe(
         switchMap(response => {

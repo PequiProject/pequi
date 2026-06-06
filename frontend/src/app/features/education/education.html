@@ -1,1 +1,60 @@
-<p>education works!</p>
+<section
+  class="relative mx-auto w-full max-w-lg lg:max-w-2xl"
+  aria-labelledby="education-page-title"
+>
+  <header class="mb-5">
+    <h1 id="education-page-title" class="text-lg font-bold text-[#4338CA] sm:text-xl">
+      Educação em saúde
+    </h1>
+    <p class="mt-1 text-sm text-[#64655C] sm:text-base">
+      Conteúdos recomendados sobre cuidado e tratamento da hanseníase.
+    </p>
+  </header>
+
+  <div class="mb-4 space-y-4">
+    <app-community-search-bar
+      [value]="searchQuery()"
+      placeholder="Buscar conteúdos..."
+      (searchChange)="onSearchChange($event)"
+    />
+    <app-education-filter-tags
+      [tags]="filterTags()"
+      [activeTag]="activeTag()"
+      (tagChange)="onFilterChange($event)"
+    />
+  </div>
+
+  @if (loading()) {
+    <p
+      class="rounded-2xl bg-white p-6 text-center text-sm text-[#64655C] ring-1 ring-[#E7E5E4]"
+      data-testid="education-loading"
+    >
+      Carregando conteúdos...
+    </p>
+  } @else if (loadError()) {
+    <p
+      class="rounded-2xl bg-white p-6 text-center text-sm text-[#B91C1C] ring-1 ring-[#E7E5E4]"
+      data-testid="education-error"
+    >
+      {{ loadError() }}
+    </p>
+  } @else if (!hasArticles()) {
+    <p
+      class="rounded-2xl bg-white p-6 text-center text-sm text-[#64655C] ring-1 ring-[#E7E5E4]"
+      data-testid="education-empty"
+    >
+      Nenhum conteúdo encontrado para sua busca ou filtro.
+    </p>
+  } @else {
+    <p class="sr-only" data-testid="education-total">
+      {{ total() }} conteúdos encontrados
+    </p>
+    <ul class="space-y-4" data-testid="education-article-list">
+      @for (article of articles(); track article.id) {
+        <li>
+          <app-education-article-card [article]="article" (openArticle)="openArticle($event)" />
+        </li>
+      }
+    </ul>
+  }
+</section>

@@ -1,7 +1,7 @@
 import uuid
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Integer, Text, func
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import relationship
 
 from pequi.database import Base
@@ -20,7 +20,7 @@ class CommunityAnonymousMap(Base):
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="RESTRICT"),
         unique=True,
-        nullable=False,
+        nullable=True,
         index=True,
     )
     anonymous_id = Column(
@@ -63,10 +63,16 @@ class CommunityPost(Base):
         nullable=False,
         index=True,
     )
+    author_mode = Column(
+        Enum("anonymous", "identified", name="community_author_mode_enum"),
+        nullable=False,
+        server_default="anonymous",
+    )
+    author_display_name = Column(Text, nullable=True)
     title = Column(Text, nullable=False)
     content = Column(Text, nullable=False)
-    category = Column(
-        Enum("experience", "question", "support", "news", name="post_category_enum"),
+    categories = Column(
+        ARRAY(Enum("experience", "question", "support", "news", name="post_category_enum")),
         nullable=False,
     )
     is_pinned = Column(Boolean, server_default="false", nullable=False)
@@ -110,6 +116,12 @@ class CommunityComment(Base):
         nullable=False,
         index=True,
     )
+    author_mode = Column(
+        Enum("anonymous", "identified", name="community_author_mode_enum"),
+        nullable=False,
+        server_default="anonymous",
+    )
+    author_display_name = Column(Text, nullable=True)
     content = Column(Text, nullable=False)
     created_at = Column(
         DateTime(timezone=True),

@@ -12,6 +12,7 @@
       <app-community-author-avatar
         [initials]="post().authorInitials"
         [anonymous]="post().isAnonymous ?? false"
+        [imageUrl]="post().authorAvatarUrl ?? null"
       />
       <div class="min-w-0">
         <p class="truncate font-semibold text-[#373831]">{{ post().authorName }}</p>
@@ -31,7 +32,7 @@
           type="button"
           data-testid="delete-post-btn"
           (click)="onDelete($event)"
-          class="rounded-full p-1 text-[#B91C1C] transition hover:bg-[#FEE2E2] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#B91C1C]"
+          class="cursor-pointer rounded-full p-1 text-[#B91C1C] transition hover:bg-[#FEE2E2] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#B91C1C]"
           aria-label="Excluir post"
         >
           <lucide-icon [name]="LucideTrash2" [size]="18" [strokeWidth]="2" />

@@ -20,7 +20,8 @@ headers {
 
 body:json {
   {
-    "content": "Ótimo post! Obrigado por compartilhar."
+    "content": "Otimo post! Obrigado por compartilhar.",
+    "author_mode": "anonymous"
   }
 }
 
@@ -29,16 +30,19 @@ assert {
   res.body.id: isDefined
   res.body.post_id: isDefined
   res.body.author_anonymous_id: isDefined
+  res.body.author_mode: eq "anonymous"
+  res.body.author_display_name: isNull
   res.body.content: isDefined
   res.body.user_id: isNotDefined
 }
 
 docs {
-  Cria comentário anônimo em um post (PEQ-106).
+  Cria comentario em um post (PEQ-106).
 
   - Apenas pacientes podem comentar.
-  - Sistema usa anonymous_id do usuário.
-  - Nunca expõe user_id na resposta.
+  - author_mode: anonymous | identified
+  - Sistema usa anonymous_id do usuario.
+  - Nunca expoe user_id na resposta.
   - Incrementa comment_count do post.
 
   Rate limit: 30/hora.

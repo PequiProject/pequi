@@ -1,32 +1,25 @@
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
+import { Component, EventEmitter, OnDestroy, OnInit, Output, effect, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import type { PatientTreatmentData } from '../profile/models/patient-profile.models';
 import {
   MedicationDataService,
   type MedicationChecklistResponse,
-  type MedicationAlarmPayload,
-  type MedicationAlarmConfig,
 } from './services/medication-data.service';
+import { MedicationIntakeService } from './services/medication-intake.service';
+import { HealthAppointmentService } from '../appointments/services/health-appointment.service';
+import { PatientTreatmentService } from '../profile/services/patient-treatment.service';
 import {
-  Hospital,
-  Pill,
-  Clock3,
-  Bell,
-  X,
-  LucideAngularModule,
-} from 'lucide-angular';
+  buildMedicationSchedule,
+  buildTodayDoseSlots,
+  getDoseSlotIntakeState,
+  type DoseSlot,
+} from './utils/medication-schedule.utils';
+import { formatSupervisedDoseScheduleLabel } from './utils/supervised-dose-schedule.utils';
+import { Hospital, Pill, LucideAngularModule } from 'lucide-angular';
 
 type InstitutedMedicationItem = PatientTreatmentData['institutedMedications'][number];
 type MedicationSection = 'unsupervised' | 'supervised';
-type WeekdayKey =
-  | 'monday'
-  | 'tuesday'
-  | 'wednesday'
-  | 'thursday'
-  | 'friday'
-  | 'saturday'
-  | 'sunday';
 
 export interface MedicationChecklistPayload {
   checkedCount: number;
@@ -37,65 +30,85 @@ export interface MedicationChecklistPayload {
   supervisedTotalCount: number;
 }
 
-interface WeekdayOption {
-  key: WeekdayKey;
-  label: string;
-  shortLabel: string;
+/** Um card por horário de dose no dia (ex.: 08:00, 16:00, 00:00). */
+interface MedicationDoseCardItem {
+  storageKey: string;
+  id: string;
+  medicationName: string;
+  title: string;
+  subtitle: string;
+  frequencyLabel: string;
+  doseTime: string;
+  doseIndex: number;
+  dosesPerDay: number;
+  slot: DoseSlot;
+  isDueNow: boolean;
+  canToggle: boolean;
+  checked: boolean;
+  statusLabel: string | null;
+  section: MedicationSection;
+  doseLabel: string;
+  nextSupervisedDoseLabel: string | null;
 }
 
-interface MedicationCardItem {
+interface SupervisedMedicationCardItem {
+  storageKey: string;
   id: string;
   title: string;
   subtitle: string;
-  checked: boolean;
-  section: MedicationSection;
+  scheduleLabel: string;
   doseLabel: string;
-  alarmEnabled: boolean;
-  alarmConfig: MedicationAlarmConfig;
+  nextSupervisedDoseLabel: string | null;
 }
 
 @Component({
   selector: 'app-medication',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, FormsModule],
+  imports: [CommonModule, LucideAngularModule, RouterLink],
   templateUrl: './medication.html',
   styleUrl: './medication.css',
 })
-export class Medication implements OnInit {
+export class Medication implements OnInit, OnDestroy {
   private readonly medicationDataService = inject(MedicationDataService);
+  private readonly intakeService = inject(MedicationIntakeService);
+  private readonly treatmentService = inject(PatientTreatmentService);
+  private readonly appointmentService = inject(HealthAppointmentService);
 
   readonly Pill = Pill;
   readonly Hospital = Hospital;
-  readonly Clock3 = Clock3;
-  readonly Bell = Bell;
-  readonly X = X;
 
   @Output() checklistChange = new EventEmitter<MedicationChecklistPayload>();
 
   isLoading = false;
+  canRegisterDoses = false;
+  loadError = '';
 
-  unsupervisedItems: MedicationCardItem[] = [];
-  supervisedItems: MedicationCardItem[] = [];
+  unsupervisedItems: MedicationDoseCardItem[] = [];
+  supervisedItems: SupervisedMedicationCardItem[] = [];
 
-  isAlarmModalOpen = false;
-  selectedMedicationId: string | null = null;
-  selectedMedicationSection: MedicationSection | null = null;
+  private institutedMedications: PatientTreatmentData['institutedMedications'] = [];
+  private currentDoseMedication = '';
+  private treatmentStartDate = '';
+  private slotRefreshTimer?: ReturnType<typeof setInterval>;
 
-  modalDraftDays: WeekdayKey[] = [];
-  modalDraftTime = '08:00';
+  constructor() {
+    effect(() => {
+      this.appointmentService.appointments();
+      this.refreshSupervisedSchedule();
+    });
+  }
 
-  readonly weekdays: WeekdayOption[] = [
-    { key: 'monday', label: 'Segunda-feira', shortLabel: 'Seg' },
-    { key: 'tuesday', label: 'Terça-feira', shortLabel: 'Ter' },
-    { key: 'wednesday', label: 'Quarta-feira', shortLabel: 'Qua' },
-    { key: 'thursday', label: 'Quinta-feira', shortLabel: 'Qui' },
-    { key: 'friday', label: 'Sexta-feira', shortLabel: 'Sex' },
-    { key: 'saturday', label: 'Sábado', shortLabel: 'Sáb' },
-    { key: 'sunday', label: 'Domingo', shortLabel: 'Dom' },
-  ];
+  get dueTodayCount(): number {
+    return this.unsupervisedItems.filter((item) => item.isDueNow).length;
+  }
 
   ngOnInit(): void {
     this.loadMedicationChecklist();
+    this.slotRefreshTimer = setInterval(() => this.refreshUnsupervisedSlots(), 60_000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.slotRefreshTimer) clearInterval(this.slotRefreshTimer);
   }
 
   loadMedicationChecklist(): void {
@@ -103,11 +116,19 @@ export class Medication implements OnInit {
 
     this.medicationDataService.getMedicationChecklist().subscribe({
       next: (response: MedicationChecklistResponse) => {
-        this.unsupervisedItems = this.mapUnsupervisedItems(response.institutedMedications);
-        this.supervisedItems = this.mapSupervisedItem(response.currentDoseMedication);
+        this.canRegisterDoses = response.canRegisterDoses;
+        this.loadError = '';
+        this.currentDoseMedication = response.currentDoseMedication;
+        this.treatmentStartDate = response.treatmentStartDate;
+        this.institutedMedications = response.institutedMedications;
+        this.unsupervisedItems = this.mapUnsupervisedItems(this.institutedMedications);
+        this.refreshSupervisedSchedule();
         this.emitChecklistPayload();
       },
       error: () => {
+        this.loadError =
+          'Não foi possível carregar os medicamentos. Preencha Meu tratamento no perfil.';
+        this.institutedMedications = [];
         this.unsupervisedItems = [];
         this.supervisedItems = [];
         this.emitChecklistPayload();
@@ -120,161 +141,117 @@ export class Medication implements OnInit {
   }
 
   toggleUnsupervised(id: string): void {
-    this.unsupervisedItems = this.unsupervisedItems.map(item =>
-      item.id === id ? { ...item, checked: !item.checked } : item
-    );
+    const item = this.unsupervisedItems.find((entry) => entry.id === id);
+    if (!item?.canToggle) return;
 
-    this.emitChecklistPayload();
-  }
-
-  toggleSupervised(id: string): void {
-    this.supervisedItems = this.supervisedItems.map(item =>
-      item.id === id ? { ...item, checked: !item.checked } : item
-    );
-
-    this.emitChecklistPayload();
-  }
-
-  openAlarmModal(item: MedicationCardItem): void {
-    this.isAlarmModalOpen = true;
-    this.selectedMedicationId = item.id;
-    this.selectedMedicationSection = item.section;
-    this.modalDraftDays = [...item.alarmConfig.days];
-    this.modalDraftTime = item.alarmConfig.time;
-  }
-
-  closeAlarmModal(): void {
-    this.isAlarmModalOpen = false;
-    this.selectedMedicationId = null;
-    this.selectedMedicationSection = null;
-    this.modalDraftDays = [];
-    this.modalDraftTime = '08:00';
-  }
-
-  toggleModalDay(day: WeekdayKey): void {
-    const alreadySelected = this.modalDraftDays.includes(day);
-
-    this.modalDraftDays = alreadySelected
-      ? this.modalDraftDays.filter(selectedDay => selectedDay !== day)
-      : [...this.modalDraftDays, day];
-  }
-
-  saveAlarmConfig(): void {
-    const item = this.getSelectedMedicationItem();
-
-    if (!item) {
-      return;
+    if (item.checked) {
+      this.intakeService.unmarkSlot(item.storageKey, item.slot.slotKey);
+    } else {
+      this.intakeService.markSlotTaken(item.storageKey, item.slot.slotKey);
+      this.registerDoseIfAllowed(item.medicationName);
     }
 
-    const normalizedDays = this.modalDraftDays.length
-      ? [...this.modalDraftDays]
-      : this.weekdays.map(day => day.key);
-
-    const updatedItem: MedicationCardItem = {
-      ...item,
-      alarmEnabled: true,
-      alarmConfig: {
-        days: normalizedDays,
-        time: this.modalDraftTime || '08:00',
-      },
-    };
-
-    this.updateMedicationItem(updatedItem);
-
-    const payload: MedicationAlarmPayload = {
-      medicationName: updatedItem.title,
-      dosage: updatedItem.doseLabel,
-      message: `Está na hora de tomar o remédio ${updatedItem.title}.`,
-      schedule: {
-        days: updatedItem.alarmConfig.days,
-        time: updatedItem.alarmConfig.time,
-      },
-    };
-
-    this.medicationDataService.saveMedicationAlarm(payload).subscribe();
-    this.closeAlarmModal();
+    this.unsupervisedItems = this.unsupervisedItems.map((entry) =>
+      entry.id === id ? this.applySlotState(entry) : entry
+    );
+    this.emitChecklistPayload();
   }
 
-  getSelectedMedicationName(): string {
-    return this.getSelectedMedicationItem()?.title ?? '';
-  }
-
-  isDaySelected(day: WeekdayKey): boolean {
-    return this.modalDraftDays.includes(day);
-  }
-
-  trackById(_: number, item: MedicationCardItem): string {
+  trackById(_: number, item: { id: string }): string {
     return item.id;
-  }
-
-  private getSelectedMedicationItem(): MedicationCardItem | null {
-    if (!this.selectedMedicationId || !this.selectedMedicationSection) {
-      return null;
-    }
-
-    const source =
-      this.selectedMedicationSection === 'unsupervised'
-        ? this.unsupervisedItems
-        : this.supervisedItems;
-
-    return source.find(item => item.id === this.selectedMedicationId) ?? null;
-  }
-
-  private updateMedicationItem(updatedItem: MedicationCardItem): void {
-    if (updatedItem.section === 'unsupervised') {
-      this.unsupervisedItems = this.unsupervisedItems.map(item =>
-        item.id === updatedItem.id ? updatedItem : item
-      );
-      return;
-    }
-
-    this.supervisedItems = this.supervisedItems.map(item =>
-      item.id === updatedItem.id ? updatedItem : item
-    );
   }
 
   private mapUnsupervisedItems(
     items: PatientTreatmentData['institutedMedications']
-  ): MedicationCardItem[] {
-    return items.map((item: InstitutedMedicationItem) => {
-      const doseLabel = this.buildDoseLabel(item.dose, item.unit);
+  ): MedicationDoseCardItem[] {
+    return items.flatMap((item: InstitutedMedicationItem) => {
+      const schedule = buildMedicationSchedule(item.frequency);
+      const storageKey = this.intakeService.medicationKey(item.name);
+      const slots = buildTodayDoseSlots(schedule.reminderTimes);
+      const dosesPerDay = slots.length;
+      const frequencyLabel = schedule.label.split(' · ')[0] ?? schedule.label;
+      const subtitle = this.buildSubtitle(item.dose, item.unit);
 
-      return {
-        id: crypto.randomUUID(),
-        title: item.name,
-        subtitle: this.buildSubtitle(item.dose, item.unit, item.frequency),
-        checked: false,
-        section: 'unsupervised',
-        doseLabel,
-        alarmEnabled: true,
-        alarmConfig: this.buildDefaultAlarmConfig(item.frequency),
-      };
+      return slots.map((slot, index) => {
+        const base: MedicationDoseCardItem = {
+          storageKey,
+          id: `${storageKey}_${slot.time}`,
+          medicationName: item.name,
+          title: item.name,
+          subtitle,
+          frequencyLabel,
+          doseTime: slot.time,
+          doseIndex: index + 1,
+          dosesPerDay,
+          slot,
+          isDueNow: false,
+          canToggle: false,
+          checked: false,
+          statusLabel: null,
+          section: 'unsupervised',
+          doseLabel: this.buildDoseLabel(item.dose, item.unit),
+          nextSupervisedDoseLabel: null,
+        };
+
+        return this.applySlotState(base);
+      });
     });
   }
 
-  private mapSupervisedItem(
-    value: PatientTreatmentData['currentDoseMedication']
-  ): MedicationCardItem[] {
-    const trimmed = value.trim();
+  private applySlotState(item: MedicationDoseCardItem): MedicationDoseCardItem {
+    const taken = this.intakeService.isSlotTaken(item.storageKey, item.slot.slotKey);
+    const state = getDoseSlotIntakeState(item.slot, taken);
 
+    return {
+      ...item,
+      checked: state.checked,
+      canToggle: state.canToggle,
+      isDueNow: state.isDueNow,
+      statusLabel: state.statusLabel,
+    };
+  }
+
+  private refreshSupervisedSchedule(): void {
+    this.supervisedItems = this.mapSupervisedItems(
+      this.currentDoseMedication,
+      this.treatmentStartDate
+    );
+  }
+
+  private refreshUnsupervisedSlots(): void {
+    if (this.institutedMedications.length === 0) return;
+    this.unsupervisedItems = this.mapUnsupervisedItems(this.institutedMedications);
+    this.emitChecklistPayload();
+  }
+
+  private mapSupervisedItems(
+    value: PatientTreatmentData['currentDoseMedication'],
+    treatmentStartDate: string
+  ): SupervisedMedicationCardItem[] {
+    const trimmed = value.trim();
     if (!trimmed) return [];
+
+    const storageKey = this.intakeService.medicationKey(`supervised:${trimmed}`);
+    const lastSupervisedDoseDate = this.appointmentService.getLastSupervisedDoseDate();
 
     return [
       {
-        id: crypto.randomUUID(),
+        storageKey,
+        id: storageKey,
         title: trimmed,
         subtitle: '',
-        checked: false,
-        section: 'supervised',
+        scheduleLabel: '1 vez por mês · na unidade de saúde',
         doseLabel: 'Dose supervisionada',
-        alarmEnabled: true,
-        alarmConfig: this.buildDefaultAlarmConfig(),
+        nextSupervisedDoseLabel: formatSupervisedDoseScheduleLabel(
+          treatmentStartDate,
+          lastSupervisedDoseDate
+        ),
       },
     ];
   }
 
-  private buildSubtitle(dose: string, unit: string, frequency: string): string {
-    const parts = [dose?.trim(), unit?.trim(), frequency?.trim()].filter(Boolean);
+  private buildSubtitle(dose: string, unit: string): string {
+    const parts = [dose?.trim(), unit?.trim()].filter(Boolean);
     return parts.join(' • ');
   }
 
@@ -283,55 +260,22 @@ export class Medication implements OnInit {
     return parts.join(' ');
   }
 
-  private buildDefaultAlarmConfig(frequency?: string): MedicationAlarmConfig {
-    return {
-      days: this.weekdays.map(day => day.key),
-      time: this.extractTimeFromFrequency(frequency),
-    };
-  }
-
-  private extractTimeFromFrequency(frequency?: string): string {
-    const value = frequency?.trim();
-
-    if (!value) {
-      return '08:00';
-    }
-
-    const match = value.match(/(\d{1,2}):(\d{2})\s?(AM|PM)/i);
-
-    if (!match) {
-      return '08:00';
-    }
-
-    const [, hourRaw, minute, periodRaw] = match;
-    const period = periodRaw.toUpperCase();
-    let hour = Number(hourRaw);
-
-    if (period === 'AM' && hour === 12) {
-      hour = 0;
-    }
-
-    if (period === 'PM' && hour < 12) {
-      hour += 12;
-    }
-
-    return `${String(hour).padStart(2, '0')}:${minute}`;
+  private registerDoseIfAllowed(drugName: string): void {
+    if (!this.canRegisterDoses) return;
+    this.treatmentService.registerTakenDose(drugName).subscribe({ error: () => undefined });
   }
 
   private emitChecklistPayload(): void {
-    const unsupervisedCheckedCount = this.unsupervisedItems.filter(item => item.checked).length;
+    const unsupervisedCheckedCount = this.unsupervisedItems.filter((item) => item.checked).length;
     const unsupervisedTotalCount = this.unsupervisedItems.length;
 
-    const supervisedCheckedCount = this.supervisedItems.filter(item => item.checked).length;
-    const supervisedTotalCount = this.supervisedItems.length;
-
     this.checklistChange.emit({
-      checkedCount: unsupervisedCheckedCount + supervisedCheckedCount,
-      totalCount: unsupervisedTotalCount + supervisedTotalCount,
+      checkedCount: unsupervisedCheckedCount,
+      totalCount: unsupervisedTotalCount,
       unsupervisedCheckedCount,
       unsupervisedTotalCount,
-      supervisedCheckedCount,
-      supervisedTotalCount,
+      supervisedCheckedCount: 0,
+      supervisedTotalCount: this.supervisedItems.length,
     });
   }
 }

@@ -27,6 +27,15 @@ class TreatmentRepository:
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def get_active_by_patient_id(self, patient_id: UUID) -> Treatment | None:
+        treatments = await self.list_by_patient_id(
+            patient_id,
+            status=TreatmentStatus.active,
+        )
+        if not treatments:
+            return None
+        return treatments[0]
+
     async def list_by_patient_id(
         self,
         patient_id: UUID,
