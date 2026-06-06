@@ -39,8 +39,8 @@ export class CommunityCreatePost {
 
   readonly canSubmit = computed(
     () =>
-      this.title().trim().length > 0 &&
-      this.description().trim().length > 0 &&
+      this.title().trim().length >= 3 &&
+      this.description().trim().length >= 10 &&
       this.categories().length > 0
   );
 

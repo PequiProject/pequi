@@ -96,8 +96,10 @@ class RegisterDoseUseCase:
         treatment,
         data: DoseLogCreate,
     ) -> None:
-        if data.supervised:
-            raise ForbiddenError("Paciente não pode registrar doses supervisionadas.")
+        if data.supervised and not data.via_consultation:
+            raise ForbiddenError(
+                "Dose supervisionada só pode ser registrada ao informar uma consulta realizada."
+            )
 
         patient = await self._patient_repo.get_by_user_id(actor_user_id)
         if patient is None or patient.id != treatment.patient_id:

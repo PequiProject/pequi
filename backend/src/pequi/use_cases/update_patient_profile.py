@@ -9,9 +9,7 @@ class UpdatePatientProfileUseCase:
         self.patient_repo = patient_repo
 
     async def execute(self, user_id: UUID, data: PatientProfileUpdate) -> PatientProfileRead | None:
-        patient = await self.patient_repo.get_by_user_id(user_id)
-        if not patient:
-            return None
+        patient = await self.patient_repo.get_or_create_by_user_id(user_id)
         fields = {k: v for k, v in data.model_dump().items() if v is not None}
         if not fields:
             return PatientProfileRead.model_validate(patient)

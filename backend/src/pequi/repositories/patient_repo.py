@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from sqlalchemy import select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pequi.models.patient import PatientProfile
@@ -29,6 +30,25 @@ class PatientRepository:
     async def create(self, patient: PatientProfile) -> PatientProfile:
         self.session.add(patient)
         await self.session.flush()
+        return patient
+
+    async def get_or_create_by_user_id(self, user_id: UUID) -> PatientProfile:
+        patient = await self.get_by_user_id(user_id)
+        if patient is not None:
+            return patient
+
+        try:
+            async with self.session.begin_nested():
+                patient = PatientProfile(user_id=user_id)
+                self.session.add(patient)
+                await self.session.flush()
+        except IntegrityError:
+            patient = await self.get_by_user_id(user_id)
+            if patient is not None:
+                return patient
+            raise
+
+        await self.session.refresh(patient)
         return patient
 
     async def update(self, id: UUID, **fields) -> PatientProfile | None:

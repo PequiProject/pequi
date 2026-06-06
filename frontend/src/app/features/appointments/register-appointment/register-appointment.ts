@@ -1,17 +1,23 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { LucideAngularModule, LucideCalendar, LucideCheck, LucidePill } from 'lucide-angular';
 import {
   ANS_GIF_GRADE_OPTIONS,
   APPOINTMENT_TYPES,
   EMPTY_APPOINTMENT_DRAFT,
   type AnsGifGrade,
+  type AppointmentFollowUpDraft,
+  type HealthAppointment,
   type HealthAppointmentDraft,
   type NeurologicalAssessmentDraft,
 } from '../models/health-appointment.models';
 import { HealthAppointmentService } from '../services/health-appointment.service';
+import {
+  appointmentToDraft,
+  partialDraftFromNextInfo,
+} from '../utils/appointment-draft.utils';
 import { PatientMedicationService } from '../services/patient-medication.service';
 import {
   INSTITUTED_MEDICATION_FREQUENCY_OPTIONS,
@@ -24,8 +30,10 @@ import {
   parseInstitutedMedicationRows,
   type PatientTreatmentData,
 } from '../../profile/models/patient-profile.models';
+import { ToastService } from '../../../components/toast/toast.service';
+import { AuthService } from '../../auth/services/auth-service';
 import { PatientProfileService } from '../../profile/services/patient-profile.service';
-
+import { PatientTreatmentService } from '../../profile/services/patient-treatment.service';
 type WizardStepId = 'basics' | 'performed' | 'summary';
 
 const WIZARD_STEPS: WizardStepId[] = ['basics', 'performed', 'summary'];
@@ -37,12 +45,17 @@ const WIZARD_STEP_COUNT = WIZARD_STEPS.length;
   imports: [CommonModule, ReactiveFormsModule, LucideAngularModule],
   templateUrl: './register-appointment.html',
 })
-export class RegisterAppointmentComponent {
+export class RegisterAppointmentComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly appointmentService = inject(HealthAppointmentService);
+  private editingAppointmentId: string | null = null;
   private readonly medicationService = inject(PatientMedicationService);
+  private readonly authService = inject(AuthService);
   private readonly profileService = inject(PatientProfileService);
+  private readonly treatmentService = inject(PatientTreatmentService);
+  private readonly toast = inject(ToastService);
 
   readonly appointmentTypes = APPOINTMENT_TYPES;
   readonly ansGifGradeOptions = ANS_GIF_GRADE_OPTIONS;
@@ -166,6 +179,64 @@ export class RegisterAppointmentComponent {
     this.loadInstitutedMedicationsFromTreatment(treatment);
   }
 
+  ngOnInit(): void {
+    this.applyPrefillFromRoute();
+  }
+
+  private applyPrefillFromRoute(): void {
+    const params = this.route.snapshot.queryParamMap;
+    const appointmentId = params.get('appointmentId');
+    if (appointmentId) {
+      const existing = this.appointmentService.findById(appointmentId);
+      if (existing) {
+        this.editingAppointmentId = existing.id;
+        this.hydrateDraft(existing);
+        return;
+      }
+    }
+
+    const date = params.get('date');
+    const time = params.get('time');
+    const location = params.get('location');
+    const type = params.get('type');
+    if (!date && !time && !location && !type) {
+      return;
+    }
+
+    const draft = partialDraftFromNextInfo({
+      dateIso: date ?? '',
+      time: time ?? undefined,
+      location: location ?? undefined,
+      appointmentType: type ?? undefined,
+    });
+    this.hydrateDraftFromPartial(draft);
+  }
+
+  private hydrateDraft(appointment: HealthAppointment): void {
+    const draft = appointmentToDraft(appointment);
+    this.draft.set(draft);
+    this.basicsForm.patchValue({
+      appointmentDate: draft.appointmentDate,
+      appointmentTime: draft.appointmentTime,
+      location: draft.location,
+      type: draft.type,
+      professional: draft.professional,
+      notes: draft.notes,
+    });
+  }
+
+  private hydrateDraftFromPartial(draft: HealthAppointmentDraft): void {
+    this.draft.set(draft);
+    this.basicsForm.patchValue({
+      appointmentDate: draft.appointmentDate,
+      appointmentTime: draft.appointmentTime,
+      location: draft.location,
+      type: draft.type,
+      professional: draft.professional,
+      notes: draft.notes,
+    });
+  }
+
   private loadInstitutedMedicationsFromTreatment(treatment: PatientTreatmentData): void {
     this.institutedMedicationsArray.clear();
     const stored = treatment.institutedMedications ?? [];
@@ -278,7 +349,7 @@ export class RegisterAppointmentComponent {
   }
 
   goToProfile(): void {
-    void this.router.navigate(['/profile']);
+    void this.router.navigate(['/profile'], { queryParams: { tab: 'treatment' } });
   }
 
   private syncFollowUpFromForm(): void {
@@ -486,10 +557,99 @@ export class RegisterAppointmentComponent {
   submit(): void {
     this.syncFollowUpFromForm();
     if (this.draft().followUp.registerNeurologicalAssessment) this.syncAnsFromForm();
-    this.syncProfileFromConsultation();
-    const record = this.appointmentService.saveFromDraft(this.draft());
-    this.savedStatusLabel.set(record.status === 'scheduled' ? 'Agendado' : 'Realizado');
-    this.saved.set(true);
+
+    const draft = this.draft();
+    const isOffline = !this.authService.isAuthenticated();
+
+    if (isOffline) {
+      this.syncProfileFromConsultation();
+    }
+
+    this.appointmentService
+      .saveFromDraft(draft, this.editingAppointmentId ?? undefined)
+      .subscribe({
+      next: (record) => {
+        this.editingAppointmentId = record.id;
+        if (isOffline) {
+          this.registerSupervisedDosesIfNeeded();
+        } else {
+          this.profileService.syncTreatmentFromApi().subscribe({ error: () => undefined });
+          this.treatmentService.getMedicationChecklist().subscribe({ error: () => undefined });
+        }
+        this.savedStatusLabel.set(record.status === 'scheduled' ? 'Agendado' : 'Realizado');
+        this.saved.set(true);
+      },
+      error: () => {
+        if (isOffline) {
+          this.toast.error('Consulta', 'Não foi possível salvar a consulta.');
+          return;
+        }
+        this.syncProfileFromConsultation();
+        this.registerSupervisedDosesIfNeeded();
+        const localRecord = this.appointmentService.saveFromDraftLocal(
+          draft,
+          this.editingAppointmentId ?? undefined
+        );
+        this.editingAppointmentId = localRecord.id;
+        this.savedStatusLabel.set(
+          localRecord.status === 'scheduled' ? 'Agendado' : 'Realizado'
+        );
+        this.saved.set(true);
+        this.toast.warning(
+          'Consulta',
+          'Salva localmente. Sincronize quando estiver online.',
+        );
+      },
+    });
+  }
+
+  private registerSupervisedDosesIfNeeded(): void {
+    if (this.draft().performed !== true) return;
+
+    const fu = this.draft().followUp;
+    if (!fu.registerSupervisedDose) return;
+
+    const drugNames = this.extractSupervisedDrugNames(fu);
+    if (drugNames.length === 0) {
+      this.toast.warning(
+        'Dose supervisionada',
+        'Informe o medicamento da dose na consulta para registrar.',
+      );
+      return;
+    }
+
+    this.treatmentService.getMedicationChecklist().subscribe({
+      next: () => {
+        this.treatmentService.registerSupervisedDosesFromConsultation(drugNames).subscribe({
+          error: () => undefined,
+        });
+      },
+      error: () => undefined,
+    });
+  }
+
+  private extractSupervisedDrugNames(fu: AppointmentFollowUpDraft): string[] {
+    const fromSchemes = [
+      fu.doseSchemeRifampicina ? 'Rifampicina' : '',
+      fu.doseSchemeClofazimina ? 'Clofazimina' : '',
+      fu.doseSchemeMinociclina ? 'Minociclina' : '',
+      fu.doseSchemeOfloxacino ? 'Ofloxacino' : '',
+      fu.doseSchemeDapsone ? 'Dapsona' : '',
+    ].filter(Boolean);
+
+    if (fromSchemes.length > 0) {
+      return fromSchemes;
+    }
+
+    const combined = fu.otherMedicationName?.trim();
+    if (!combined) {
+      return [];
+    }
+
+    return combined
+      .split('+')
+      .map((part) => part.trim())
+      .filter(Boolean);
   }
 
   private syncProfileFromConsultation(): void {
@@ -513,8 +673,10 @@ export class RegisterAppointmentComponent {
       next.otherMedication = fu.institutedOtherMedication;
       next.institutedMedications = fu.institutedMedications;
     }
-    this.profileService.updateTreatment(next);
     this.medicationService.setCurrentDoseMedication(next.currentDoseMedication);
+    this.profileService.saveTreatment(next).subscribe({
+      error: () => this.profileService.updateTreatment(next),
+    });
   }
 
   goHome(): void {

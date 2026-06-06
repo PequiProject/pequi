@@ -1,39 +1,66 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+POST_CATEGORIES = frozenset({"experience", "question", "support", "news"})
 
 
 class PostCreate(BaseModel):
-    """Payload para criação de post na comunidade anônima (PEQ-106)."""
+    """Payload for creating a community post."""
 
     model_config = ConfigDict(extra="forbid")
 
-    title: str = Field(..., min_length=3, max_length=200, description="Título do post")
-    content: str = Field(..., min_length=10, max_length=5000, description="Conteúdo do post")
-    category: str = Field(
+    title: str = Field(..., min_length=3, max_length=200, description="Post title")
+    content: str = Field(..., min_length=10, max_length=5000, description="Post content")
+    categories: list[str] = Field(
         ...,
-        pattern="^(experience|question|support|news)$",
-        description="Categoria do post",
+        min_length=1,
+        max_length=4,
+        description="Post categories",
     )
+    author_mode: str = Field(
+        ...,
+        pattern="^(anonymous|identified)$",
+        description="Public author mode",
+    )
+
+    @field_validator("categories")
+    @classmethod
+    def validate_categories(cls, value: list[str]) -> list[str]:
+        if len(set(value)) != len(value):
+            raise ValueError("Duplicate categories are not allowed")
+
+        invalid = [item for item in value if item not in POST_CATEGORIES]
+        if invalid:
+            raise ValueError(f"Invalid categories: {', '.join(invalid)}")
+
+        return value
 
 
 class CommentCreate(BaseModel):
-    """Payload para criação de comentário em post (PEQ-106)."""
+    """Payload for creating a community comment."""
 
     model_config = ConfigDict(extra="forbid")
 
-    content: str = Field(..., min_length=3, max_length=2000, description="Conteúdo do comentário")
+    content: str = Field(..., min_length=3, max_length=2000, description="Comment content")
+    author_mode: str = Field(
+        ...,
+        pattern="^(anonymous|identified)$",
+        description="Public author mode",
+    )
 
 
 class PostResponse(BaseModel):
-    """Resposta de post da comunidade — nunca expõe user_id, apenas anonymous_id."""
+    """Community post response. Never exposes user_id."""
 
     id: UUID
     author_anonymous_id: UUID
+    author_mode: str
+    author_display_name: str | None = None
     title: str
     content: str
-    category: str
+    categories: list[str]
     is_pinned: bool
     is_moderated: bool
     like_count: int
@@ -45,11 +72,13 @@ class PostResponse(BaseModel):
 
 
 class CommentResponse(BaseModel):
-    """Resposta de comentário — nunca expõe user_id, apenas anonymous_id."""
+    """Community comment response. Never exposes user_id."""
 
     id: UUID
     post_id: UUID
     author_anonymous_id: UUID
+    author_mode: str
+    author_display_name: str | None = None
     content: str
     created_at: datetime
     updated_at: datetime
@@ -58,27 +87,27 @@ class CommentResponse(BaseModel):
 
 
 class PostListResponse(BaseModel):
-    """Lista paginada de posts da comunidade."""
+    """Paginated community posts."""
 
     items: list[PostResponse]
     total: int
 
 
 class CommentListResponse(BaseModel):
-    """Lista de comentários de um post."""
+    """Paginated community comments."""
 
     items: list[CommentResponse]
     total: int
 
 
 class PostModerate(BaseModel):
-    """Payload para moderação de post (admin only)."""
+    """Admin-only post moderation payload."""
 
-    is_moderated: bool = Field(..., description="Marca o post como moderado/removido")
+    is_moderated: bool = Field(..., description="Marks the post as moderated/removed")
 
 
 class DeanonymizeResponse(BaseModel):
-    """Resposta de deanonymização (admin only) — expõe user_id real com auditoria."""
+    """Admin-only deanonymization response."""
 
     anonymous_id: UUID
     user_id: UUID

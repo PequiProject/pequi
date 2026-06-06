@@ -28,34 +28,6 @@
       Nome de usuário atualizado.
     </p>
   }
-  @if (personalSavedToast()) {
-    <p
-      class="mb-4 rounded-xl bg-[#E8F5E9] px-4 py-3 text-sm font-medium text-[#2E7D32]"
-      data-testid="personal-saved-toast"
-      role="status"
-    >
-      Dados pessoais salvos.
-    </p>
-  }
-  @if (treatmentSavedToast()) {
-    <p
-      class="mb-4 rounded-xl bg-[#E8F5E9] px-4 py-3 text-sm font-medium text-[#2E7D32]"
-      data-testid="treatment-saved-toast"
-      role="status"
-    >
-      Dados de tratamento salvos.
-    </p>
-  }
-  @if (exportPdfHint()) {
-    <p
-      class="mb-4 rounded-xl bg-[#EEF2FF] px-4 py-3 text-sm text-[#4338CA]"
-      data-testid="export-pdf-hint"
-      role="status"
-    >
-      A exportação em PDF estará disponível em breve pelo servidor.
-    </p>
-  }
-
   <div
     class="mb-6 flex flex-col items-center rounded-2xl bg-white px-6 py-8 text-center shadow-sm ring-1 ring-[#E7E5E4]"
     data-testid="profile-summary"
@@ -315,11 +287,12 @@
       <button
         type="button"
         data-testid="export-pdf-button"
-        (click)="onExportPdf()"
-        class="flex w-full items-center justify-center gap-2 rounded-xl border border-[#D6D3D1] bg-white px-4 py-3.5 text-sm font-semibold text-[#373831] shadow-sm transition hover:bg-[#FAFAF9]"
+        [disabled]="exportingBooklet()"
+        (click)="onExportBooklet()"
+        class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#D6D3D1] bg-white px-4 py-3.5 text-sm font-semibold text-[#373831] shadow-sm transition hover:bg-[#FAFAF9] disabled:cursor-not-allowed disabled:opacity-60"
       >
         <lucide-icon [name]="LucideDownload" [size]="18" [strokeWidth]="2" />
-        Exportar cartilha em PDF
+        {{ exportingBooklet() ? 'Gerando cartilha…' : 'Exportar cartilha' }}
       </button>
       <p
         class="mt-2 text-center text-xs leading-relaxed text-[#64655C]"
@@ -977,9 +950,10 @@
         <button
           type="submit"
           data-testid="save-treatment-button"
-          class="w-full rounded-xl bg-[#4338CA] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90"
+          [disabled]="savingTreatment()"
+          class="w-full rounded-xl bg-[#4338CA] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          Salvar tratamento
+          {{ savingTreatment() ? 'Salvando...' : 'Salvar tratamento' }}
         </button>
       </form>
     </div>
@@ -1007,8 +981,7 @@
   <app-profile-edit-account
     [initialEmail]="profile().account.loginEmail"
     [hasPassword]="hasAccountPassword()"
-    [passwordError]="accountPasswordError()"
-    (saved)="onAccountSaved($event)"
+    (passwordChanged)="onPasswordChanged()"
     (closed)="closeEditAccount()"
   />
 }

@@ -7,8 +7,8 @@ from pydantic import BaseModel, ConfigDict
 class PatientProfileRead(BaseModel):
     id: UUID
     user_id: UUID
-    health_unit_id: UUID
-    date_of_birth: date
+    health_unit_id: UUID | None = None
+    date_of_birth: date | None = None
     sex: str | None = None
     neighborhood: str | None = None
     city: str | None = None

@@ -21,6 +21,8 @@ assert {
   res.status: eq 200
   res.body.id: isDefined
   res.body.author_anonymous_id: isDefined
+  res.body.author_mode: isDefined
+  res.body.author_display_name: isDefined
   res.body.user_id: isNotDefined
 }
 

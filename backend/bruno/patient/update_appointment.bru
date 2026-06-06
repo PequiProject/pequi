@@ -1,0 +1,35 @@
+meta {
+  name: Update Appointment
+  type: http
+  seq: 10
+}
+
+patch {
+  url: {{baseUrl}}/v1/patients/me/appointments/{{appointmentId}}
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "appointment_date": "2026-06-27",
+    "appointment_time": "15:30",
+    "location": "UBS Centro",
+    "appointment_type": "consulta",
+    "performed": true,
+    "follow_up": {
+      "conduct": "Consulta realizada",
+      "next_appointment_date": "2026-07-27"
+    }
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.id: eq {{appointmentId}}
+  res.body.status: eq completed
+}

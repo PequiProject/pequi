@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { LucideAngularModule, LucideUsers } from 'lucide-angular';
+import { ToastService } from '../../../components/toast/toast.service';
+import { getApiErrorMessage } from '../../../core/api-error.utils';
 import { CommunityCreatePost } from '../components/community-create-post/community-create-post';
 import { CommunityDeleteConfirm } from '../components/community-delete-confirm/community-delete-confirm';
 import { CommunityFab } from '../components/community-fab/community-fab';
@@ -31,8 +33,9 @@ import { CommunityProfileService } from '../services/community-profile.service';
   ],
   templateUrl: './community-feed.html',
 })
-export class CommunityFeed {
+export class CommunityFeed implements OnInit {
   private readonly router = inject(Router);
+  private readonly toast = inject(ToastService);
   readonly profileService = inject(CommunityProfileService);
   readonly postsService = inject(CommunityPostsService);
 
@@ -49,16 +52,15 @@ export class CommunityFeed {
   readonly activeFilter = signal<CommunityFilterId>('all');
   readonly showCreatePost = signal(false);
   readonly pendingDeletePostId = signal<string | null>(null);
+  readonly submitting = signal(false);
 
   readonly filteredPosts = computed(() => {
     const query = this.searchQuery().trim().toLowerCase();
-    const filter = this.activeFilter();
+    const posts = this.postsService.posts();
 
-    return this.postsService.posts().filter((post) => {
-      const matchesFilter = filter === 'all' || post.categories.includes(filter);
-      if (!matchesFilter) return false;
-      if (!query) return true;
+    if (!query) return posts;
 
+    return posts.filter((post) => {
       const haystack = [post.title, post.description, post.authorName, ...post.categoryLabels]
         .join(' ')
         .toLowerCase();
@@ -72,6 +74,10 @@ export class CommunityFeed {
     }
   }
 
+  ngOnInit(): void {
+    this.fetchPosts();
+  }
+
   changeProfile(): void {
     this.profileService.clear();
     void this.router.navigate(['/comunity']);
@@ -83,10 +89,18 @@ export class CommunityFeed {
 
   onFilterChange(filter: CommunityFilterId): void {
     this.activeFilter.set(filter);
+    this.fetchPosts(filter);
   }
 
   toggleSupport(postId: string): void {
-    this.postsService.toggleSupport(postId);
+    this.postsService.toggleSupport(postId).subscribe({
+      error: (error) => {
+        this.toast.error(
+          'Erro ao acolher post',
+          getApiErrorMessage(error, 'Tente novamente em instantes.'),
+        );
+      },
+    });
   }
 
   openPost(postId: string): void {
@@ -102,8 +116,21 @@ export class CommunityFeed {
   }
 
   onSubmitPost(payload: CreatePostFormValue): void {
-    this.postsService.createPost(payload);
-    this.showCreatePost.set(false);
+    this.submitting.set(true);
+    this.postsService.createPost(payload).subscribe({
+      next: () => {
+        this.submitting.set(false);
+        this.showCreatePost.set(false);
+        this.toast.success('Post publicado na comunidade!');
+      },
+      error: (error) => {
+        this.submitting.set(false);
+        this.toast.error(
+          'Erro ao publicar post',
+          getApiErrorMessage(error, 'Revise os campos e tente novamente.'),
+        );
+      },
+    });
   }
 
   requestDeletePost(postId: string): void {
@@ -117,7 +144,29 @@ export class CommunityFeed {
   confirmDeletePost(): void {
     const postId = this.pendingDeletePostId();
     if (!postId) return;
-    this.postsService.deletePost(postId);
-    this.pendingDeletePostId.set(null);
+
+    this.postsService.deletePost(postId).subscribe({
+      next: () => {
+        this.pendingDeletePostId.set(null);
+        this.toast.success('Post excluído.');
+      },
+      error: (error) => {
+        this.toast.error(
+          'Erro ao excluir post',
+          getApiErrorMessage(error, 'Tente novamente em instantes.'),
+        );
+      },
+    });
+  }
+
+  private fetchPosts(filter: CommunityFilterId = this.activeFilter()): void {
+    this.postsService.loadPosts(filter).subscribe({
+      error: (error) => {
+        this.toast.error(
+          'Erro ao carregar comunidade',
+          getApiErrorMessage(error, 'Tente novamente em instantes.'),
+        );
+      },
+    });
   }
 }

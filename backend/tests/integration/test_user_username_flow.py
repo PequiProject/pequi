@@ -7,6 +7,7 @@ contra o banco de dados real (PostgreSQL), sem HTTP.
 import pytest
 
 from pequi.core.exceptions import ConflictError, UnauthorizedError
+from pequi.repositories.patient_repo import PatientRepository
 from pequi.repositories.user_repo import UserRepository
 from pequi.schemas.user import LoginRequest, UserCreate
 from pequi.use_cases.login_user import LoginUserUseCase
@@ -15,9 +16,13 @@ from pequi.use_cases.register_user import RegisterUserUseCase
 pytestmark = pytest.mark.asyncio
 
 
+def _register_use_case(db_session):
+    return RegisterUserUseCase(UserRepository(db_session), PatientRepository(db_session))
+
+
 async def test_register_persists_username(db_session):
     repo = UserRepository(db_session)
-    use_case = RegisterUserUseCase(repo)
+    use_case = _register_use_case(db_session)
 
     result = await use_case.execute(
         UserCreate(
@@ -36,8 +41,7 @@ async def test_register_persists_username(db_session):
 
 
 async def test_register_username_stored_lowercase(db_session):
-    repo = UserRepository(db_session)
-    use_case = RegisterUserUseCase(repo)
+    use_case = _register_use_case(db_session)
 
     result = await use_case.execute(
         UserCreate(
@@ -53,7 +57,7 @@ async def test_register_username_stored_lowercase(db_session):
 
 async def test_get_by_username_case_insensitive(db_session):
     repo = UserRepository(db_session)
-    use_case = RegisterUserUseCase(repo)
+    use_case = _register_use_case(db_session)
 
     await use_case.execute(
         UserCreate(
@@ -70,8 +74,7 @@ async def test_get_by_username_case_insensitive(db_session):
 
 
 async def test_register_rejects_duplicate_username(db_session):
-    repo = UserRepository(db_session)
-    use_case = RegisterUserUseCase(repo)
+    use_case = _register_use_case(db_session)
 
     await use_case.execute(
         UserCreate(
@@ -94,8 +97,7 @@ async def test_register_rejects_duplicate_username(db_session):
 
 
 async def test_register_rejects_duplicate_username_case_insensitive(db_session):
-    repo = UserRepository(db_session)
-    use_case = RegisterUserUseCase(repo)
+    use_case = _register_use_case(db_session)
 
     await use_case.execute(
         UserCreate(
@@ -119,7 +121,7 @@ async def test_register_rejects_duplicate_username_case_insensitive(db_session):
 
 async def test_login_by_email(db_session):
     repo = UserRepository(db_session)
-    await RegisterUserUseCase(repo).execute(
+    await _register_use_case(db_session).execute(
         UserCreate(
             email="emaillogin@example.com",
             username="emailloginuser",
@@ -138,7 +140,7 @@ async def test_login_by_email(db_session):
 
 async def test_login_by_username(db_session):
     repo = UserRepository(db_session)
-    await RegisterUserUseCase(repo).execute(
+    await _register_use_case(db_session).execute(
         UserCreate(
             email="userlogin@example.com",
             username="userloginuser",
@@ -157,7 +159,7 @@ async def test_login_by_username(db_session):
 
 async def test_login_by_username_case_insensitive(db_session):
     repo = UserRepository(db_session)
-    await RegisterUserUseCase(repo).execute(
+    await _register_use_case(db_session).execute(
         UserCreate(
             email="cilogin@example.com",
             username="ciloginuser",

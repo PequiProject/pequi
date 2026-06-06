@@ -19,7 +19,7 @@
         type="button"
         data-testid="close-create-post"
         (click)="onClose()"
-        class="rounded-full p-2 text-[#64655C] transition hover:bg-[#F5F5F4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4338CA]"
+        class="cursor-pointer rounded-full p-2 text-[#64655C] transition hover:bg-[#F5F5F4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4338CA]"
         aria-label="Fechar"
       >
         <lucide-icon [name]="LucideX" [size]="20" [strokeWidth]="2" />
@@ -91,14 +91,14 @@
           type="button"
           data-testid="cancel-create-post"
           (click)="onClose()"
-          class="flex-1 rounded-xl border border-[#D6D3D1] px-4 py-2.5 text-sm font-semibold text-[#373831] transition hover:bg-[#FAFAF9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4338CA]"
+          class="cursor-pointer flex-1 rounded-xl border border-[#D6D3D1] px-4 py-2.5 text-sm font-semibold text-[#373831] transition hover:bg-[#FAFAF9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4338CA]"
         >
           Cancelar
         </button>
         <button
           type="submit"
           data-testid="submit-create-post"
-          class="flex-1 rounded-xl bg-[#4338CA] px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4338CA] disabled:opacity-50"
+          class="cursor-pointer flex-1 rounded-xl bg-[#4338CA] px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4338CA] disabled:cursor-not-allowed disabled:opacity-50"
           [disabled]="!canSubmit()"
         >
           Publicar

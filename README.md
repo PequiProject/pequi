@@ -26,7 +26,7 @@ Pequi nasceu para reduzir esse abandono. O aplicativo permite que pacientes regi
 
 O projeto é desenvolvido como software de código aberto para unidades de saúde pública e organizações que atuam no combate à hanseníase no Brasil.
 
-> [!IMPORTANTE]
+> [!NOTE]
 > O objetivo do Pequi é apoiar o acompanhamento de pacientes com hanseníase, mas ele **não substitui avaliação médica profissional**. A plataforma foi projetada para auxiliar a adesão ao tratamento, o monitoramento clínico e a comunicação entre equipes de saúde, sempre respeitando princípios de privacidade, segurança da informação e conformidade com a LGPD.
 
 ---

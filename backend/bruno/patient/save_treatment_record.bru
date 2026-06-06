@@ -1,0 +1,39 @@
+meta {
+  name: Save Treatment Record
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{baseUrl}}/v1/patients/me/treatment-record
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "classification": "PB",
+    "treatment_start_date": "2025-02-01",
+    "diagnosis_date": "2025-01-10",
+    "current_dose_medication": "Rifampicina + Dapsona",
+    "instituted_medications": [
+      {
+        "name": "Dapsona",
+        "dose": "100",
+        "unit": "mg",
+        "frequency": "dia"
+      }
+    ],
+    "scheme_dapsone": true,
+    "scheme_rifampicina": true
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.classification: eq PB
+}

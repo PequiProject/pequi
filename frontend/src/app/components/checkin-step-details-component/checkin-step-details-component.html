@@ -21,7 +21,7 @@
   </div>
 
   <div
-    class="rounded-2xl border border-[#ECE7E2] bg-white p-4"
+    class="rounded-2xl border border-[#ECE7E2] bg-white p-4 shadow-sm"
     data-testid="details-textarea-block"
   >
     <label
@@ -40,5 +40,58 @@
       data-testid="details-textarea"
       class="min-h-36 w-full rounded-xl border border-[#D9D4CE] px-4 py-3 text-sm text-[#373831] outline-none transition placeholder:text-[#9A968F] focus:border-[#436D57]"
     ></textarea>
+  </div>
+
+  <div class="rounded-2xl border border-[#ECE7E2] bg-white p-4 shadow-sm">
+    <div class="flex justify-between items-center mb-3">
+      <label class="block text-sm font-medium text-[#373831]">
+        Registros fotográficos (opcional)
+      </label>
+      <span class="text-xs font-semibold text-[#9A968F] bg-[#F2F1ED] px-2 py-1 rounded-md">
+        {{ images().length }} adicionada(s)
+      </span>
+    </div>
+
+    <input
+      type="file"
+      id="checkin-image-upload"
+      class="hidden"
+      accept="image/*"
+      multiple
+      (change)="onFilesSelected($event)"
+    >
+
+    <button
+      type="button"
+      (click)="triggerFileInput()"
+      class="flex w-full flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-[#D9D4CE] bg-[#F8F9FA] px-4 py-8 text-sm font-medium text-[#6B6B67] transition hover:bg-[#F2F1ED] hover:border-[#436D57] hover:text-[#436D57]"
+    >
+      <lucide-icon [name]="ImagePlusIcon" [size]="28" class="text-[#9A968F]"></lucide-icon>
+      <div class="text-center">
+        <span class="block text-[#373831] font-semibold">Toque para adicionar fotos</span>
+        <span class="text-xs text-[#9A968F] font-normal mt-1">Você pode selecionar várias de uma vez</span>
+      </div>
+    </button>
+
+    @if (images().length > 0) {
+      <div class="mt-4 grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 pt-2">
+        @for (img of images(); track $index) {
+          <div class="relative aspect-square rounded-xl overflow-visible border border-[#ECE7E2] shadow-sm">
+            
+            <img [src]="img.previewUrl" class="w-full h-full object-cover rounded-xl" alt="Preview">
+
+            <button
+              type="button"
+              (click)="removeImage($index)"
+              class="absolute -top-2 -right-2 flex h-7 w-7 items-center justify-center rounded-full bg-white border border-[#ECE7E2] text-red-500 shadow-md hover:bg-red-50 transition-colors"
+              title="Remover imagem"
+            >
+              <lucide-icon [name]="TrashIcon" [size]="14"></lucide-icon>
+            </button>
+            
+          </div>
+        }
+      </div>
+    }
   </div>
 </div>

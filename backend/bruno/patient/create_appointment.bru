@@ -1,0 +1,39 @@
+meta {
+  name: Create Appointment
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/v1/patients/me/appointments
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "appointment_date": "2026-03-15",
+    "appointment_time": "09:30",
+    "location": "UBS Centro",
+    "appointment_type": "consulta",
+    "professional": "Dr. Silva",
+    "notes": "Retorno de rotina",
+    "performed": true,
+    "follow_up": {
+      "conduct": "Manter esquema atual",
+      "register_supervised_dose": true,
+      "dose_scheme_rifampicina": true,
+      "dose_scheme_dapsone": true
+    }
+  }
+}
+
+assert {
+  res.status: eq 201
+  res.body.id: isDefined
+  res.body.status: eq completed
+}

@@ -1,0 +1,15 @@
+meta {
+  name: Get Personal Record
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/v1/patients/me/personal-record
+  auth: bearer
+}
+
+assert {
+  res.status: eq 200
+  res.body.cpf: isDefined
+}

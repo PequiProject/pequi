@@ -11,8 +11,11 @@ export interface CommunityComment {
   id: string;
   authorName: string;
   authorInitials: string;
+  authorAvatarUrl?: string | null;
   content: string;
   timeLabel: string;
+  /** Stable anonymous identifier — used to detect own content. */
+  authorAnonymousId?: string;
   /** True when published with anonymous profile. */
   isAnonymous?: boolean;
   /** True when the comment was authored by the current user in this session. */
@@ -24,6 +27,7 @@ export interface CommunityPost {
   id: string;
   authorName: string;
   authorInitials: string;
+  authorAvatarUrl?: string | null;
   title: string;
   description: string;
   categories: CommunityPostCategory[];
@@ -33,6 +37,8 @@ export interface CommunityPost {
   isSupported: boolean;
   commentCount: number;
   comments: CommunityComment[];
+  /** Stable anonymous identifier — used to detect own content. */
+  authorAnonymousId?: string;
   /** True when published with anonymous profile. */
   isAnonymous?: boolean;
   /** True when the post was authored by the current user in this session. */

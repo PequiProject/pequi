@@ -33,6 +33,7 @@ class FakePatientRepository:
     def __init__(self, *, patient=None, refreshed=_DEFAULT_REFRESHED):
         self.patient = patient
         self.refreshed = patient if refreshed is _DEFAULT_REFRESHED else refreshed
+        self.use_default_refreshed = refreshed is _DEFAULT_REFRESHED
         self.updated_id = None
         self.updated_fields = None
 
@@ -41,9 +42,23 @@ class FakePatientRepository:
             return None
         return self.patient
 
+    async def get_or_create_by_user_id(self, user_id):
+        patient = await self.get_by_user_id(user_id)
+        if patient is not None:
+            return patient
+
+        self.patient = _patient(user_id=user_id, health_unit_id=None, date_of_birth=None)
+        if self.use_default_refreshed:
+            self.refreshed = self.patient
+        return self.patient
+
     async def update(self, patient_id, **fields):
         self.updated_id = patient_id
         self.updated_fields = fields
+        if self.use_default_refreshed and self.patient is not None:
+            for key, value in fields.items():
+                setattr(self.patient, key, value)
+            self.refreshed = self.patient
         return self.refreshed
 
     async def get_by_id(self, patient_id):
@@ -52,14 +67,19 @@ class FakePatientRepository:
         return self.refreshed
 
 
-async def test_update_patient_profile_returns_none_when_profile_does_not_exist():
+async def test_update_patient_profile_creates_minimal_profile_when_missing():
     repo = FakePatientRepository(patient=None)
     use_case = UpdatePatientProfileUseCase(repo)
+    user_id = uuid4()
 
-    result = await use_case.execute(uuid4(), PatientProfileUpdate(city="Recife"))
+    result = await use_case.execute(user_id, PatientProfileUpdate(city="Recife"))
 
-    assert result is None
-    assert repo.updated_fields is None
+    assert result is not None
+    assert result.user_id == user_id
+    assert result.city == "Recife"
+    assert result.health_unit_id is None
+    assert result.date_of_birth is None
+    assert repo.updated_fields == {"city": "Recife"}
 
 
 async def test_update_patient_profile_empty_patch_returns_current_profile_without_writing():
