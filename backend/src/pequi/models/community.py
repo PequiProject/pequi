@@ -1,7 +1,7 @@
 import uuid
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Integer, Text, func
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import relationship
 
 from pequi.database import Base
@@ -71,8 +71,8 @@ class CommunityPost(Base):
     author_display_name = Column(Text, nullable=True)
     title = Column(Text, nullable=False)
     content = Column(Text, nullable=False)
-    category = Column(
-        Enum("experience", "question", "support", "news", name="post_category_enum"),
+    categories = Column(
+        ARRAY(Enum("experience", "question", "support", "news", name="post_category_enum")),
         nullable=False,
     )
     is_pinned = Column(Boolean, server_default="false", nullable=False)

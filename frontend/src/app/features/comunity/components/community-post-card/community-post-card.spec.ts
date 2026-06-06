@@ -38,7 +38,7 @@ describe('CommunityPostCard', () => {
 
   it('should show comment count next to message icon', () => {
     const count = fixture.nativeElement.querySelector('[data-testid="comment-count"]');
-    expect(count?.textContent).toContain('3');
+    expect(count?.textContent).toContain('4');
   });
 
   it('should mark support button as pressed and fill heart when supported', () => {

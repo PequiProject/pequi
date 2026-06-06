@@ -10,6 +10,13 @@
       [strokeWidth]="2"
       aria-hidden="true"
     />
+  } @else if (imageUrl()) {
+    <img
+      [src]="imageUrl()!"
+      alt=""
+      class="h-full w-full object-cover"
+      data-testid="author-avatar-image"
+    />
   } @else {
     {{ initials() }}
   }

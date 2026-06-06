@@ -41,7 +41,14 @@
     />
   </div>
 
-  @if (filteredPosts().length === 0) {
+  @if (postsService.loading()) {
+    <p
+      class="rounded-2xl bg-white p-6 text-center text-sm text-[#64655C] ring-1 ring-[#E7E5E4]"
+      data-testid="feed-loading"
+    >
+      Carregando posts...
+    </p>
+  } @else if (filteredPosts().length === 0) {
     <p
       class="rounded-2xl bg-white p-6 text-center text-sm text-[#64655C] ring-1 ring-[#E7E5E4]"
       data-testid="empty-feed"

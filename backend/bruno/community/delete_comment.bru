@@ -1,0 +1,29 @@
+meta {
+  name: Delete Comment
+  type: http
+  seq: 7
+}
+
+delete {
+  url: {{baseUrl}}/v1/community/posts/{{postId}}/comments/{{commentId}}
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.id: isDefined
+}
+
+docs {
+  Soft delete de comentário.
+
+  - Próprio autor ou admin podem excluir.
+  - Decrementa comment_count do post.
+  - Comentário deixa de aparecer em GET /comments.
+
+  Rate limit: 30/hora.
+}

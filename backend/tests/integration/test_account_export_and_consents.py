@@ -73,7 +73,7 @@ async def test_export_account_data_includes_profile_clinical_community_and_conse
         author_anonymous_id=mapping.anonymous_id,
         title="Minha jornada",
         content="Conteudo publico",
-        category="experience",
+        categories=["experience"],
     )
     db_session.add(post)
     await db_session.flush()
@@ -91,6 +91,7 @@ async def test_export_account_data_includes_profile_clinical_community_and_conse
     assert exported["adherence_snapshots"] == []
     assert exported["weekly_symptom_summaries"] == []
     assert exported["community_posts"][0]["title"] == "Minha jornada"
+    assert exported["community_posts"][0]["categories"] == ["experience"]
     assert "author_anonymous_id" not in exported["community_posts"][0]
     assert exported["consents"][0]["term_version"] == "v1.2"
     assert datetime.fromisoformat(exported["exported_at"]).tzinfo is not None

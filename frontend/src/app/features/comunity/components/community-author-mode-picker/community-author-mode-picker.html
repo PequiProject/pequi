@@ -12,7 +12,7 @@
         [attr.data-mode]="option.mode"
         [attr.aria-pressed]="isSelected(option.mode)"
         (click)="select(option.mode)"
-        class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4338CA] sm:px-3.5 sm:text-sm"
+        class="cursor-pointer inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4338CA] sm:px-3.5 sm:text-sm"
         [ngClass]="
           isSelected(option.mode)
             ? 'bg-white text-[#4338CA] shadow-sm'
