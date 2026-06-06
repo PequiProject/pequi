@@ -13,12 +13,20 @@ from pequi.core.dependencies import (
 )
 from pequi.core.rate_limit import user_limiter
 from pequi.integrations.object_storage import ObjectStorageClient
-from pequi.schemas.account import ConsentCreate, ConsentResponse
+from pequi.repositories.user_repo import UserRepository
+from pequi.schemas.account import ChangePasswordRequest, ConsentCreate, ConsentResponse
+from pequi.use_cases.change_password import ChangePasswordUseCase
 from pequi.use_cases.delete_account import DeleteAccountUseCase
 from pequi.use_cases.export_account_data import ExportAccountDataUseCase
 from pequi.use_cases.record_consent import ListConsentsUseCase, RecordConsentUseCase
 
 router = APIRouter()
+
+
+def get_change_password_use_case(
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> ChangePasswordUseCase:
+    return ChangePasswordUseCase(UserRepository(session))
 
 
 def _client_ip(request: Request) -> str | None:
@@ -51,6 +59,18 @@ def get_list_consents_use_case(
     session: Annotated[AsyncSession, Depends(get_db)],
 ) -> ListConsentsUseCase:
     return ListConsentsUseCase(session)
+
+
+@router.post("/password", status_code=204)
+@user_limiter.limit("5/minute")
+async def change_password(
+    request: Request,
+    body: ChangePasswordRequest,
+    user_id: Annotated[UUID, Depends(get_current_patient)],
+    use_case: Annotated[ChangePasswordUseCase, Depends(get_change_password_use_case)],
+) -> Response:
+    await use_case.execute(user_id, body)
+    return Response(status_code=204)
 
 
 @router.delete("", status_code=204)

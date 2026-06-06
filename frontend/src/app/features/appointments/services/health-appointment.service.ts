@@ -1,4 +1,9 @@
-import { Injectable, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject, signal } from '@angular/core';
+import { Observable, map, of, tap } from 'rxjs';
+
+import { environment } from '../../../../environments/environment';
+import { AuthService } from '../../auth/services/auth-service';
 import type {
   AppointmentFollowUp,
   AppointmentFollowUpDraft,
@@ -6,20 +11,104 @@ import type {
   HealthAppointmentDraft,
   NeurologicalAssessmentDraft,
 } from '../models/health-appointment.models';
+import type { HealthAppointmentApi } from '../models/health-appointment-api.models';
+import {
+  apiToHealthAppointment,
+  draftToCreateApi,
+} from './health-appointment-api.mapper';
 
 const STORAGE_KEY = 'pequi.health_appointments';
 
 @Injectable({ providedIn: 'root' })
 export class HealthAppointmentService {
+  private readonly http = inject(HttpClient);
+  private readonly authService = inject(AuthService);
+  private readonly baseUrl = `${environment.apiUrl}/v1/patients/me/appointments`;
+
   private readonly appointmentsSignal = signal<HealthAppointment[]>(this.loadFromStorage());
 
   readonly appointments = this.appointmentsSignal.asReadonly();
 
-  saveFromDraft(draft: HealthAppointmentDraft): HealthAppointment {
+  findById(id: string): HealthAppointment | undefined {
+    return this.appointmentsSignal().find((appointment) => appointment.id === id);
+  }
+
+  constructor() {
+    if (this.authService.isAuthenticated()) {
+      this.syncFromApi().subscribe({ error: () => undefined });
+    }
+  }
+
+  /** Data da última consulta realizada com dose supervisionada registrada. */
+  getLastSupervisedDoseDate(): string | null {
+    let latest: string | null = null;
+
+    for (const appointment of this.appointmentsSignal()) {
+      if (!appointment.performed || !appointment.followUp?.supervisedDose) {
+        continue;
+      }
+
+      const date = appointment.appointmentDate?.trim();
+      if (!date) continue;
+      if (!latest || date > latest) {
+        latest = date;
+      }
+    }
+
+    return latest;
+  }
+
+  syncFromApi(): Observable<HealthAppointment[]> {
+    if (!this.authService.isAuthenticated()) {
+      return of(this.appointmentsSignal());
+    }
+
+    return this.http.get<HealthAppointmentApi[]>(this.baseUrl).pipe(
+      map((rows) => rows.map(apiToHealthAppointment)),
+      tap((items) => {
+        this.appointmentsSignal.set(items);
+        this.persist(items);
+      }),
+    );
+  }
+
+  /** Persistência local (fallback ou usuário sem login). */
+  saveFromDraftLocal(draft: HealthAppointmentDraft, existingId?: string): HealthAppointment {
+    return this.saveLocalFromDraft(draft, existingId);
+  }
+
+  saveFromDraft(
+    draft: HealthAppointmentDraft,
+    existingId?: string
+  ): Observable<HealthAppointment> {
+    if (!this.authService.isAuthenticated()) {
+      return of(this.saveLocalFromDraft(draft, existingId));
+    }
+
+    const body = draftToCreateApi(draft);
+    const request$ = existingId
+      ? this.http.patch<HealthAppointmentApi>(`${this.baseUrl}/${existingId}`, body)
+      : this.http.post<HealthAppointmentApi>(this.baseUrl, body);
+
+    return request$.pipe(
+      map(apiToHealthAppointment),
+      tap((record) => this.upsertAppointment(record)),
+    );
+  }
+
+  private upsertAppointment(record: HealthAppointment): void {
+    const withoutDuplicate = this.appointmentsSignal().filter((a) => a.id !== record.id);
+    const next = [record, ...withoutDuplicate];
+    this.appointmentsSignal.set(next);
+    this.persist(next);
+  }
+
+  private saveLocalFromDraft(draft: HealthAppointmentDraft, existingId?: string): HealthAppointment {
     const performed = draft.performed === true;
     const followUp = performed ? this.buildFollowUpFromDraft(draft) : undefined;
+    const previous = existingId ? this.findById(existingId) : undefined;
     const record: HealthAppointment = {
-      id: crypto.randomUUID(),
+      id: existingId ?? crypto.randomUUID(),
       appointmentDate: draft.appointmentDate,
       appointmentTime: draft.appointmentTime,
       location: draft.location.trim(),
@@ -30,12 +119,10 @@ export class HealthAppointmentService {
       status: performed ? 'completed' : 'scheduled',
       wantsFollowUpDetails: !!followUp,
       followUp,
-      createdAt: new Date().toISOString(),
+      createdAt: previous?.createdAt ?? new Date().toISOString(),
     };
 
-    const next = [record, ...this.appointmentsSignal()];
-    this.appointmentsSignal.set(next);
-    this.persist(next);
+    this.upsertAppointment(record);
     return record;
   }
 

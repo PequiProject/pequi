@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 import { EMPTY_PERSONAL_DATA, EMPTY_TREATMENT_DATA } from '../models/patient-profile.models';
 import { AuthService } from '../../auth/services/auth-service';
 import { PatientProfileService } from './patient-profile.service';
@@ -9,7 +10,8 @@ describe('PatientProfileService', () => {
 
   const authServiceMock = {
     displayName: signal('Paciente'),
-    currentUser: signal<{ full_name: string } | null>(null),
+    currentUser: signal<{ full_name: string; email?: string } | null>(null),
+    isAuthenticated: () => false,
   };
 
   beforeEach(() => {
@@ -38,21 +40,25 @@ describe('PatientProfileService', () => {
     expect(service.legalFullName()).toBe('Maria Silva');
   });
 
-  it('should lock full name when saving personal data', () => {
+  it('should lock full name when saving personal data', async () => {
     authServiceMock.currentUser.set({ full_name: 'João Souza' });
-    service.updatePersonal({
-      ...EMPTY_PERSONAL_DATA,
-      fullName: 'Outro Nome',
-    });
+    await firstValueFrom(
+      service.savePersonal({
+        ...EMPTY_PERSONAL_DATA,
+        fullName: 'Outro Nome',
+      })
+    );
     expect(service.profile().personal.fullName).toBe('João Souza');
   });
 
-  it('should persist personal data to localStorage', () => {
-    service.updatePersonal({
-      ...EMPTY_PERSONAL_DATA,
-      fullName: 'João Souza',
-      cpf: '123.456.789-00',
-    });
+  it('should persist personal data to localStorage', async () => {
+    await firstValueFrom(
+      service.savePersonal({
+        ...EMPTY_PERSONAL_DATA,
+        fullName: 'João Souza',
+        cpf: '123.456.789-00',
+      })
+    );
 
     const raw = localStorage.getItem('pequi.patient_profile');
     expect(raw).toBeTruthy();
@@ -79,21 +85,29 @@ describe('PatientProfileService', () => {
     expect(service.profile().avatarDataUrl).toBe('');
   });
 
-  it('should update login email', () => {
-    service.updateLoginEmail('paciente@email.com');
+  it('should sync login email from auth user', () => {
+    authServiceMock.currentUser.set({
+      full_name: 'Maria',
+      email: 'paciente@email.com',
+    });
+    service.syncLoginEmailFromAuth();
     expect(service.profile().account.loginEmail).toBe('paciente@email.com');
   });
 
-  it('should change password when none set', () => {
-    const result = service.changePassword('', 'senha123', 'senha123');
-    expect(result.ok).toBe(true);
-    expect(service.profile().account.password).toBe('senha123');
-  });
-
-  it('should reject wrong current password', () => {
-    service.changePassword('', 'senha123', 'senha123');
-    const result = service.changePassword('errada', 'nova123', 'nova123');
+  it('should reject password change without local stored password', async () => {
+    const result = await firstValueFrom(
+      service.changePassword('qualquer', 'senha12345', 'senha12345')
+    );
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error).toBe('wrong_current');
+  });
+
+  it('should change password when local stored password matches', async () => {
+    await firstValueFrom(service.changePassword('', 'senha12345', 'senha12345'));
+    const result = await firstValueFrom(
+      service.changePassword('senha12345', 'outrasenha1', 'outrasenha1')
+    );
+    expect(result.ok).toBe(true);
+    expect(service.profile().account.password).toBe('outrasenha1');
   });
 });

@@ -1,51 +1,60 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { of, throwError } from 'rxjs';
+import { provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 import { vi, type Mocked } from 'vitest';
 
+import { PatientTreatmentService } from '../profile/services/patient-treatment.service';
 import { Medication } from './medication';
 import {
   MedicationDataService,
   type MedicationChecklistResponse,
 } from './services/medication-data.service';
+import { MedicationIntakeService } from './services/medication-intake.service';
 
 describe('Medication', () => {
   let component: Medication;
   let fixture: ComponentFixture<Medication>;
   let medicationDataServiceSpy: Mocked<MedicationDataService>;
+  let intakeService: MedicationIntakeService;
 
   const mockResponse: MedicationChecklistResponse = {
     institutedMedications: [
       {
-        name: 'Suplemento Noturno',
-        dose: '500',
+        name: 'Dapsona',
+        dose: '100',
         unit: 'mg',
-        frequency: '08:00 PM',
-      },
-      {
-        name: 'Vitamina Matinal',
-        dose: '1',
-        unit: 'Unidade',
-        frequency: '08:00 AM',
+        frequency: '8/8h',
       },
     ],
     currentDoseMedication: 'Rifampicina + Clofazimina',
+    treatmentStartDate: '2026-06-04',
+    canRegisterDoses: false,
   };
 
   beforeEach(async () => {
+    localStorage.clear();
+
     medicationDataServiceSpy = {
       getMedicationChecklist: vi.fn().mockReturnValue(of(mockResponse)),
-      saveMedicationAlarm: vi.fn().mockReturnValue(of(undefined)),
     } as Mocked<MedicationDataService>;
 
     await TestBed.configureTestingModule({
       imports: [Medication],
       providers: [
+        provideRouter([]),
         { provide: MedicationDataService, useValue: medicationDataServiceSpy },
+        {
+          provide: PatientTreatmentService,
+          useValue: {
+            registerTakenDose: vi.fn().mockReturnValue(of(null)),
+          },
+        },
       ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(Medication);
     component = fixture.componentInstance;
+    intakeService = TestBed.inject(MedicationIntakeService);
   });
 
   it('should create', () => {
@@ -57,128 +66,29 @@ describe('Medication', () => {
     fixture.detectChanges();
 
     expect(medicationDataServiceSpy.getMedicationChecklist).toHaveBeenCalled();
-    expect(component.unsupervisedItems.length).toBe(2);
-    expect(component.supervisedItems.length).toBe(1);
+    expect(component.unsupervisedItems.length).toBe(3);
+    expect(component.unsupervisedItems[0].dosesPerDay).toBe(3);
+    expect(component.unsupervisedItems[0].doseTime).toBe('00:00');
+    expect(component.unsupervisedItems[1].doseTime).toBe('08:00');
+    expect(component.supervisedItems[0].nextSupervisedDoseLabel).toContain('dose');
   });
 
-  it('should map unsupervised medications correctly', () => {
-    fixture.detectChanges();
-
-    expect(component.unsupervisedItems[0].title).toBe('Suplemento Noturno');
-    expect(component.unsupervisedItems[0].subtitle).toBe('500 • mg • 08:00 PM');
-
-    expect(component.unsupervisedItems[1].title).toBe('Vitamina Matinal');
-    expect(component.unsupervisedItems[1].subtitle).toBe('1 • Unidade • 08:00 AM');
-  });
-
-  it('should map supervised medication correctly', () => {
-    fixture.detectChanges();
-
-    expect(component.supervisedItems[0].title).toBe('Rifampicina + Clofazimina');
-    expect(component.supervisedItems[0].subtitle).toBe('');
-    expect(component.supervisedItems[0].checked).toBeFalsy();
-  });
-
-  it('should toggle unsupervised item', () => {
-    fixture.detectChanges();
-
-    const itemId = component.unsupervisedItems[0].id;
-
-    component.toggleUnsupervised(itemId);
-    expect(component.unsupervisedItems[0].checked).toBeTruthy();
-
-    component.toggleUnsupervised(itemId);
-    expect(component.unsupervisedItems[0].checked).toBeFalsy();
-  });
-
-  it('should toggle supervised item', () => {
-    fixture.detectChanges();
-
-    const itemId = component.supervisedItems[0].id;
-
-    component.toggleSupervised(itemId);
-    expect(component.supervisedItems[0].checked).toBeTruthy();
-
-    component.toggleSupervised(itemId);
-    expect(component.supervisedItems[0].checked).toBeFalsy();
-  });
-
-  it('should emit checklist payload after loading data', () => {
-    const emitSpy = vi.spyOn(component.checklistChange, 'emit');
+  it('persists intake when marking after scheduled time', () => {
+    const now = new Date(2026, 5, 4, 14, 0, 0);
+    vi.setSystemTime(now);
 
     fixture.detectChanges();
+    const item = component.unsupervisedItems[0];
+    expect(item.canToggle).toBe(true);
 
-    expect(emitSpy).toHaveBeenCalledWith({
-      checkedCount: 0,
-      totalCount: 3,
-      unsupervisedCheckedCount: 0,
-      unsupervisedTotalCount: 2,
-      supervisedCheckedCount: 0,
-      supervisedTotalCount: 1,
-    });
-  });
+    component.toggleUnsupervised(item.id);
+    expect(component.unsupervisedItems[0].checked).toBe(true);
+    expect(intakeService.isSlotTaken(item.storageKey, '2026-06-04_08:00')).toBe(true);
 
-  it('should emit updated payload when toggling unsupervised item', () => {
-    fixture.detectChanges();
-    const emitSpy = vi.spyOn(component.checklistChange, 'emit');
+    component.toggleUnsupervised(item.id);
+    expect(component.unsupervisedItems[0].checked).toBe(false);
+    expect(intakeService.isSlotTaken(item.storageKey, '2026-06-04_08:00')).toBe(false);
 
-    const itemId = component.unsupervisedItems[0].id;
-    component.toggleUnsupervised(itemId);
-
-    expect(emitSpy).toHaveBeenCalledWith({
-      checkedCount: 1,
-      totalCount: 3,
-      unsupervisedCheckedCount: 1,
-      unsupervisedTotalCount: 2,
-      supervisedCheckedCount: 0,
-      supervisedTotalCount: 1,
-    });
-  });
-
-  it('should emit updated payload when toggling supervised item', () => {
-    fixture.detectChanges();
-    const emitSpy = vi.spyOn(component.checklistChange, 'emit');
-
-    const itemId = component.supervisedItems[0].id;
-    component.toggleSupervised(itemId);
-
-    expect(emitSpy).toHaveBeenCalledWith({
-      checkedCount: 1,
-      totalCount: 3,
-      unsupervisedCheckedCount: 0,
-      unsupervisedTotalCount: 2,
-      supervisedCheckedCount: 1,
-      supervisedTotalCount: 1,
-    });
-  });
-
-  it('should clear lists when service returns error', async () => {
-    medicationDataServiceSpy.getMedicationChecklist.mockReturnValue(
-      throwError(() => new Error('erro'))
-    );
-
-    fixture = TestBed.createComponent(Medication);
-    component = fixture.componentInstance;
-
-    fixture.detectChanges();
-
-    expect(component.unsupervisedItems.length).toBe(0);
-    expect(component.supervisedItems.length).toBe(0);
-    expect(component.isLoading).toBeFalsy();
-  });
-
-  it('should return item id in trackById', () => {
-    const item = {
-      id: 'abc123',
-      title: 'Teste',
-      subtitle: 'Sub',
-      doseLabel: '500 mg',
-      checked: false,
-      alarmEnabled: false,
-      alarmConfig: { days: ['monday' as const], time: '08:00' },
-      section: 'unsupervised' as const,
-    };
-
-    expect(component.trackById(0, item)).toBe('abc123');
+    vi.useRealTimers();
   });
 });

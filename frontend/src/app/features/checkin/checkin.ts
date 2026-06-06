@@ -14,7 +14,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { CheckinStepFeelingComponent } from '../../components/checkin-step-feeling-component/checkin-step-feeling-component';
 import { CheckinStepSymptomsComponent } from '../../components/checkin-step-symptoms-component/checkin-step-symptoms-component';
 import { CheckinStepIntensityComponent } from '../../components/checkin-step-intensity-component/checkin-step-intensity-component';
@@ -22,6 +22,7 @@ import { CheckinStepDetailsComponent } from '../../components/checkin-step-detai
 import { ToastService } from '../../components/toast/toast.service';
 import type { SymptomResponse } from './models/checkin.models';
 import { CheckinService } from './services/checkin.service';
+import { MedicationDataService } from '../medication/services/medication-data.service';
 
 type StepItem = {
   id: number;
@@ -38,6 +39,7 @@ type StepItem = {
     CheckinStepSymptomsComponent,
     CheckinStepIntensityComponent,
     CheckinStepDetailsComponent,
+    RouterLink,
   ],
   templateUrl: './checkin.html',
   styleUrl: './checkin.css',
@@ -46,12 +48,14 @@ export class CheckinComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly checkinService = inject(CheckinService);
+  private readonly medicationData = inject(MedicationDataService);
   private readonly toast = inject(ToastService);
 
   private readonly NO_SYMPTOM_VALUE = 'nenhum sintoma';
 
   readonly symptomCatalog = signal<SymptomResponse[]>([]);
   readonly submitting = signal(false);
+  readonly medicationReminder = signal<string | null>(null);
 
   steps: StepItem[] = [
     { id: 1, label: 'Ranking de Sentimentos' },
@@ -98,6 +102,23 @@ export class CheckinComponent implements OnInit {
           'Verifique sua conexão e tente novamente.',
         );
       },
+    });
+
+    this.medicationData.getMedicationChecklist().subscribe({
+      next: (checklist) => {
+        const total =
+          checklist.institutedMedications.length + (checklist.currentDoseMedication ? 1 : 0);
+        if (total === 0) {
+          this.medicationReminder.set(
+            'Cadastre medicamentos e frequência em Meu tratamento para ver os lembretes em Remédios.',
+          );
+          return;
+        }
+        this.medicationReminder.set(
+          `Você tem ${total} medicamento(s) no plano. Em Remédios, os avisos seguem a frequência de cada um.`,
+        );
+      },
+      error: () => undefined,
     });
   }
 
@@ -229,8 +250,11 @@ export class CheckinComponent implements OnInit {
     this.checkinService.submit(payload).subscribe({
       next: () => {
         this.submitting.set(false);
-        this.toast.success('Check-in registrado com sucesso!');
-        void this.router.navigate(['/home']);
+        this.toast.success(
+          'Check-in registrado com sucesso!',
+          'Não esqueça de registrar seus remédios do dia.',
+        );
+        void this.router.navigate(['/medication']);
       },
       error: () => {
         this.submitting.set(false);

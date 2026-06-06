@@ -40,6 +40,24 @@
         [form]="detailsForm"
       ></app-checkin-step-details-component>
 
+      @if (currentStep() === 4 && medicationReminder()) {
+        <div
+          class="rounded-xl border border-[#E0E7FF] bg-[#EEF2FF] px-4 py-3 text-sm text-[#4338CA]"
+          data-testid="checkin-medication-reminder"
+        >
+          <p>{{ medicationReminder() }}</p>
+          <a
+            routerLink="/profile"
+            [queryParams]="{ tab: 'treatment' }"
+            class="mt-2 inline-block font-semibold underline"
+          >
+            Ir para Meu tratamento
+          </a>
+          <span class="mx-2">·</span>
+          <a routerLink="/medication" class="font-semibold underline">Registrar remédios</a>
+        </div>
+      }
+
     <div class="flex items-center justify-between pt-4">
       <button
         type="button"
