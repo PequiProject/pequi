@@ -114,6 +114,7 @@ async def test_journey_returns_timeline_with_doses(create_tables, db_session):
     ]
     assert len(dose_events) == 1
     assert result.summary.completed_doses == 1
+    assert result.summary.adherence_pct is None
 
 
 @pytest.mark.asyncio
@@ -147,6 +148,50 @@ async def test_journey_includes_consultation_events(create_tables, db_session):
         if event.type == "consultation_registered"
     ]
     assert len(consultation_events) == 1
+
+
+@pytest.mark.asyncio
+async def test_journey_combines_dose_and_consultation_in_same_month(create_tables, db_session):
+    health_unit = await _create_health_unit(db_session)
+    user = await _create_user(db_session, email="journey-combo@test.com")
+    patient = await _create_patient(db_session, user=user, health_unit=health_unit)
+    treatment = await _create_treatment(db_session, patient=patient)
+
+    register = RegisterDoseUseCase(
+        TreatmentRepository(db_session),
+        DoseRepository(db_session),
+        PatientRepository(db_session),
+    )
+    await register.execute(
+        user.id,
+        treatment.id,
+        DoseLogCreate(
+            drug_name="Dapsona",
+            expected_at=datetime(2025, 2, 15, 8, 0, tzinfo=UTC),
+            taken_at=datetime(2025, 2, 15, 8, 30, tzinfo=UTC),
+        ),
+    )
+
+    appointment = PatientHealthAppointment(
+        id=uuid4(),
+        patient_id=patient.id,
+        appointment_date=date(2025, 2, 20),
+        appointment_time="09:00",
+        location="UBS Norte",
+        appointment_type="consulta",
+        performed=True,
+        status="completed",
+        wants_follow_up_details=False,
+    )
+    db_session.add(appointment)
+    await db_session.flush()
+
+    result = await _journey_use_case(db_session).execute(user.id)
+
+    month_two = result.months[1]
+    types = {event.type for event in month_two.events}
+    assert "dose_taken" in types
+    assert "consultation_registered" in types
 
 
 @pytest.mark.asyncio

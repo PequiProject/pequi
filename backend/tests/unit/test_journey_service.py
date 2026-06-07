@@ -179,7 +179,59 @@ class TestJourneyServiceTimeline:
 
         assert journey.summary.completed_doses == 1
         assert journey.summary.pending_doses == 1
-        assert journey.summary.adherence_pct == Decimal("50.00")
+        assert journey.summary.adherence_pct is None
+
+    def test_summary_without_snapshot_does_not_calculate_adherence(self) -> None:
+        treatment = _treatment()
+        doses = [
+            _dose(
+                expected=datetime(2025, 2, 1, 8, 0, tzinfo=UTC),
+                taken=datetime(2025, 2, 1, 8, 0, tzinfo=UTC),
+            ),
+            _dose(
+                expected=datetime(2025, 2, 2, 8, 0, tzinfo=UTC),
+                skipped=True,
+            ),
+        ]
+
+        journey = JourneyService.build_journey(
+            patient_id=uuid4(),
+            treatment=treatment,
+            doses=doses,
+            appointments=[],
+            adherence_snapshot=None,
+            today=date(2025, 3, 1),
+        )
+
+        assert journey.summary.completed_doses == 1
+        assert journey.summary.skipped_doses == 1
+        assert journey.summary.adherence_pct is None
+
+    def test_dose_and_consultation_same_month_sort_without_error(self) -> None:
+        treatment = _treatment()
+        taken_at = datetime(2025, 2, 15, 9, 0, tzinfo=UTC)
+        doses = [_dose(expected=taken_at, taken=taken_at)]
+        appointment = SimpleNamespace(
+            appointment_date=date(2025, 2, 20),
+            appointment_type="consulta",
+            location="UBS Central",
+            professional=None,
+            performed=True,
+        )
+
+        journey = JourneyService.build_journey(
+            patient_id=uuid4(),
+            treatment=treatment,
+            doses=doses,
+            appointments=[appointment],
+            adherence_snapshot=None,
+            today=date(2025, 3, 1),
+        )
+
+        month_two = journey.months[1]
+        types = {event.type for event in month_two.events}
+        assert "dose_taken" in types
+        assert "consultation_registered" in types
 
     def test_months_grouped_by_calendar_month(self) -> None:
         treatment = _treatment(regimen=TreatmentRegimen.PB)
