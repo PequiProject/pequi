@@ -20,17 +20,16 @@ headers {
 
 body:json {
   {
-    "patient_id": "{{patientId}}",
     "regimen": "PB",
     "start_date": "2026-01-15",
-    "notes": "Tratamento PB iniciado após diagnóstico confirmatório."
+    "notes": "Tratamento PB iniciado pelo paciente."
   }
 }
 
 assert {
   res.status: eq 201
   res.body.id: isDefined
-  res.body.patient_id: eq "{{patientId}}"
+  res.body.patient_id: isDefined
   res.body.regimen: eq "PB"
   res.body.start_date: isDefined
   res.body.expected_end: isDefined
@@ -38,12 +37,12 @@ assert {
 }
 
 docs {
-  Cria um novo tratamento MDT para o paciente informado.
+  Cria um novo tratamento MDT para o paciente autenticado.
 
-  Apenas profissionais de saúde autenticados podem chamar este endpoint.
+  Apenas pacientes autenticados podem chamar este endpoint.
   O campo `expected_end` é calculado automaticamente:
     - PB → start_date + 6 meses
     - MB → start_date + 12 meses
 
-  Rate limit: 10/minuto por profissional.
+  Rate limit: 10/minuto por paciente.
 }

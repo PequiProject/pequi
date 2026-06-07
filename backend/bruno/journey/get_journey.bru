@@ -1,0 +1,38 @@
+meta {
+  name: Get Journey
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/v1/journey
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.patient_id: isDefined
+  res.body.regimen: isDefined
+  res.body.start_date: isDefined
+  res.body.expected_end: isDefined
+  res.body.current_month: isDefined
+  res.body.progress_pct: isDefined
+  res.body.months: isDefined
+  res.body.summary: isDefined
+  res.body.summary.completed_doses: isDefined
+  res.body.summary.pending_doses: isDefined
+  res.body.summary.adherence_pct: isDefined
+}
+
+docs {
+  Retorna a jornada de tratamento do paciente autenticado.
+
+  Timeline agrupada por mês com eventos de doses e consultas.
+  Estrutura preparada para check-ins e alertas futuros.
+
+  Rate limit: 100/minuto por paciente.
+}

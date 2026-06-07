@@ -23,9 +23,7 @@ body:json {
     "drug_name": "Dapsona",
     "expected_at": "2026-02-15T08:00:00Z",
     "taken_at": "2026-02-15T08:30:00Z",
-    "skipped": false,
-    "skip_reason": null,
-    "supervised": false
+    "skipped": false
   }
 }
 
@@ -34,37 +32,14 @@ assert {
   res.body.id: isDefined
   res.body.treatment_id: eq "{{treatmentId}}"
   res.body.drug_name: eq "Dapsona"
-  res.body.skipped: eq false
-  res.body.supervised: eq false
-  res.body.created_at: isDefined
 }
 
 docs {
-  Registra uma dose (tomada, pulada ou supervisionada) para o tratamento.
+  Registra uma dose (tomada ou pulada) no tratamento ativo do paciente.
 
-  Regras de negócio:
-  - Paciente: doses diárias com `supervised: false`.
-  - Paciente: dose supervisionada somente com `supervised: true` e `via_consultation: true`
-    (após registrar consulta realizada no app).
-  - Profissional: pode registrar doses supervisionadas (`supervised: true`)
-    com `registered_by` preenchido automaticamente.
-  - Dose duplicada (mesmo `drug_name` + `expected_at` + tratamento) retorna 409.
+  - Paciente autenticado registra doses do próprio tratamento ativo.
+  - Doses diárias e mensais seguem o mesmo contrato.
+  - Duplicidade (treatment_id + drug_name + expected_at) retorna HTTP 409.
 
-  Rate limit: 20/minuto.
-
-  Exemplo de dose supervisionada (para profissional):
-  {
-    "drug_name": "Rifampicina",
-    "expected_at": "2026-02-01T09:00:00Z",
-    "taken_at": "2026-02-01T09:15:00Z",
-    "supervised": true
-  }
-
-  Exemplo de dose pulada:
-  {
-    "drug_name": "Dapsona",
-    "expected_at": "2026-02-16T08:00:00Z",
-    "skipped": true,
-    "skip_reason": "Paciente relatou náusea intensa."
-  }
+  Rate limit: 20/minuto por paciente.
 }
