@@ -15,12 +15,7 @@ from pequi.schemas.dose_log import DoseLogCreate, DoseLogResponse
 
 
 class RegisterDoseUseCase:
-    """Registra uma dose (tomada ou pulada) pelo paciente dono do tratamento.
-
-    Regras de negócio:
-    - Paciente pode registrar qualquer dose do próprio tratamento ativo.
-    - Duplicidade (treatment_id + drug_name + expected_at) retorna ConflictError → HTTP 409.
-    """
+    """v2 — paciente registra qualquer dose do próprio tratamento ativo."""
 
     def __init__(
         self,
@@ -51,17 +46,6 @@ class RegisterDoseUseCase:
                 "Registro de dose permitido apenas em tratamentos com status 'active'."
             )
 
-        duplicate = await self._dose_repo.exists_duplicate(
-            treatment_id=treatment_id,
-            drug_name=data.drug_name,
-            expected_at=data.expected_at,
-        )
-        if duplicate:
-            raise ConflictError(
-                f"Dose duplicada: já existe registro para '{data.drug_name}' "
-                f"em {data.expected_at.isoformat()} neste tratamento."
-            )
-
         dose_log = DoseLog(
             id=uuid.uuid4(),
             treatment_id=treatment_id,
@@ -71,5 +55,12 @@ class RegisterDoseUseCase:
             skipped=data.skipped,
             skip_reason=data.skip_reason,
         )
-        dose_log = await self._dose_repo.create(dose_log)
+        try:
+            dose_log = await self._dose_repo.create(dose_log)
+        except ConflictError:
+            raise ConflictError(
+                f"Dose duplicada: já existe registro para '{data.drug_name}' "
+                f"em {data.expected_at.isoformat()} neste tratamento."
+            ) from None
+
         return DoseLogResponse.model_validate(dose_log)

@@ -138,7 +138,7 @@ async def get_my_active_treatment(
     user_id: UUID = Depends(get_current_patient),
     session: AsyncSession = Depends(get_db),
 ) -> TreatmentResponse | None:
-    patient_repo, treatment_repo, _ = _treatment_repos(session)
+    patient_repo, treatment_repo = _treatment_repos(session)
     use_case = GetPatientActiveTreatmentUseCase(patient_repo, treatment_repo)
     return await use_case.execute(user_id)
 
@@ -150,7 +150,7 @@ async def get_my_medication_checklist(
     user_id: UUID = Depends(get_current_patient),
     session: AsyncSession = Depends(get_db),
 ) -> MedicationChecklistResponse:
-    patient_repo, treatment_repo, _ = _treatment_repos(session)
+    patient_repo, treatment_repo = _treatment_repos(session)
     use_case = GetMedicationChecklistUseCase(patient_repo, treatment_repo)
     return await use_case.execute(user_id)
 

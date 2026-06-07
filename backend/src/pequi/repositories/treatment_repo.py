@@ -1,11 +1,15 @@
 from uuid import UUID
 
 from sqlalchemy import desc, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from pequi.core.exceptions import ConflictError
 from pequi.models.dose_log import AdherenceSnapshot
 from pequi.models.symptom import Symptom
 from pequi.models.treatment import Treatment, TreatmentStatus
+
+_ACTIVE_TREATMENT_CONSTRAINT = "uq_treatments_one_active_per_patient"
 
 
 class TreatmentRepository:
@@ -13,10 +17,16 @@ class TreatmentRepository:
         self._session = session
 
     async def create(self, treatment: Treatment) -> Treatment:
-        self._session.add(treatment)
-        await self._session.flush()
-        await self._session.refresh(treatment)
-        return treatment
+        try:
+            self._session.add(treatment)
+            await self._session.flush()
+            await self._session.refresh(treatment)
+            return treatment
+        except IntegrityError as exc:
+            await self._session.rollback()
+            if _constraint_violated(exc, _ACTIVE_TREATMENT_CONSTRAINT):
+                raise ConflictError("Paciente já possui um tratamento ativo.") from exc
+            raise
 
     async def get_by_id(self, treatment_id: UUID) -> Treatment | None:
         """Retorna tratamento ativo (não soft-deleted)."""
@@ -42,9 +52,13 @@ class TreatmentRepository:
         *,
         status: TreatmentStatus | None = None,
     ) -> list[Treatment]:
-        stmt = select(Treatment).where(
-            Treatment.patient_id == patient_id,
-            Treatment.deleted_at.is_(None),
+        stmt = (
+            select(Treatment)
+            .where(
+                Treatment.patient_id == patient_id,
+                Treatment.deleted_at.is_(None),
+            )
+            .order_by(desc(Treatment.created_at))
         )
         if status is not None:
             stmt = stmt.where(Treatment.status == status)
@@ -78,3 +92,14 @@ class SymptomRepository:
         stmt = select(Symptom).where(Symptom.id.in_(symptom_ids))
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
+
+
+def _constraint_violated(exc: IntegrityError, constraint_name: str) -> bool:
+    orig = getattr(exc, "orig", None)
+    if orig is None:
+        return constraint_name in str(exc)
+    diag = getattr(orig, "__cause__", None) or orig
+    pg_constraint = getattr(diag, "constraint_name", None)
+    if pg_constraint == constraint_name:
+        return True
+    return constraint_name in str(exc)

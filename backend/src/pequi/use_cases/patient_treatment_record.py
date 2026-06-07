@@ -13,7 +13,7 @@ from pequi.schemas.patient_treatment import (
     treatment_record_to_storage,
 )
 from pequi.schemas.treatment import TreatmentResponse
-from pequi.use_cases.create_treatment import _calculate_expected_end
+from pequi.use_cases.treatment_schedule import calculate_expected_end
 
 
 class GetPatientTreatmentRecordUseCase:
@@ -80,7 +80,7 @@ class SavePatientTreatmentRecordUseCase:
             return
 
         regimen = TreatmentRegimen(data.classification)
-        expected_end = _calculate_expected_end(data.treatment_start_date, regimen)
+        expected_end = calculate_expected_end(data.treatment_start_date, regimen)
 
         treatment = Treatment(
             id=uuid.uuid4(),

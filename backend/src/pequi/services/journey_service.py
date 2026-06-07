@@ -14,7 +14,6 @@ from pequi.schemas.journey import (
     JourneyResponse,
     JourneySummaryBlock,
 )
-from pequi.services.adherence_service import AdherenceService
 
 if TYPE_CHECKING:
     from pequi.models.dose_log import AdherenceSnapshot, DoseLog
@@ -129,13 +128,7 @@ class JourneyService:
 
             events = cls._build_dose_events(month_doses)
             events.extend(cls._build_consultation_events(month_appointments))
-            events.sort(
-                key=lambda event: (
-                    event.date
-                    if isinstance(event.date, datetime)
-                    else datetime.combine(event.date, datetime.min.time())
-                )
-            )
+            events.sort(key=_event_sort_key)
 
             months.append(JourneyMonthResponse(month=month_index, events=events))
 
@@ -148,16 +141,16 @@ class JourneyService:
     ) -> JourneySummaryBlock:
         completed = sum(1 for dose in doses if dose.taken_at is not None and not dose.skipped)
         pending = sum(1 for dose in doses if dose.taken_at is None and not dose.skipped)
+        skipped = sum(1 for dose in doses if dose.skipped)
 
+        adherence_pct: Decimal | None = None
         if adherence_snapshot is not None:
             adherence_pct = Decimal(str(adherence_snapshot.adherence_pct))
-        else:
-            total = completed + pending
-            adherence_pct = AdherenceService.calculate_pct(total, completed)
 
         return JourneySummaryBlock(
             completed_doses=completed,
             pending_doses=pending,
+            skipped_doses=skipped,
             adherence_pct=adherence_pct,
         )
 
@@ -212,6 +205,15 @@ class JourneyService:
             )
 
         return events
+
+
+def _event_sort_key(event: JourneyEventResponse) -> datetime:
+    value = event.date
+    if isinstance(value, datetime):
+        if value.tzinfo is None:
+            return value.replace(tzinfo=UTC)
+        return value.astimezone(UTC)
+    return datetime.combine(value, datetime.min.time(), tzinfo=UTC)
 
 
 def _add_months(start_date: date, months: int) -> date:

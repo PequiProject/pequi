@@ -1,21 +1,15 @@
-import calendar
 import uuid
-from datetime import date
 
-from pequi.core.exceptions import NotFoundError, ValidationFailedError
+from pequi.core.exceptions import ConflictError, NotFoundError, ValidationFailedError
 from pequi.models.treatment import Treatment, TreatmentRegimen, TreatmentStatus
 from pequi.repositories.patient_repo import PatientRepository
 from pequi.repositories.treatment_repo import TreatmentRepository
 from pequi.schemas.treatment import TreatmentCreate, TreatmentResponse
-
-_REGIMEN_MONTHS = {
-    TreatmentRegimen.PB: 6,
-    TreatmentRegimen.MB: 12,
-}
+from pequi.use_cases.treatment_schedule import calculate_expected_end
 
 
 class CreateTreatmentUseCase:
-    """Cria um tratamento MDT para o paciente autenticado."""
+    """v2 — paciente autenticado cria seu próprio tratamento MDT."""
 
     def __init__(
         self,
@@ -39,7 +33,7 @@ class CreateTreatmentUseCase:
             raise ValidationFailedError("Paciente já possui um tratamento ativo.")
 
         regimen = TreatmentRegimen(data.regimen)
-        expected_end = _calculate_expected_end(data.start_date, regimen)
+        expected_end = calculate_expected_end(data.start_date, regimen)
 
         treatment = Treatment(
             id=uuid.uuid4(),
@@ -50,15 +44,9 @@ class CreateTreatmentUseCase:
             status=TreatmentStatus.active,
             notes=data.notes,
         )
-        treatment = await self._treatment_repo.create(treatment)
+        try:
+            treatment = await self._treatment_repo.create(treatment)
+        except ConflictError:
+            raise ConflictError("Paciente já possui um tratamento ativo.") from None
+
         return TreatmentResponse.model_validate(treatment)
-
-
-def _calculate_expected_end(start_date: date, regimen: TreatmentRegimen) -> date:
-    """Adiciona N meses à data de início, limitando ao último dia do mês destino."""
-    months = _REGIMEN_MONTHS[regimen]
-    total_months = start_date.month - 1 + months
-    year = start_date.year + total_months // 12
-    month = total_months % 12 + 1
-    day = min(start_date.day, calendar.monthrange(year, month)[1])
-    return date(year, month, day)

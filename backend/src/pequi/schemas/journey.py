@@ -26,7 +26,8 @@ class JourneyMonthResponse(BaseModel):
 class JourneySummaryBlock(BaseModel):
     completed_doses: int
     pending_doses: int
-    adherence_pct: Decimal
+    skipped_doses: int = 0
+    adherence_pct: Decimal | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
