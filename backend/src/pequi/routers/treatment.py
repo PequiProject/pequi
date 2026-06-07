@@ -3,15 +3,9 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from pequi.core.dependencies import (
-    get_actor_from_token,
-    get_current_professional,
-    get_current_user,
-    get_db,
-)
+from pequi.core.dependencies import get_current_patient, get_current_user, get_db
 from pequi.core.rate_limit import limiter
 from pequi.repositories.dose_repo import DoseRepository
-from pequi.repositories.health_professional_repo import HealthProfessionalRepository
 from pequi.repositories.patient_repo import PatientRepository
 from pequi.repositories.treatment_repo import SymptomRepository, TreatmentRepository
 from pequi.schemas.dose_log import DoseLogCreate, DoseLogResponse
@@ -33,25 +27,13 @@ symptoms_router = APIRouter()
 
 def _make_repos(
     session: AsyncSession,
-) -> tuple[
-    TreatmentRepository,
-    PatientRepository,
-    HealthProfessionalRepository,
-    DoseRepository,
-    SymptomRepository,
-]:
+) -> tuple[TreatmentRepository, PatientRepository, DoseRepository, SymptomRepository]:
     return (
         TreatmentRepository(session),
         PatientRepository(session),
-        HealthProfessionalRepository(session),
         DoseRepository(session),
         SymptomRepository(session),
     )
-
-
-# ---------------------------------------------------------------------------
-# POST /v1/treatments — apenas profissionais
-# ---------------------------------------------------------------------------
 
 
 @router.post("", response_model=TreatmentResponse, status_code=201)
@@ -59,17 +41,12 @@ def _make_repos(
 async def create_treatment(
     request: Request,
     body: TreatmentCreate,
-    professional_user_id: UUID = Depends(get_current_professional),
+    patient_user_id: UUID = Depends(get_current_patient),
     session: AsyncSession = Depends(get_db),
 ) -> TreatmentResponse:
-    treatment_repo, patient_repo, professional_repo, _, _ = _make_repos(session)
-    use_case = CreateTreatmentUseCase(treatment_repo, patient_repo, professional_repo)
-    return await use_case.execute(professional_user_id, body)
-
-
-# ---------------------------------------------------------------------------
-# GET /v1/treatments/{id} — paciente ou profissional
-# ---------------------------------------------------------------------------
+    treatment_repo, patient_repo, _, _ = _make_repos(session)
+    use_case = CreateTreatmentUseCase(treatment_repo, patient_repo)
+    return await use_case.execute(patient_user_id, body)
 
 
 @router.get("/{treatment_id}", response_model=TreatmentResponse)
@@ -77,19 +54,12 @@ async def create_treatment(
 async def get_treatment(
     request: Request,
     treatment_id: UUID,
-    actor: tuple[UUID, str] = Depends(get_actor_from_token),
+    patient_user_id: UUID = Depends(get_current_patient),
     session: AsyncSession = Depends(get_db),
 ) -> TreatmentResponse:
-    actor_user_id, actor_role = actor
-
-    treatment_repo, patient_repo, professional_repo, _, _ = _make_repos(session)
-    use_case = GetTreatmentUseCase(treatment_repo, patient_repo, professional_repo)
-    return await use_case.execute(actor_user_id, actor_role, treatment_id)
-
-
-# ---------------------------------------------------------------------------
-# POST /v1/treatments/{id}/doses — paciente ou profissional
-# ---------------------------------------------------------------------------
+    treatment_repo, patient_repo, _, _ = _make_repos(session)
+    use_case = GetTreatmentUseCase(treatment_repo, patient_repo)
+    return await use_case.execute(patient_user_id, treatment_id)
 
 
 @router.post("/{treatment_id}/doses", response_model=DoseLogResponse, status_code=201)
@@ -98,19 +68,12 @@ async def register_dose(
     request: Request,
     treatment_id: UUID,
     body: DoseLogCreate,
-    actor: tuple[UUID, str] = Depends(get_actor_from_token),
+    patient_user_id: UUID = Depends(get_current_patient),
     session: AsyncSession = Depends(get_db),
 ) -> DoseLogResponse:
-    actor_user_id, actor_role = actor
-
-    treatment_repo, patient_repo, professional_repo, dose_repo, _ = _make_repos(session)
-    use_case = RegisterDoseUseCase(treatment_repo, dose_repo, patient_repo, professional_repo)
-    return await use_case.execute(actor_user_id, actor_role, treatment_id, body)
-
-
-# ---------------------------------------------------------------------------
-# GET /v1/treatments/{id}/adherence — paciente ou profissional
-# ---------------------------------------------------------------------------
+    treatment_repo, patient_repo, dose_repo, _ = _make_repos(session)
+    use_case = RegisterDoseUseCase(treatment_repo, dose_repo, patient_repo)
+    return await use_case.execute(patient_user_id, treatment_id, body)
 
 
 @router.get("/{treatment_id}/adherence", response_model=AdherenceSnapshotResponse)
@@ -118,20 +81,12 @@ async def register_dose(
 async def get_adherence(
     request: Request,
     treatment_id: UUID,
-    actor: tuple[UUID, str] = Depends(get_actor_from_token),
+    patient_user_id: UUID = Depends(get_current_patient),
     session: AsyncSession = Depends(get_db),
 ) -> AdherenceSnapshotResponse:
-    actor_user_id, actor_role = actor
-
-    treatment_repo, patient_repo, professional_repo, _, _ = _make_repos(session)
-    use_case = GetAdherenceUseCase(treatment_repo, patient_repo, professional_repo)
-    return await use_case.execute(actor_user_id, actor_role, treatment_id)
-
-
-# ---------------------------------------------------------------------------
-# GET /v1/symptoms — qualquer usuário autenticado
-# Registrado em main.py como prefix="/v1/symptoms"
-# ---------------------------------------------------------------------------
+    treatment_repo, patient_repo, _, _ = _make_repos(session)
+    use_case = GetAdherenceUseCase(treatment_repo, patient_repo)
+    return await use_case.execute(patient_user_id, treatment_id)
 
 
 @symptoms_router.get("", response_model=list[SymptomResponse])
@@ -141,6 +96,6 @@ async def list_symptoms(
     _user_id: UUID = Depends(get_current_user),
     session: AsyncSession = Depends(get_db),
 ) -> list[SymptomResponse]:
-    _, _, _, _, symptom_repo = _make_repos(session)
+    _, _, _, symptom_repo = _make_repos(session)
     use_case = ListSymptomsUseCase(symptom_repo)
     return await use_case.execute()

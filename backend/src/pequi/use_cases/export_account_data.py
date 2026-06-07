@@ -96,7 +96,6 @@ class ExportAccountDataUseCase:
                     include=[
                         "id",
                         "patient_id",
-                        "prescribed_by",
                         "regimen",
                         "start_date",
                         "expected_end",
@@ -119,8 +118,6 @@ class ExportAccountDataUseCase:
                         "taken_at",
                         "skipped",
                         "skip_reason",
-                        "supervised",
-                        "registered_by",
                         "created_at",
                     ],
                 )

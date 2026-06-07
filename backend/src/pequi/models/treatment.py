@@ -42,7 +42,6 @@ class Treatment(Base):
     __tablename__ = "treatments"
     __table_args__ = (
         Index("ix_treatments_patient_id", "patient_id"),
-        Index("ix_treatments_prescribed_by", "prescribed_by"),
         Index("ix_treatments_status", "status"),
         Index("ix_treatments_deleted_at", "deleted_at"),
     )
@@ -51,11 +50,6 @@ class Treatment(Base):
     patient_id = Column(
         UUID(as_uuid=True),
         ForeignKey("patient_profiles.id", ondelete="RESTRICT"),
-        nullable=False,
-    )
-    prescribed_by = Column(
-        UUID(as_uuid=True),
-        ForeignKey("health_professionals.id", ondelete="RESTRICT"),
         nullable=False,
     )
     regimen = Column(

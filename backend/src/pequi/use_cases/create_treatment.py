@@ -2,9 +2,8 @@ import calendar
 import uuid
 from datetime import date
 
-from pequi.core.exceptions import ForbiddenError, NotFoundError
+from pequi.core.exceptions import NotFoundError, ValidationFailedError
 from pequi.models.treatment import Treatment, TreatmentRegimen, TreatmentStatus
-from pequi.repositories.health_professional_repo import HealthProfessionalRepository
 from pequi.repositories.patient_repo import PatientRepository
 from pequi.repositories.treatment_repo import TreatmentRepository
 from pequi.schemas.treatment import TreatmentCreate, TreatmentResponse
@@ -16,47 +15,35 @@ _REGIMEN_MONTHS = {
 
 
 class CreateTreatmentUseCase:
-    """Cria um tratamento MDT para um paciente.
-
-    Apenas profissionais de saúde podem criar tratamentos, e somente para
-    pacientes da mesma unidade de saúde.
-    """
+    """Cria um tratamento MDT para o paciente autenticado."""
 
     def __init__(
         self,
         treatment_repo: TreatmentRepository,
         patient_repo: PatientRepository,
-        professional_repo: HealthProfessionalRepository,
     ) -> None:
         self._treatment_repo = treatment_repo
         self._patient_repo = patient_repo
-        self._professional_repo = professional_repo
 
     async def execute(
         self,
-        professional_user_id: uuid.UUID,
+        patient_user_id: uuid.UUID,
         data: TreatmentCreate,
     ) -> TreatmentResponse:
-        professional = await self._professional_repo.get_by_user_id(professional_user_id)
-        if professional is None:
-            raise NotFoundError("HealthProfessional", str(professional_user_id))
-
-        patient = await self._patient_repo.get_by_id(data.patient_id)
+        patient = await self._patient_repo.get_by_user_id(patient_user_id)
         if patient is None:
-            raise NotFoundError("PatientProfile", str(data.patient_id))
+            raise NotFoundError("PatientProfile", str(patient_user_id))
 
-        if patient.health_unit_id != professional.health_unit_id:
-            raise ForbiddenError(
-                "Profissional não tem acesso a pacientes de outra unidade de saúde."
-            )
+        existing = await self._treatment_repo.get_active_by_patient_id(patient.id)
+        if existing is not None:
+            raise ValidationFailedError("Paciente já possui um tratamento ativo.")
 
         regimen = TreatmentRegimen(data.regimen)
         expected_end = _calculate_expected_end(data.start_date, regimen)
 
         treatment = Treatment(
             id=uuid.uuid4(),
-            patient_id=data.patient_id,
-            prescribed_by=professional.id,
+            patient_id=patient.id,
             regimen=regimen,
             start_date=data.start_date,
             expected_end=expected_end,

@@ -3,7 +3,6 @@ from uuid import UUID
 
 from pequi.core.exceptions import ValidationFailedError
 from pequi.models.treatment import Treatment, TreatmentRegimen, TreatmentStatus
-from pequi.repositories.health_professional_repo import HealthProfessionalRepository
 from pequi.repositories.patient_repo import PatientRepository
 from pequi.repositories.treatment_repo import TreatmentRepository
 from pequi.schemas.patient_treatment import (
@@ -36,11 +35,9 @@ class SavePatientTreatmentRecordUseCase:
         self,
         patient_repo: PatientRepository,
         treatment_repo: TreatmentRepository,
-        professional_repo: HealthProfessionalRepository,
     ) -> None:
         self._patient_repo = patient_repo
         self._treatment_repo = treatment_repo
-        self._professional_repo = professional_repo
 
     async def execute(
         self,
@@ -82,17 +79,12 @@ class SavePatientTreatmentRecordUseCase:
         if existing is not None:
             return
 
-        professional = await self._professional_repo.get_first_available()
-        if professional is None:
-            return
-
         regimen = TreatmentRegimen(data.classification)
         expected_end = _calculate_expected_end(data.treatment_start_date, regimen)
 
         treatment = Treatment(
             id=uuid.uuid4(),
             patient_id=patient_id,
-            prescribed_by=professional.id,
             regimen=regimen,
             start_date=data.treatment_start_date,
             expected_end=expected_end,

@@ -5,7 +5,6 @@ from pequi.core.exceptions import NotFoundError
 from pequi.models.health_appointment import PatientHealthAppointment
 from pequi.repositories.dose_repo import DoseRepository
 from pequi.repositories.health_appointment_repo import HealthAppointmentRepository
-from pequi.repositories.health_professional_repo import HealthProfessionalRepository
 from pequi.repositories.patient_repo import PatientRepository
 from pequi.repositories.treatment_repo import TreatmentRepository
 from pequi.schemas.health_appointment import (
@@ -35,13 +34,11 @@ class ListPatientHealthAppointmentsUseCase:
 def _consultation_effects(
     patient_repo: PatientRepository,
     treatment_repo: TreatmentRepository,
-    professional_repo: HealthProfessionalRepository,
     dose_repo: DoseRepository,
 ) -> AppointmentConsultationEffects:
     return AppointmentConsultationEffects(
         patient_repo,
         treatment_repo,
-        professional_repo,
         dose_repo,
     )
 
@@ -73,7 +70,6 @@ class CreatePatientHealthAppointmentUseCase:
         patient_repo: PatientRepository,
         appointment_repo: HealthAppointmentRepository,
         treatment_repo: TreatmentRepository,
-        professional_repo: HealthProfessionalRepository,
         dose_repo: DoseRepository,
     ) -> None:
         self._patient_repo = patient_repo
@@ -81,7 +77,6 @@ class CreatePatientHealthAppointmentUseCase:
         self._effects = _consultation_effects(
             patient_repo,
             treatment_repo,
-            professional_repo,
             dose_repo,
         )
 
@@ -115,7 +110,6 @@ class UpdatePatientHealthAppointmentUseCase:
         patient_repo: PatientRepository,
         appointment_repo: HealthAppointmentRepository,
         treatment_repo: TreatmentRepository,
-        professional_repo: HealthProfessionalRepository,
         dose_repo: DoseRepository,
     ) -> None:
         self._patient_repo = patient_repo
@@ -123,7 +117,6 @@ class UpdatePatientHealthAppointmentUseCase:
         self._effects = _consultation_effects(
             patient_repo,
             treatment_repo,
-            professional_repo,
             dose_repo,
         )
 

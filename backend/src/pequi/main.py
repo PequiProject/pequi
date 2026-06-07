@@ -77,10 +77,12 @@ def _register_routers(app: FastAPI) -> None:
     from pequi.routers import body_map as body_map_router
     from pequi.routers import checkin as checkin_router
     from pequi.routers import community as community_router
+    from pequi.routers import journey as journey_router
     from pequi.routers import patient as patient_router
     from pequi.routers import treatment as treatment_router
 
     app.include_router(patient_router.router, prefix="/v1/patients", tags=["patients"])
+    app.include_router(journey_router.router, prefix="/v1/journey", tags=["journey"])
     app.include_router(account_router.router, prefix="/v1/account", tags=["account"])
     app.include_router(auth_router.router, prefix="/v1/auth", tags=["auth"])
     app.include_router(treatment_router.router, prefix="/v1/treatments", tags=["treatments"])
