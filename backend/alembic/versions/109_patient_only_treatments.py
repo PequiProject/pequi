@@ -49,7 +49,13 @@ def downgrade() -> None:
         WHERE t.prescribed_by IS NULL
         """
     )
-    op.alter_column("treatments", "prescribed_by", nullable=False)
+    bind = op.get_bind()
+    null_count = bind.execute(
+        sa.text("SELECT COUNT(*) FROM treatments WHERE prescribed_by IS NULL")
+    ).scalar_one()
+    if null_count == 0:
+        op.alter_column("treatments", "prescribed_by", nullable=False)
+
     op.create_foreign_key(
         "fk_treatments_prescribed_by_health_professionals",
         "treatments",
