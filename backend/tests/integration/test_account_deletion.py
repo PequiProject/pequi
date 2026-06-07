@@ -74,10 +74,8 @@ async def _create_professional(db_session: AsyncSession, unit_id) -> HealthProfe
 
 async def test_delete_account_blocks_active_treatment(create_tables, db_session: AsyncSession):
     user, patient = await _create_patient(db_session)
-    professional = await _create_professional(db_session, patient.health_unit_id)
     treatment = Treatment(
         patient_id=patient.id,
-        prescribed_by=professional.id,
         regimen=TreatmentRegimen.PB,
         start_date=date.today(),
         expected_end=date.today() + timedelta(days=180),

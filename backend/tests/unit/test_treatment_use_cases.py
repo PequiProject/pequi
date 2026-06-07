@@ -4,7 +4,7 @@ from uuid import uuid4
 
 import pytest
 
-from pequi.core.exceptions import ForbiddenError, NotFoundError
+from pequi.core.exceptions import ForbiddenError, NotFoundError, ValidationFailedError
 from pequi.schemas.treatment import TreatmentCreate
 from pequi.use_cases.create_treatment import CreateTreatmentUseCase
 from pequi.use_cases.get_treatment import GetTreatmentUseCase
@@ -16,7 +16,6 @@ def _treatment_attrs(**overrides):
     base = {
         "id": uuid4(),
         "patient_id": uuid4(),
-        "prescribed_by": uuid4(),
         "regimen": "PB",
         "start_date": date(2026, 1, 1),
         "expected_end": date(2026, 7, 1),
@@ -30,8 +29,9 @@ def _treatment_attrs(**overrides):
 
 
 class FakeTreatmentRepository:
-    def __init__(self, treatment=None):
+    def __init__(self, treatment=None, active=None):
         self.treatment = treatment
+        self.active = active
         self.created = None
 
     async def create(self, treatment):
@@ -44,6 +44,11 @@ class FakeTreatmentRepository:
         if self.treatment is None or self.treatment.id != treatment_id:
             return None
         return self.treatment
+
+    async def get_active_by_patient_id(self, patient_id):
+        if self.active is None or self.active.patient_id != patient_id:
+            return None
+        return self.active
 
 
 class FakePatientRepository:
@@ -62,31 +67,17 @@ class FakePatientRepository:
         return self.by_user_id
 
 
-class FakeProfessionalRepository:
-    def __init__(self, professional=None):
-        self.professional = professional
-
-    async def get_by_user_id(self, user_id):
-        if self.professional is None or self.professional.user_id != user_id:
-            return None
-        return self.professional
-
-
 async def test_create_treatment_calculates_expected_end_and_preserves_notes():
-    unit_id = uuid4()
-    patient = SimpleNamespace(id=uuid4(), health_unit_id=unit_id)
-    professional = SimpleNamespace(id=uuid4(), user_id=uuid4(), health_unit_id=unit_id)
+    patient = SimpleNamespace(id=uuid4(), user_id=uuid4())
     treatment_repo = FakeTreatmentRepository()
     use_case = CreateTreatmentUseCase(
         treatment_repo,
-        FakePatientRepository(by_id=patient),
-        FakeProfessionalRepository(professional),
+        FakePatientRepository(by_user_id=patient),
     )
 
     result = await use_case.execute(
-        professional.user_id,
+        patient.user_id,
         TreatmentCreate(
-            patient_id=patient.id,
             regimen="PB",
             start_date=date(2026, 1, 31),
             notes="Tratamento inicial",
@@ -94,7 +85,6 @@ async def test_create_treatment_calculates_expected_end_and_preserves_notes():
     )
 
     assert result.patient_id == patient.id
-    assert result.prescribed_by == professional.id
     assert result.expected_end == date(2026, 7, 31)
     assert result.status == "active"
     assert result.notes == "Tratamento inicial"
@@ -102,159 +92,81 @@ async def test_create_treatment_calculates_expected_end_and_preserves_notes():
 
 
 async def test_create_treatment_handles_month_end_for_mb_regimen():
-    unit_id = uuid4()
-    patient = SimpleNamespace(id=uuid4(), health_unit_id=unit_id)
-    professional = SimpleNamespace(id=uuid4(), user_id=uuid4(), health_unit_id=unit_id)
+    patient = SimpleNamespace(id=uuid4(), user_id=uuid4())
     use_case = CreateTreatmentUseCase(
         FakeTreatmentRepository(),
-        FakePatientRepository(by_id=patient),
-        FakeProfessionalRepository(professional),
+        FakePatientRepository(by_user_id=patient),
     )
 
     result = await use_case.execute(
-        professional.user_id,
-        TreatmentCreate(patient_id=patient.id, regimen="MB", start_date=date(2024, 2, 29)),
+        patient.user_id,
+        TreatmentCreate(regimen="MB", start_date=date(2024, 2, 29)),
     )
 
     assert result.expected_end == date(2025, 2, 28)
     assert result.regimen == "MB"
 
 
-async def test_create_treatment_requires_existing_professional_profile():
+async def test_create_treatment_requires_existing_patient_profile():
     use_case = CreateTreatmentUseCase(
         FakeTreatmentRepository(),
-        FakePatientRepository(),
-        FakeProfessionalRepository(None),
+        FakePatientRepository(by_user_id=None),
     )
 
     with pytest.raises(NotFoundError):
         await use_case.execute(
             uuid4(),
-            TreatmentCreate(patient_id=uuid4(), regimen="PB", start_date=date(2026, 1, 1)),
+            TreatmentCreate(regimen="PB", start_date=date(2026, 1, 1)),
         )
 
 
-async def test_create_treatment_requires_existing_patient_profile():
-    professional = SimpleNamespace(id=uuid4(), user_id=uuid4(), health_unit_id=uuid4())
+async def test_create_treatment_rejects_when_active_treatment_exists():
+    patient = SimpleNamespace(id=uuid4(), user_id=uuid4())
+    active = SimpleNamespace(id=uuid4(), patient_id=patient.id, status="active")
     use_case = CreateTreatmentUseCase(
-        FakeTreatmentRepository(),
-        FakePatientRepository(by_id=None),
-        FakeProfessionalRepository(professional),
+        FakeTreatmentRepository(active=active),
+        FakePatientRepository(by_user_id=patient),
     )
 
-    with pytest.raises(NotFoundError):
+    with pytest.raises(ValidationFailedError):
         await use_case.execute(
-            professional.user_id,
-            TreatmentCreate(patient_id=uuid4(), regimen="PB", start_date=date(2026, 1, 1)),
-        )
-
-
-async def test_create_treatment_rejects_patient_from_another_unit():
-    patient = SimpleNamespace(id=uuid4(), health_unit_id=uuid4())
-    professional = SimpleNamespace(id=uuid4(), user_id=uuid4(), health_unit_id=uuid4())
-    use_case = CreateTreatmentUseCase(
-        FakeTreatmentRepository(),
-        FakePatientRepository(by_id=patient),
-        FakeProfessionalRepository(professional),
-    )
-
-    with pytest.raises(ForbiddenError):
-        await use_case.execute(
-            professional.user_id,
-            TreatmentCreate(patient_id=patient.id, regimen="PB", start_date=date(2026, 1, 1)),
+            patient.user_id,
+            TreatmentCreate(regimen="PB", start_date=date(2026, 1, 1)),
         )
 
 
 async def test_get_treatment_allows_patient_owner():
-    patient = SimpleNamespace(id=uuid4(), user_id=uuid4(), health_unit_id=uuid4())
+    patient = SimpleNamespace(id=uuid4(), user_id=uuid4())
     treatment = SimpleNamespace(**_treatment_attrs(patient_id=patient.id))
     use_case = GetTreatmentUseCase(
         FakeTreatmentRepository(treatment),
         FakePatientRepository(by_user_id=patient),
-        FakeProfessionalRepository(),
     )
 
-    result = await use_case.execute(patient.user_id, "patient", treatment.id)
+    result = await use_case.execute(patient.user_id, treatment.id)
 
     assert result.id == treatment.id
     assert result.patient_id == patient.id
 
 
 async def test_get_treatment_rejects_patient_that_is_not_owner():
-    owner = SimpleNamespace(id=uuid4(), user_id=uuid4(), health_unit_id=uuid4())
-    actor = SimpleNamespace(id=uuid4(), user_id=uuid4(), health_unit_id=owner.health_unit_id)
+    owner = SimpleNamespace(id=uuid4(), user_id=uuid4())
+    actor = SimpleNamespace(id=uuid4(), user_id=uuid4())
     treatment = SimpleNamespace(**_treatment_attrs(patient_id=owner.id))
     use_case = GetTreatmentUseCase(
         FakeTreatmentRepository(treatment),
         FakePatientRepository(by_user_id=actor),
-        FakeProfessionalRepository(),
     )
 
     with pytest.raises(ForbiddenError):
-        await use_case.execute(actor.user_id, "patient", treatment.id)
-
-
-async def test_get_treatment_allows_professional_from_same_unit():
-    unit_id = uuid4()
-    patient = SimpleNamespace(id=uuid4(), user_id=uuid4(), health_unit_id=unit_id)
-    professional = SimpleNamespace(id=uuid4(), user_id=uuid4(), health_unit_id=unit_id)
-    treatment = SimpleNamespace(**_treatment_attrs(patient_id=patient.id))
-    use_case = GetTreatmentUseCase(
-        FakeTreatmentRepository(treatment),
-        FakePatientRepository(by_id=patient),
-        FakeProfessionalRepository(professional),
-    )
-
-    result = await use_case.execute(professional.user_id, "health_professional", treatment.id)
-
-    assert result.id == treatment.id
-
-
-async def test_get_treatment_rejects_professional_from_another_unit():
-    patient = SimpleNamespace(id=uuid4(), user_id=uuid4(), health_unit_id=uuid4())
-    professional = SimpleNamespace(id=uuid4(), user_id=uuid4(), health_unit_id=uuid4())
-    treatment = SimpleNamespace(**_treatment_attrs(patient_id=patient.id))
-    use_case = GetTreatmentUseCase(
-        FakeTreatmentRepository(treatment),
-        FakePatientRepository(by_id=patient),
-        FakeProfessionalRepository(professional),
-    )
-
-    with pytest.raises(ForbiddenError):
-        await use_case.execute(professional.user_id, "health_professional", treatment.id)
-
-
-async def test_get_treatment_rejects_unknown_actor_role():
-    treatment = SimpleNamespace(**_treatment_attrs())
-    use_case = GetTreatmentUseCase(
-        FakeTreatmentRepository(treatment),
-        FakePatientRepository(),
-        FakeProfessionalRepository(),
-    )
-
-    with pytest.raises(ForbiddenError):
-        await use_case.execute(uuid4(), "admin", treatment.id)
+        await use_case.execute(actor.user_id, treatment.id)
 
 
 async def test_get_treatment_raises_not_found_for_missing_treatment():
     use_case = GetTreatmentUseCase(
         FakeTreatmentRepository(None),
         FakePatientRepository(),
-        FakeProfessionalRepository(),
     )
 
     with pytest.raises(NotFoundError):
-        await use_case.execute(uuid4(), "patient", uuid4())
-
-
-async def test_get_treatment_raises_not_found_when_treatment_patient_disappears():
-    professional = SimpleNamespace(id=uuid4(), user_id=uuid4(), health_unit_id=uuid4())
-    treatment = SimpleNamespace(**_treatment_attrs())
-    use_case = GetTreatmentUseCase(
-        FakeTreatmentRepository(treatment),
-        FakePatientRepository(by_id=None),
-        FakeProfessionalRepository(professional),
-    )
-
-    with pytest.raises(NotFoundError):
-        await use_case.execute(professional.user_id, "health_professional", treatment.id)
+        await use_case.execute(uuid4(), uuid4())

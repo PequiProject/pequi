@@ -91,7 +91,6 @@ async def _create_patient_with_treatment(
     treatment = Treatment(
         id=treatment_id,
         patient_id=patient_id,
-        prescribed_by=professional_id,
         regimen="MB",
         start_date=date(2026, 1, 1),
         expected_end=date(2026, 12, 31),
@@ -240,7 +239,6 @@ async def test_adherence_repo_lists_active_treatments(db_session: AsyncSession):
     # Criar tratamento ativo
     active_treatment = Treatment(
         patient_id=patient_id,
-        prescribed_by=professional_id,
         regimen="MB",
         start_date=date(2026, 1, 1),
         expected_end=date(2026, 12, 31),
@@ -250,7 +248,6 @@ async def test_adherence_repo_lists_active_treatments(db_session: AsyncSession):
     # Criar tratamento completado
     completed_treatment = Treatment(
         patient_id=patient_id,
-        prescribed_by=professional_id,
         regimen="PB",
         start_date=date(2025, 1, 1),
         expected_end=date(2025, 6, 30),
