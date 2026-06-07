@@ -44,6 +44,10 @@ from pequi.use_cases.patient_treatment_record import (
 )
 from pequi.use_cases.update_patient_profile import UpdatePatientProfileUseCase
 
+from pequi.repositories.checkin_repo import CheckinRepository
+from pequi.schemas.patient_journey import PatientJourneyResponse
+from pequi.use_cases.get_patient_journey import GetPatientJourneyUseCase
+
 router = APIRouter()
 
 
@@ -223,3 +227,19 @@ async def update_my_appointment(
         dose_repo,
     )
     return await use_case.execute(user_id, appointment_id, body)
+
+@router.get("/me/journey", response_model=PatientJourneyResponse)
+@limiter.limit("100/minute")
+async def get_my_journey(
+    request: Request,
+    user_id: UUID = Depends(get_current_patient),
+    session: AsyncSession = Depends(get_db),
+) -> PatientJourneyResponse:
+    use_case = GetPatientJourneyUseCase(
+        PatientRepository(session),
+        TreatmentRepository(session),
+        HealthAppointmentRepository(session),
+        CheckinRepository(session),
+        DoseRepository(session),
+    )
+    return await use_case.execute(user_id)

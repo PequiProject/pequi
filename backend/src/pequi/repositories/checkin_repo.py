@@ -6,8 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from pequi.models.checkin import Checkin, CheckinMood, checkin_symptoms
-from pequi.schemas.checkin import CheckinCreate
-
+from pequi.schemas.checkin import CheckinCreate, CheckinResponse
 
 class CheckinRepository:
     def __init__(self, session: AsyncSession) -> None:
@@ -76,6 +75,26 @@ class CheckinRepository:
         )
         result = await self._session.execute(stmt)
         return list(result.scalars().all()), total
+    
+    async def list_history_by_patient_id(
+        self,
+        patient_id: UUID,
+        limit: int = 500,
+        offset: int = 0,
+    ) -> list[CheckinResponse]:
+        from pequi.schemas.checkin import checkin_to_response
+
+        stmt = (
+            select(Checkin)
+            .options(selectinload(Checkin.symptoms))
+            .where(Checkin.patient_id == patient_id)
+            .order_by(Checkin.checked_in_at.asc())
+            .limit(limit)
+            .offset(offset)
+        )
+        result = await self._session.execute(stmt)
+        rows = list(result.scalars().all())
+        return [checkin_to_response(row) for row in rows]
 
     async def get_recent_moods(
         self,

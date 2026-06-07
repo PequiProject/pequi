@@ -1,17 +1,17 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  OnInit,
   computed,
   inject,
-  input,
   signal,
 } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
-import { JourneyService } from './journey-service';
+import { JourneyService } from './services/journey-service';
+import { RouterLink } from '@angular/router';
 
-export type LeprosyType = 'PB' | 'MB';
+export type LeprosyType = 'PB' | 'MB' | '';
 export type JourneyEventType =
-  | 'app-start'
   | 'treatment-start'
   | 'appointment'
   | 'medication-summary'
@@ -52,98 +52,122 @@ export interface JourneyMonth {
 @Component({
   selector: 'app-journey',
   standalone: true,
-  imports: [CommonModule, DatePipe],
+  imports: [CommonModule, DatePipe, RouterLink],
   templateUrl: './journey.html',
   styleUrl: './journey.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Journey {
+export class Journey implements OnInit {
   readonly journeyService = inject(JourneyService);
-  readonly patient = this.journeyService.patient;
 
-  readonly patientName = computed(() => this.patient().name);
-  readonly leprosyType = computed(() => this.patient().leprosyType);
-  readonly treatmentStartDate = computed(() => this.patient().treatmentStartDate);
-  readonly appStartDate = computed(() => this.patient().appStartDate);
-  readonly events = this.journeyService.events();
+  readonly patient = this.journeyService.patient;
+  readonly apiMonths = this.journeyService.months;
+  readonly summary = this.journeyService.summary;
+  readonly isLoading = this.journeyService.isLoading;
+  readonly error = this.journeyService.error;
 
   readonly expandedMonths = signal<Record<number, boolean>>({});
 
-  readonly totalMonths = computed(() =>
-    this.leprosyType() === 'PB' ? 6 : 12
-  );
+  ngOnInit(): void {
+    this.journeyService.loadJourney();
+  }
 
-  readonly totalDays = computed(() => this.totalMonths() * 30);
+  readonly patientName = computed(() => this.patient().name);
 
-  readonly treatmentStart = computed(() =>
-    this.parseIsoDate(this.treatmentStartDate())
-  );
-
-  readonly today = computed(() => this.stripTime(new Date()));
-
-  readonly elapsedDays = computed(() => {
-    const start = this.treatmentStart();
-    if (!start) {
-      return 0;
-    }
-
-    return Math.max(0, this.diffInDays(start, this.today()));
+  readonly leprosyType = computed<LeprosyType>(() => {
+    return this.summary()?.classification ?? this.patient().leprosyType ?? '';
   });
 
-  readonly remainingDays = computed(() =>
-    Math.max(0, this.totalDays() - this.elapsedDays())
+  readonly treatmentStartDate = computed(
+    () => this.summary()?.treatment_start_date ?? this.patient().treatmentStartDate
   );
+
+  readonly events = computed(() => this.journeyService.events());
+
+  readonly totalMonths = computed(() => {
+    const apiValue = this.summary()?.treatment_duration_months;
+    if (apiValue) {
+      return apiValue;
+    }
+    return this.leprosyType() === 'PB' ? 6 : 12;
+  });
+
+  readonly totalDays = computed(() => {
+    return this.summary()?.total_days ?? this.totalMonths() * 30;
+  });
+
+  readonly elapsedDays = computed(() => this.summary()?.elapsed_days ?? 0);
+
+  readonly remainingDays = computed(() => {
+    return this.summary()?.remaining_days ?? Math.max(0, this.totalDays() - this.elapsedDays());
+  });
 
   readonly progressPercent = computed(() => {
-    const percent = Math.floor(
-      (this.elapsedDays() / this.totalDays()) * 100
-    );
-
-    return Number.isFinite(percent) ? Math.min(100, Math.max(0, percent)) : 0;
+    return this.summary()?.progress_percent ?? 0;
   });
 
-  readonly currentMonth = computed(() =>
-    Math.min(
-      this.totalMonths(),
-      Math.max(1, Math.floor(this.elapsedDays() / 30) + 1)
-    )
-  );
+  readonly currentMonth = computed(() => {
+    return this.summary()?.current_month ?? 1;
+  });
 
   readonly estimatedEndDate = computed(() => {
-    const start = this.treatmentStart();
-    if (!start) {
-      return '';
-    }
-
-    const endDate = new Date(start);
-    endDate.setDate(endDate.getDate() + this.totalDays());
-    return endDate.toISOString();
+    return this.summary()?.estimated_end_date ?? '';
   });
 
   readonly months = computed<JourneyMonth[]>(() => {
-    const totalMonths = this.totalMonths();
-    const currentMonth = this.currentMonth();
     const expandedMap = this.expandedMonths();
 
-    return Array.from({ length: totalMonths }, (_, index) => {
-      const monthIndex = index + 1;
-      const events = this.getEventsForMonth(monthIndex);
-      const medicationSummary = this.extractMedicationSummary(events);
-      const locked = monthIndex > currentMonth;
-
-      return {
-        monthIndex,
-        label: `Mês ${monthIndex}`,
-        expanded: expandedMap[monthIndex] ?? monthIndex === currentMonth,
-        completed: monthIndex < currentMonth,
-        current: monthIndex === currentMonth,
-        locked,
-        events,
-        medicationTaken: medicationSummary.taken,
-        medicationExpected: medicationSummary.expected,
-      };
-    });
+    return this.apiMonths().map((month) => ({
+      monthIndex: month.month_index,
+      label: month.label,
+      expanded: expandedMap[month.month_index] ?? month.status === 'current',
+      completed: month.status === 'completed',
+      current: month.status === 'current',
+      locked: month.status === 'upcoming',
+      events: month.events
+        .map((event) => ({
+          id: event.id,
+          type: event.type,
+          title: event.title,
+          description: event.description,
+          date: event.date,
+          monthIndex: month.month_index,
+          status: event.status,
+          metadata: {
+            dosesTaken: event.metadata?.dosesTaken,
+            dosesExpected: event.metadata?.dosesExpected,
+            symptomTrend: event.metadata?.symptomTrend,
+            consultationLocation:
+              event.metadata?.consultationLocation ?? event.metadata?.location,
+          },
+        }))
+        .sort((a, b) => +new Date(b.date) - +new Date(a.date)),
+      medicationTaken: month.medication_summary.doses_taken,
+      medicationExpected: month.medication_summary.doses_expected,
+    }));
   });
+
+  readonly hasTreatmentStartDate = computed(() => {
+  const value = this.treatmentStartDate();
+  return !!value?.trim();
+});
+
+readonly shouldShowJourneySetupState = computed(() => !this.hasTreatmentStartDate());
+
+readonly emptyJourneyTitle = computed(() =>
+  'Sua jornada de tratamento ainda não começou'
+);
+
+readonly emptyJourneyMessage = computed(
+  () => 'Para acompanhar sua evolução, adicione a data de início do tratamento na tela de '
+);
+
+readonly emptyJourneyLinkLabel = computed(() => 'Perfil > Meu tratamento');
+
+readonly emptyJourneySupportMessage = computed(
+  () =>
+    'Depois de informar essa data, a linha do tempo será organizada automaticamente.'
+);
 
   readonly leprosyTypeLabel = computed(() =>
     this.leprosyType() === 'PB'
@@ -152,39 +176,50 @@ export class Journey {
   );
 
   readonly treatmentEstimateText = computed(() =>
-    this.leprosyType() === 'PB'
+    this.totalMonths() === 6
       ? 'Estimativa de tratamento: 6 meses'
       : 'Estimativa de tratamento: 12 meses'
   );
 
-  readonly progressHeadline = computed(() => {
-    if (this.progressPercent() >= 80) {
-      return 'Você está avançando bem no tratamento';
-    }
+readonly progressHeadline = computed(() => {
+  if (!this.hasTreatmentStartDate()) {
+    return 'Adicione a data de início do tratamento';
+  }
 
-    if (this.progressPercent() >= 40) {
-      return 'Seu tratamento segue em andamento';
-    }
+  if (this.progressPercent() >= 80) {
+    return 'Você está avançando bem no tratamento';
+  }
 
-    return 'Cada etapa cumprida fortalece sua jornada';
-  });
+  if (this.progressPercent() >= 40) {
+    return 'Seu tratamento segue em andamento';
+  }
 
-  readonly progressSupportText = computed(
-    () =>
-      `Você já percorreu ${this.elapsedDays()} de ${this.totalDays()} dias previstos do tratamento.`
-  );
+  return 'Cada etapa cumprida fortalece sua jornada';
+});
 
-  readonly remainingText = computed(() => {
-    if (this.remainingDays() <= 0) {
-      return 'Tratamento previsto concluído.';
-    }
+readonly progressSupportText = computed(() => {
+  if (!this.hasTreatmentStartDate()) {
+    return 'Assim que essa data for informada, mostraremos seu progresso e os marcos da jornada.';
+  }
 
-    const remainingMonths = Math.ceil(this.remainingDays() / 30);
+  return `Você já percorreu ${this.elapsedDays()} de ${this.totalDays()} dias previstos do tratamento.`;
+});
 
-    return `Faltam aproximadamente ${this.remainingDays()} dias (${remainingMonths} ${
-      remainingMonths === 1 ? 'mês' : 'meses'
-    }) para a estimativa final. Continue com o ótimo trabalho!`;
-  });
+readonly remainingText = computed(() => {
+  if (!this.hasTreatmentStartDate()) {
+    return 'Acesse Perfil > Meu tratamento para informar a data e iniciar sua jornada visual.';
+  }
+
+  if (this.remainingDays() <= 0) {
+    return 'Tratamento previsto concluído.';
+  }
+
+  const remainingMonths = Math.ceil(this.remainingDays() / 30);
+
+  return `Faltam aproximadamente ${this.remainingDays()} dias (${remainingMonths} ${
+    remainingMonths === 1 ? 'mês' : 'meses'
+  }) para a estimativa final. Continue com o ótimo trabalho!`;
+});
 
   toggleMonth(month: JourneyMonth): void {
     if (month.locked) {
@@ -262,8 +297,6 @@ export class Journey {
         return 'bg-sky-100 text-sky-700';
       case 'treatment-start':
         return 'bg-violet-100 text-violet-700';
-      case 'app-start':
-        return 'bg-slate-200 text-slate-700';
       case 'medication-summary':
         return 'bg-emerald-100 text-emerald-700';
       case 'clinical-update':
@@ -279,8 +312,6 @@ export class Journey {
         return 'Consulta';
       case 'treatment-start':
         return 'Tratamento';
-      case 'app-start':
-        return 'Aplicativo';
       case 'medication-summary':
         return 'Medicação';
       case 'clinical-update':
@@ -290,146 +321,11 @@ export class Journey {
     }
   }
 
-  getEventsForMonth(monthIndex: number): JourneyEvent[] {
-    const mappedInputEvents = this.journeyService.events()
-      .map((event) => ({
-        ...event,
-        monthIndex: event.monthIndex ?? this.getMonthIndexFromDate(event.date),
-      }))
-      .filter((event) => event.monthIndex === monthIndex);
-
-    const generatedEvents: JourneyEvent[] = [];
-
-    const appMonth = this.getMonthIndexFromDate(this.appStartDate());
-    if (appMonth === monthIndex && this.appStartDate()) {
-      generatedEvents.push({
-        id: `app-start-${monthIndex}`,
-        type: 'app-start',
-        title: 'Você começou a usar o aplicativo',
-        description:
-          'Seu acompanhamento digital foi iniciado para apoiar sua continuidade no tratamento.',
-        date: this.appStartDate(),
-        monthIndex,
-        status: 'neutral',
-      });
-    }
-
-    const treatmentMonth = this.getMonthIndexFromDate(this.treatmentStartDate());
-    if (treatmentMonth === monthIndex && this.treatmentStartDate()) {
-      generatedEvents.push({
-        id: `treatment-start-${monthIndex}`,
-        type: 'treatment-start',
-        title: 'Início do tratamento',
-        description:
-          'Seu tratamento foi iniciado e sua jornada de cuidado começou oficialmente.',
-        date: this.treatmentStartDate(),
-        monthIndex,
-        status: 'positive',
-      });
-    }
-
-    const allEvents = [...mappedInputEvents, ...generatedEvents]
-      .sort((a, b) => +new Date(b.date) - +new Date(a.date));
-
-    const hasImproved = allEvents.some(
-      (event) => event.metadata?.symptomTrend === 'improved'
-    );
-    const hasWorsened = allEvents.some(
-      (event) => event.metadata?.symptomTrend === 'worsened'
-    );
-
-    if (hasImproved) {
-      allEvents.push({
-        id: `auto-improved-${monthIndex}`,
-        type: 'motivational-message',
-        title: 'Sinais positivos neste mês',
-        description:
-          'Percebemos uma melhora registrada no período. Manter a regularidade do tratamento é importante para seguir avançando.',
-        date: this.getSyntheticMonthDate(monthIndex),
-        monthIndex,
-        status: 'positive',
-      });
-    }
-
-    if (hasWorsened) {
-      allEvents.push({
-        id: `auto-attention-${monthIndex}`,
-        type: 'motivational-message',
-        title: 'Atenção aos sintomas',
-        description:
-          'Houve registro de piora neste mês. Continue acompanhando os sintomas e leve essas informações para a próxima consulta.',
-        date: this.getSyntheticMonthDate(monthIndex),
-        monthIndex,
-        status: 'attention',
-      });
-    }
-
-    return allEvents.sort((a, b) => +new Date(b.date) - +new Date(a.date));
-  }
-
-  extractMedicationSummary(events: JourneyEvent[]): {
-    taken: number;
-    expected: number;
-  } {
-    return events
-      .filter((event) => event.type === 'medication-summary')
-      .reduce(
-        (acc, event) => {
-          acc.taken += event.metadata?.dosesTaken ?? 0;
-          acc.expected += event.metadata?.dosesExpected ?? 0;
-          return acc;
-        },
-        { taken: 0, expected: 0 }
-      );
-  }
-
-  getMonthIndexFromDate(dateString?: string): number {
-    const start = this.parseIsoDate(this.treatmentStartDate());
-    const date = this.parseIsoDate(dateString);
-
-    if (!start || !date) {
-      return 1;
-    }
-
-    const diffDays = Math.max(0, this.diffInDays(start, date));
-    return Math.min(this.totalMonths(), Math.floor(diffDays / 30) + 1);
-  }
-
   trackMonth(_: number, month: JourneyMonth): number {
     return month.monthIndex;
   }
 
   trackEvent(_: number, event: JourneyEvent): string {
     return event.id;
-  }
-
-  private getSyntheticMonthDate(monthIndex: number): string {
-    const start = this.parseIsoDate(this.treatmentStartDate());
-
-    if (!start) {
-      return new Date().toISOString();
-    }
-
-    const synthetic = new Date(start);
-    synthetic.setDate(synthetic.getDate() + (monthIndex - 1) * 30 + 29);
-    return synthetic.toISOString();
-  }
-
-  private parseIsoDate(dateString?: string): Date | null {
-    if (!dateString) {
-      return null;
-    }
-
-    const date = new Date(dateString);
-    return Number.isNaN(date.getTime()) ? null : this.stripTime(date);
-  }
-
-  private stripTime(date: Date): Date {
-    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  }
-
-  private diffInDays(start: Date, end: Date): number {
-    const msPerDay = 1000 * 60 * 60 * 24;
-    return Math.floor((end.getTime() - start.getTime()) / msPerDay);
   }
 }
