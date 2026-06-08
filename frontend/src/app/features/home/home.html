@@ -1,4 +1,4 @@
-<div class="container">
+<div class="mx-auto w-full max-w-[500px]">
   <section class="calendar-section">
     <div class="calendar-header flex justify-between items-center mb-4">
       
@@ -136,7 +136,6 @@
     </div>
   </section>
 
-<div>
   <section class="section-container">
     <h3 class="section-title">Ações rápidas</h3>
 
@@ -155,21 +154,31 @@
     </div>
   </section>
 
-  <section class="analysis-section">
-    <div class="analysis-card">
-      <div class="analysis-image-wrapper">
-        <div class="mock-image-bg"></div>
-      </div>
+  @if (featuredArticle(); as article) {
+    <section class="analysis-section" data-testid="home-featured-article" aria-labelledby="weekly-reading-title">
+      <h3 id="weekly-reading-title" class="analysis-section-title">Leitura da semana</h3>
 
-      <div class="analysis-content">
-        <span class="analysis-tag">{{ weeklyArticle.tag }}</span>
-        <h3 class="analysis-title">{{ weeklyArticle.title }}</h3>
-        <p class="analysis-desc">{{ weeklyArticle.description }}</p>
+      <div class="analysis-card">
+        <div class="analysis-image-wrapper">
+          @if (article.cover_image_url) {
+            <img [src]="article.cover_image_url" [alt]="'Capa: ' + article.title" />
+          } @else {
+            <div class="mock-image-bg" aria-hidden="true"></div>
+          }
+        </div>
 
-        <button class="analysis-btn">
-          {{ weeklyArticle.actionText }}
-        </button>
+        <div class="analysis-content">
+          @if (article.tags[0]; as tag) {
+            <span class="analysis-topic">{{ tag.name }}</span>
+          }
+          <h4 class="analysis-title">{{ article.title }}</h4>
+          <p class="analysis-desc">{{ article.summary }}</p>
+
+          <button type="button" class="analysis-btn" (click)="openFeaturedArticle()">
+            Ler artigo
+          </button>
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
+  }
 </div>

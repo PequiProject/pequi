@@ -1,5 +1,5 @@
 import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { AuthService } from '../auth/services/auth-service';
@@ -9,6 +9,14 @@ import { HomeComponent } from './home';
 describe('HomeComponent', () => {
   let component: HomeComponent;
   let fixture: ComponentFixture<HomeComponent>;
+  let httpMock: HttpTestingController;
+
+  function flushFeaturedArticleRequest(items: unknown[] = []): void {
+    const req = httpMock.expectOne(
+      (r) => r.url.includes('/v1/articles') && r.params.get('category') === 'education',
+    );
+    req.flush({ items, total: items.length });
+  }
 
   beforeEach(async () => {
     localStorage.clear();
@@ -27,7 +35,10 @@ describe('HomeComponent', () => {
 
     fixture = TestBed.createComponent(HomeComponent);
     component = fixture.componentInstance;
-    await fixture.whenStable();
+    httpMock = TestBed.inject(HttpTestingController);
+    fixture.detectChanges();
+    flushFeaturedArticleRequest();
+    fixture.detectChanges();
   });
 
   it('should create', () => {
@@ -37,6 +48,39 @@ describe('HomeComponent', () => {
   it('shows placeholder when no next appointment is registered', () => {
     expect(component.nextAppointmentCard().value).toBe('Próxima consulta ainda não registrada');
     expect(component.nextAppointmentCard().hasNext).toBe(false);
+  });
+
+  it('renders featured education article from API', () => {
+    fixture = TestBed.createComponent(HomeComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+    flushFeaturedArticleRequest([
+      {
+        id: '1',
+        title: 'Cuidados diários',
+        slug: 'cuidados-diarios',
+        summary: 'Resumo do artigo.',
+        content: 'Conteúdo.',
+        category: 'education',
+        author_name: 'Equipe Pequi',
+        cover_image_url: null,
+        cover_image_key: null,
+        is_published: true,
+        published_at: '2026-05-01T10:00:00Z',
+        reading_time_min: 5,
+        view_count: 0,
+        tags: [{ id: 't1', name: 'Cuidados' }],
+        created_at: '2026-05-01T10:00:00Z',
+        updated_at: '2026-05-01T10:00:00Z',
+      },
+    ]);
+    fixture.detectChanges();
+
+    const section = fixture.nativeElement.querySelector('[data-testid="home-featured-article"]');
+    expect(section).toBeTruthy();
+    expect(section.textContent).toContain('Leitura da semana');
+    expect(section.textContent).toContain('Cuidados diários');
+    expect(section.textContent).toContain('Resumo do artigo.');
   });
 
   it('shows next scheduled appointment from service', () => {

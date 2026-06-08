@@ -1,9 +1,3 @@
-.container {
-  padding: 20px;
-  max-width: 500px;
-  margin: 0 auto;
-}
-
 .calendar-section {
   margin-bottom: 24px;
 }
@@ -185,12 +179,21 @@
   margin-bottom: 32px;
 }
 
+.analysis-section-title {
+  margin: 0 0 16px;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #373831;
+}
+
 .analysis-card {
-  background-color: #f1f0e8;
+  background-color: #fff;
+  border: 1px solid #e7e5e4;
   border-radius: 28px;
   padding: 16px;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 4px 16px rgba(55, 56, 49, 0.04);
 }
 
 .analysis-image-wrapper {
@@ -198,13 +201,14 @@
   height: 200px;
   border-radius: 20px;
   overflow: hidden;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
+  background-color: #eef2ff;
 }
 
 .mock-image-bg {
   width: 100%;
   height: 100%;
-  background: radial-gradient(circle at center, #35a3b5 0%, #174d64 100%);
+  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 55%, #eef2ff 100%);
 }
 
 .analysis-image-wrapper img {
@@ -214,51 +218,54 @@
 }
 
 .analysis-content {
-  padding: 0 8px 8px 8px;
+  padding: 0 4px 4px;
 }
 
-.analysis-tag {
-  display: block;
-  color: #3b6b82;
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  margin-bottom: 16px;
+.analysis-topic {
+  display: inline-block;
+  margin-bottom: 12px;
+  border-radius: 999px;
+  background-color: #eef2ff;
+  padding: 6px 12px;
+  color: #4338ca;
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
 .analysis-title {
-  font-size: 1.6rem;
-  color: #333;
+  font-size: 1.35rem;
+  color: #373831;
   font-weight: 700;
-  line-height: 1.25;
-  margin: 0 0 16px 0;
+  line-height: 1.3;
+  margin: 0 0 12px;
 }
 
 .analysis-desc {
   font-size: 0.95rem;
-  color: #666;
+  color: #64655c;
   line-height: 1.5;
-  margin: 0 0 24px 0;
+  margin: 0 0 20px;
 }
 
 .analysis-btn {
-  background-color: #fff;
-  color: #5b48d9;
+  background-color: #eef2ff;
+  color: #4338ca;
   border: none;
   padding: 12px 24px;
   border-radius: 24px;
   font-weight: 600;
   font-size: 1rem;
   cursor: pointer;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
   transition: all 0.2s ease;
   align-self: flex-start;
 }
 
+.analysis-btn:hover {
+  background-color: #e0e7ff;
+}
+
 .analysis-btn:active {
   transform: scale(0.97);
-  background-color: #fafafa;
 }
 
 .summary-section {
