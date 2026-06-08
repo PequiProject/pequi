@@ -165,6 +165,41 @@ async def test_duplicate_dose_returns_conflict(create_tables, db_session):
 
 
 @pytest.mark.asyncio
+async def test_active_treatment_unique_index_returns_conflict(create_tables, db_session):
+    health_unit = await _create_health_unit(db_session)
+    patient_user = await _create_user(
+        db_session,
+        email=f"active-conflict-{uuid4()}@test.com",
+        role="patient",
+    )
+    patient = await _create_patient(db_session, user=patient_user, health_unit=health_unit)
+    await _create_treatment(db_session, patient=patient)
+
+    second_active = Treatment(
+        id=uuid4(),
+        patient_id=patient.id,
+        regimen=TreatmentRegimen.PB,
+        start_date=date(2026, 2, 1),
+        expected_end=date(2026, 8, 1),
+        status=TreatmentStatus.active,
+    )
+
+    with pytest.raises(ConflictError):
+        await TreatmentRepository(db_session).create(second_active)
+
+    inactive = Treatment(
+        id=uuid4(),
+        patient_id=patient.id,
+        regimen=TreatmentRegimen.PB,
+        start_date=date(2026, 2, 1),
+        expected_end=date(2026, 8, 1),
+        status=TreatmentStatus.suspended,
+    )
+    created = await TreatmentRepository(db_session).create(inactive)
+    assert created.id == inactive.id
+
+
+@pytest.mark.asyncio
 async def test_other_patient_cannot_register_dose(create_tables, db_session):
     """Paciente não pode registrar dose em tratamento de outro paciente."""
     health_unit = await _create_health_unit(db_session)
