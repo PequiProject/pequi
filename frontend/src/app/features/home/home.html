@@ -91,13 +91,24 @@
 
   <section class="summary-section">
     <div class="summary-grid">
-      <article class="summary-card" [ngClass]="medicationSummaryCard.backgroundClass">
-        <span class="summary-card__value">{{ medicationSummaryCard.value }}</span>
-        <span class="summary-card__title">{{ medicationSummaryCard.title }}</span>
+      <article
+        class="summary-card relative overflow-hidden"
+        [ngClass]="medicationSummaryCard.backgroundClass"
+      >
+        <div class="relative z-10 flex flex-col pr-24 md:pr-0">
+          <span class="summary-card__value">{{ medicationSummaryCard.value }}</span>
+          <span class="summary-card__title">{{ medicationSummaryCard.title }}</span>
+        </div>
+        <lucide-icon
+          [name]="Pill"
+          [size]="54"
+          class="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-[#3f3b8f] opacity-40 md:hidden"
+          aria-hidden="true"
+        ></lucide-icon>
       </article>
 
       <article
-        class="summary-card summary-card--clickable"
+        class="summary-card summary-card--clickable relative overflow-hidden"
         [ngClass]="nextAppointmentCard().backgroundClass"
         [class.summary-card--empty]="!nextAppointmentCard().hasNext"
         data-testid="next-appointment-card"
@@ -108,11 +119,19 @@
         (keydown.enter)="openNextAppointment()"
         (keydown.space)="$event.preventDefault(); openNextAppointment()"
       >
-        <span class="summary-card__value">{{ nextAppointmentCard().value }}</span>
-        @if (nextAppointmentCard().title) {
-          <span class="summary-card__title">{{ nextAppointmentCard().title }}</span>
-        }
-        <span class="summary-card__subtitle">{{ nextAppointmentCard().subtitle }}</span>
+        <div class="relative z-10 flex flex-col pr-24 md:pr-0">
+          <span class="summary-card__value">{{ nextAppointmentCard().value }}</span>
+          @if (nextAppointmentCard().title) {
+            <span class="summary-card__title">{{ nextAppointmentCard().title }}</span>
+          }
+          <span class="summary-card__subtitle">{{ nextAppointmentCard().subtitle }}</span>
+        </div>
+        <lucide-icon
+          [name]="CalendarIcon"
+          [size]="54"
+          class="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-[#2d4a58] opacity-40 md:hidden"
+          aria-hidden="true"
+        ></lucide-icon>
       </article>
     </div>
   </section>
