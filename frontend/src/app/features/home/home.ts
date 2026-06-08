@@ -67,6 +67,18 @@ export class HomeComponent implements OnInit, AfterViewInit {
   readonly Pill = Pill;
   readonly ChevronLeft = ChevronLeft;
   readonly ChevronRight = ChevronRight;
+  readonly moodMap: Record<string, string> = {
+    'great': 'Ótimo',
+    'good': 'Muito Bem',
+    'ok': 'Normal',
+    'bad': 'Ruim',
+    'terrible': 'Péssimo'
+  };
+
+  translateMood(mood: string): string {
+    if (!mood) return 'Não registrado';
+    return this.moodMap[mood.toLowerCase()] || mood;
+  }
 
   @ViewChild('daysRow') daysRow!: ElementRef<HTMLDivElement>;
 

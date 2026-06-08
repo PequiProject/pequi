@@ -106,7 +106,7 @@
             <div class="flex-1">
               <h4 class="text-sm font-semibold text-[#373831]">Check-in de Saúde</h4>
               <p class="text-xs text-[#64655C] mt-1 line-clamp-2">
-                {{ event.notes || 'Humor: ' + (event.mood || 'Não registrado') }}
+                {{ event.notes || 'Humor: ' + translateMood(event.mood) }}
               </p>
               
               <span class="inline-block mt-2 text-[10px] font-medium text-[#A8A29E] bg-[#FAFAF9] px-2 py-1 rounded-md border border-[#E7E5E4]">
