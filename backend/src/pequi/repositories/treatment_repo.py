@@ -18,12 +18,12 @@ class TreatmentRepository:
 
     async def create(self, treatment: Treatment) -> Treatment:
         try:
-            self._session.add(treatment)
-            await self._session.flush()
+            async with self._session.begin_nested():
+                self._session.add(treatment)
+                await self._session.flush()
             await self._session.refresh(treatment)
             return treatment
         except IntegrityError as exc:
-            await self._session.rollback()
             if _constraint_violated(exc, _ACTIVE_TREATMENT_CONSTRAINT):
                 raise ConflictError("Paciente já possui um tratamento ativo.") from exc
             raise

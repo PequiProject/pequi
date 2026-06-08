@@ -20,12 +20,12 @@ class DoseRepository:
 
     async def create(self, dose_log: DoseLog) -> DoseLog:
         try:
-            self._session.add(dose_log)
-            await self._session.flush()
+            async with self._session.begin_nested():
+                self._session.add(dose_log)
+                await self._session.flush()
             await self._session.refresh(dose_log)
             return dose_log
         except IntegrityError as exc:
-            await self._session.rollback()
             if _constraint_violated(exc, _DOSE_DEDUP_CONSTRAINT):
                 logger.warning(
                     "duplicate_dose_attempt",

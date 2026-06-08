@@ -19,7 +19,7 @@ class TreatmentCreateV1(BaseModel):
 class TreatmentResponseV1(BaseModel):
     id: UUID
     patient_id: UUID
-    prescribed_by: UUID | None = None
+    prescribed_by: UUID
     regimen: str
     start_date: date
     expected_end: date

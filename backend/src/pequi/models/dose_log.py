@@ -49,6 +49,12 @@ class DoseLog(Base):
     taken_at = Column(DateTime(timezone=True), nullable=True)
     skipped = Column(Boolean, server_default="false", nullable=False, default=False)
     skip_reason = Column(Text, nullable=True)
+    supervised = Column(Boolean, server_default="false", nullable=False, default=False)
+    registered_by = Column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 

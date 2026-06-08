@@ -3,6 +3,7 @@
 from datetime import UTC, date, datetime, time
 from uuid import UUID
 
+from pequi.core.exceptions import ConflictError
 from pequi.models.treatment import TreatmentStatus
 from pequi.repositories.dose_repo import DoseRepository
 from pequi.repositories.patient_repo import PatientRepository
@@ -127,5 +128,5 @@ class AppointmentConsultationEffects:
                         skipped=False,
                     ),
                 )
-            except Exception:
+            except ConflictError:
                 continue

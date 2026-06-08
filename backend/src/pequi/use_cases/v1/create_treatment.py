@@ -46,6 +46,7 @@ class CreateTreatmentV1UseCase:
         treatment = Treatment(
             id=uuid.uuid4(),
             patient_id=data.patient_id,
+            prescribed_by=professional.id,
             regimen=regimen,
             start_date=data.start_date,
             expected_end=expected_end,
@@ -57,5 +58,4 @@ class CreateTreatmentV1UseCase:
         except ConflictError:
             raise ConflictError("Paciente já possui um tratamento ativo.") from None
 
-        response = TreatmentResponseV1.model_validate(treatment)
-        return response.model_copy(update={"prescribed_by": professional.id})
+        return TreatmentResponseV1.model_validate(treatment)

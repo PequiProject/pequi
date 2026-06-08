@@ -66,6 +66,8 @@ class RegisterDoseV1UseCase:
             taken_at=data.taken_at,
             skipped=data.skipped,
             skip_reason=data.skip_reason,
+            supervised=data.supervised,
+            registered_by=registered_by,
         )
         try:
             dose_log = await self._dose_repo.create(dose_log)
@@ -75,18 +77,7 @@ class RegisterDoseV1UseCase:
                 f"em {data.expected_at.isoformat()} neste tratamento."
             ) from None
 
-        return DoseLogResponseV1(
-            id=dose_log.id,
-            treatment_id=dose_log.treatment_id,
-            drug_name=dose_log.drug_name,
-            expected_at=dose_log.expected_at,
-            taken_at=dose_log.taken_at,
-            skipped=dose_log.skipped,
-            skip_reason=dose_log.skip_reason,
-            supervised=data.supervised,
-            registered_by=registered_by,
-            created_at=dose_log.created_at,
-        )
+        return DoseLogResponseV1.model_validate(dose_log)
 
     async def _validate_patient_access(
         self,

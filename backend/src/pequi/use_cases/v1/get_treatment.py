@@ -29,6 +29,8 @@ class GetTreatmentV1UseCase:
         treatment = await self._treatment_repo.get_by_id(treatment_id)
         if treatment is None:
             raise NotFoundError("Treatment", str(treatment_id))
+        if treatment.prescribed_by is None:
+            raise NotFoundError("Treatment", str(treatment_id))
 
         await _assert_access(
             actor_user_id=actor_user_id,
