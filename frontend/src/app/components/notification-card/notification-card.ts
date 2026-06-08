@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 
 @Component({
   selector: 'app-notification-card',
@@ -12,8 +12,9 @@ export class NotificationCard {
   readonly timeLabel = input.required<string>();
   readonly timeDatetime = input<string | null>(null);
   readonly unread = input(false);
-  /** Overrides auto-generated aria-label when you need exact copy. */
   readonly ariaLabel = input<string | null>(null);
+
+  readonly cardClick = output<void>();
 
   readonly cardAriaLabel = computed(() => {
     const custom = this.ariaLabel();
@@ -26,8 +27,8 @@ export class NotificationCard {
 
   readonly articleClass = computed(() =>
     this.unread()
-      ? 'relative flex overflow-hidden rounded-xl border border-indigo-300/60 shadow-md'
-      : 'relative flex overflow-hidden rounded-xl border border-stone-200 bg-[var(--card-bg)] shadow-sm'
+      ? 'relative flex w-full overflow-hidden rounded-xl border border-indigo-300/60 bg-white text-left shadow-md transition hover:border-indigo-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500'
+      : 'relative flex w-full overflow-hidden rounded-xl border border-stone-200 bg-[var(--card-bg)] text-left shadow-sm transition hover:border-stone-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500'
   );
 
   readonly titleClass = computed(() =>
@@ -35,4 +36,15 @@ export class NotificationCard {
       ? 'm-0 text-base font-semibold text-indigo-700'
       : 'm-0 text-base font-semibold text-[#373831]'
   );
+
+  handleClick(): void {
+    this.cardClick.emit();
+  }
+
+  handleKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      this.cardClick.emit();
+    }
+  }
 }

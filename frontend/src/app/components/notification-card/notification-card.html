@@ -1,21 +1,29 @@
-<article [class]="articleClass()" [attr.aria-label]="cardAriaLabel()">
+<article
+  [class]="articleClass()"
+  [attr.aria-label]="cardAriaLabel()"
+  tabindex="0"
+  role="button"
+  (click)="handleClick()"
+  (keydown)="handleKeydown($event)"
+>
   @if (unread()) {
-    <div
-      class="w-1 shrink-0 bg-indigo-700"
-      aria-hidden="true"
-    ></div>
+    <div class="w-1 shrink-0 bg-indigo-700" aria-hidden="true"></div>
   }
+
   <div class="min-w-0 flex-1 py-4 pl-3.5 pr-4">
-    <div
-      class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-2"
-    >
+    <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-2">
       <h2 [class]="titleClass()">{{ title() }}</h2>
+
       <time
         class="shrink-0 text-xs font-medium text-[#64655C]"
         [attr.datetime]="timeDatetime() ?? null"
-        >{{ timeLabel() }}</time
       >
+        {{ timeLabel() }}
+      </time>
     </div>
-    <p class="mt-2 text-sm leading-snug text-[#64655C]">{{ body() }}</p>
+
+    <p class="mt-2 text-sm leading-snug text-[#64655C]">
+      {{ body() }}
+    </p>
   </div>
 </article>

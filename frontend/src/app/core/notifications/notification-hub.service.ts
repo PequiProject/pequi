@@ -1,29 +1,30 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, effect, inject, signal } from '@angular/core';
+import { NotificationApiService } from './../../components/notification/services/notification-api.service';
 
-/**
- * Central place for notification UI state. Wire SSE/polling here when the API exists.
- */
 @Injectable({ providedIn: 'root' })
 export class NotificationHubService {
-  /** Count for badge; backend can call `setUnreadCount` when events arrive. */
+  private readonly api = inject(NotificationApiService);
+
   readonly unreadCount = signal(0);
-
-  /** True while a refresh/sync is in flight (optional UI). */
   readonly isSyncing = signal(false);
-
-  /** Incremented when the user opens the tray — hook a panel component to this later. */
   readonly trayVersion = signal(0);
+
+  constructor() {
+    effect(() => {
+      const payload = this.api.unreadCount.value();
+      this.unreadCount.set(payload?.count ?? 0);
+    });
+  }
 
   openTray(): void {
     this.trayVersion.update((v) => v + 1);
+    this.sync();
   }
 
-  setUnreadCount(count: number): void {
-    this.unreadCount.set(Math.max(0, Math.floor(count)));
-  }
-
-  incrementUnread(delta = 1): void {
-    this.unreadCount.update((n) => Math.max(0, n + delta));
+  sync(): void {
+    this.isSyncing.set(true);
+    this.api.reloadAll();
+    queueMicrotask(() => this.isSyncing.set(false));
   }
 
   clearUnread(): void {
