@@ -10,6 +10,7 @@ from pequi.models.health_appointment import PatientHealthAppointment
 from pequi.models.user import User
 from pequi.repositories.dose_repo import DoseRepository
 from pequi.repositories.health_appointment_repo import HealthAppointmentRepository
+from pequi.repositories.journey_event_repo import JourneyEventRepository
 from pequi.repositories.patient_repo import PatientRepository
 from pequi.repositories.treatment_repo import TreatmentRepository
 from pequi.schemas.health_appointment import (
@@ -57,6 +58,7 @@ async def test_create_appointment_with_supervised_dose(create_tables, db_session
         HealthAppointmentRepository(db_session),
         TreatmentRepository(db_session),
         DoseRepository(db_session),
+        JourneyEventRepository(db_session),
     )
     created = await create_uc.execute(
         patient_user.id,
@@ -112,6 +114,7 @@ async def test_completed_appointment_survives_duplicate_supervised_dose(create_t
         HealthAppointmentRepository(db_session),
         TreatmentRepository(db_session),
         DoseRepository(db_session),
+        JourneyEventRepository(db_session),
     ).execute(
         patient_user.id,
         HealthAppointmentCreate(
@@ -163,12 +166,14 @@ async def test_complete_scheduled_appointment_updates_same_row(create_tables, db
     appointment_repo = HealthAppointmentRepository(db_session)
     treatment_repo = TreatmentRepository(db_session)
     dose_repo = DoseRepository(db_session)
+    journey_event_repo = JourneyEventRepository(db_session)
 
     scheduled = await CreatePatientHealthAppointmentUseCase(
         patient_repo,
         appointment_repo,
         treatment_repo,
         dose_repo,
+        journey_event_repo,
     ).execute(
         patient_user.id,
         HealthAppointmentCreate(
@@ -185,6 +190,7 @@ async def test_complete_scheduled_appointment_updates_same_row(create_tables, db
         appointment_repo,
         treatment_repo,
         dose_repo,
+        journey_event_repo,
     ).execute(
         patient_user.id,
         scheduled.id,

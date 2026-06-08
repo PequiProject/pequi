@@ -22,6 +22,7 @@ from pequi.models.patient import PatientProfile
 from pequi.models.treatment import Treatment, TreatmentRegimen, TreatmentStatus
 from pequi.models.user import User
 from pequi.repositories.dose_repo import DoseRepository
+from pequi.repositories.journey_event_repo import JourneyEventRepository
 from pequi.repositories.patient_repo import PatientRepository
 from pequi.repositories.treatment_repo import TreatmentRepository
 from pequi.schemas.dose_log import DoseLogCreate
@@ -100,6 +101,7 @@ def _make_use_case(session) -> RegisterDoseUseCase:
         TreatmentRepository(session),
         DoseRepository(session),
         PatientRepository(session),
+        JourneyEventRepository(session),
     )
 
 

@@ -228,7 +228,7 @@ class TestJourneyServiceTimeline:
             today=date(2025, 3, 1),
         )
 
-        month_two = journey.months[1]
+        month_two = next(month for month in journey.months if month.month_number == 2)
         types = {event.type for event in month_two.events}
         assert "dose_taken" in types
         assert "consultation_registered" in types
@@ -245,8 +245,33 @@ class TestJourneyServiceTimeline:
         )
 
         assert len(journey.months) == 6
-        assert journey.months[0].month == 1
-        assert journey.months[-1].month == 6
+        assert journey.months[0].month_number == 6
+        assert journey.months[-1].month_number == 1
+        assert next(month for month in journey.months if month.is_current).month_number == 2
+
+    def test_summary_exposes_frontend_aggregates(self) -> None:
+        treatment = _treatment()
+        journey = JourneyService.build_journey(
+            patient_id=uuid4(),
+            treatment=treatment,
+            doses=[_dose(taken=datetime(2025, 2, 1, 8, 0, tzinfo=UTC))],
+            appointments=[
+                SimpleNamespace(
+                    appointment_date=date(2025, 2, 20),
+                    appointment_type="consulta",
+                    location="UBS Central",
+                    professional=None,
+                    performed=True,
+                )
+            ],
+            adherence_snapshot=None,
+            today=date(2025, 3, 1),
+        )
+
+        assert journey.summary.total_months == 6
+        assert journey.summary.current_month == 2
+        assert journey.summary.total_consultations == 1
+        assert journey.summary.total_doses_registered == 1
 
     @pytest.mark.parametrize(
         ("regimen", "expected_months"),

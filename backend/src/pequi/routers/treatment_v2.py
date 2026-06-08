@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from pequi.core.dependencies import get_current_patient, get_db
 from pequi.core.rate_limit import limiter
 from pequi.repositories.dose_repo import DoseRepository
+from pequi.repositories.journey_event_repo import JourneyEventRepository
 from pequi.repositories.patient_repo import PatientRepository
 from pequi.repositories.treatment_repo import TreatmentRepository
 from pequi.schemas.dose_log import DoseLogCreate, DoseLogResponse
@@ -68,7 +69,12 @@ async def register_dose(
     session: AsyncSession = Depends(get_db),
 ) -> DoseLogResponse:
     treatment_repo, patient_repo, dose_repo = _make_repos(session)
-    use_case = RegisterDoseUseCase(treatment_repo, dose_repo, patient_repo)
+    use_case = RegisterDoseUseCase(
+        treatment_repo,
+        dose_repo,
+        patient_repo,
+        JourneyEventRepository(session),
+    )
     return await use_case.execute(patient_user_id, treatment_id, body)
 
 

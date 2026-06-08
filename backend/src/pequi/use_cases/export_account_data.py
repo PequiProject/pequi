@@ -140,6 +140,25 @@ class ExportAccountDataUseCase:
                 )
                 for row in await self._repo.list_adherence_snapshots(patient.id)
             ],
+            "journey_events": [
+                self._dump(
+                    row,
+                    include=[
+                        "id",
+                        "patient_id",
+                        "treatment_id",
+                        "event_type",
+                        "title",
+                        "description",
+                        "occurred_at",
+                        "source_type",
+                        "source_id",
+                        "created_at",
+                    ],
+                    extra={"metadata": row.event_metadata},
+                )
+                for row in await self._repo.list_journey_events(patient.id)
+            ],
             "alerts": [
                 self._dump(
                     row,

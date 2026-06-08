@@ -7,6 +7,7 @@ from pequi.core.dependencies import get_current_patient, get_db
 from pequi.core.rate_limit import limiter
 from pequi.repositories.dose_repo import DoseRepository
 from pequi.repositories.health_appointment_repo import HealthAppointmentRepository
+from pequi.repositories.journey_event_repo import JourneyEventRepository
 from pequi.repositories.patient_repo import PatientRepository
 from pequi.repositories.treatment_repo import TreatmentRepository
 from pequi.schemas.health_appointment import (
@@ -188,6 +189,7 @@ async def create_my_appointment(
         appointment_repo,
         treatment_repo,
         dose_repo,
+        JourneyEventRepository(session),
     )
     return await use_case.execute(user_id, body)
 
@@ -212,5 +214,6 @@ async def update_my_appointment(
         appointment_repo,
         treatment_repo,
         dose_repo,
+        JourneyEventRepository(session),
     )
     return await use_case.execute(user_id, appointment_id, body)

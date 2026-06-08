@@ -12,6 +12,7 @@ from pequi.core.dependencies import (
 from pequi.core.rate_limit import limiter
 from pequi.repositories.dose_repo import DoseRepository
 from pequi.repositories.health_professional_repo import HealthProfessionalRepository
+from pequi.repositories.journey_event_repo import JourneyEventRepository
 from pequi.repositories.patient_repo import PatientRepository
 from pequi.repositories.treatment_repo import SymptomRepository, TreatmentRepository
 from pequi.schemas.treatment import SymptomResponse
@@ -87,7 +88,13 @@ async def register_dose(
 ) -> DoseLogResponseV1:
     actor_user_id, actor_role = actor
     treatment_repo, patient_repo, professional_repo, dose_repo, _ = _make_repos(session)
-    use_case = RegisterDoseV1UseCase(treatment_repo, dose_repo, patient_repo, professional_repo)
+    use_case = RegisterDoseV1UseCase(
+        treatment_repo,
+        dose_repo,
+        patient_repo,
+        professional_repo,
+        JourneyEventRepository(session),
+    )
     return await use_case.execute(actor_user_id, actor_role, treatment_id, body)
 
 

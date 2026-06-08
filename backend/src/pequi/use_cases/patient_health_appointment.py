@@ -5,6 +5,7 @@ from pequi.core.exceptions import NotFoundError
 from pequi.models.health_appointment import PatientHealthAppointment
 from pequi.repositories.dose_repo import DoseRepository
 from pequi.repositories.health_appointment_repo import HealthAppointmentRepository
+from pequi.repositories.journey_event_repo import JourneyEventRepository
 from pequi.repositories.patient_repo import PatientRepository
 from pequi.repositories.treatment_repo import TreatmentRepository
 from pequi.schemas.health_appointment import (
@@ -35,11 +36,13 @@ def _consultation_effects(
     patient_repo: PatientRepository,
     treatment_repo: TreatmentRepository,
     dose_repo: DoseRepository,
+    journey_event_repo: JourneyEventRepository,
 ) -> AppointmentConsultationEffects:
     return AppointmentConsultationEffects(
         patient_repo,
         treatment_repo,
         dose_repo,
+        journey_event_repo,
     )
 
 
@@ -71,6 +74,7 @@ class CreatePatientHealthAppointmentUseCase:
         appointment_repo: HealthAppointmentRepository,
         treatment_repo: TreatmentRepository,
         dose_repo: DoseRepository,
+        journey_event_repo: JourneyEventRepository,
     ) -> None:
         self._patient_repo = patient_repo
         self._appointment_repo = appointment_repo
@@ -78,6 +82,7 @@ class CreatePatientHealthAppointmentUseCase:
             patient_repo,
             treatment_repo,
             dose_repo,
+            journey_event_repo,
         )
 
     async def execute(
@@ -111,6 +116,7 @@ class UpdatePatientHealthAppointmentUseCase:
         appointment_repo: HealthAppointmentRepository,
         treatment_repo: TreatmentRepository,
         dose_repo: DoseRepository,
+        journey_event_repo: JourneyEventRepository,
     ) -> None:
         self._patient_repo = patient_repo
         self._appointment_repo = appointment_repo
@@ -118,6 +124,7 @@ class UpdatePatientHealthAppointmentUseCase:
             patient_repo,
             treatment_repo,
             dose_repo,
+            journey_event_repo,
         )
 
     async def execute(

@@ -6,6 +6,7 @@ from uuid import UUID
 from pequi.core.exceptions import ConflictError
 from pequi.models.treatment import TreatmentStatus
 from pequi.repositories.dose_repo import DoseRepository
+from pequi.repositories.journey_event_repo import JourneyEventRepository
 from pequi.repositories.patient_repo import PatientRepository
 from pequi.repositories.treatment_repo import TreatmentRepository
 from pequi.schemas.dose_log import DoseLogCreate
@@ -25,6 +26,7 @@ class AppointmentConsultationEffects:
         patient_repo: PatientRepository,
         treatment_repo: TreatmentRepository,
         dose_repo: DoseRepository,
+        journey_event_repo: JourneyEventRepository,
     ) -> None:
         self._patient_repo = patient_repo
         self._treatment_repo = treatment_repo
@@ -36,6 +38,7 @@ class AppointmentConsultationEffects:
             treatment_repo,
             dose_repo,
             patient_repo,
+            journey_event_repo,
         )
 
     async def apply_on_first_completion(

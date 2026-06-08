@@ -1,11 +1,11 @@
 meta {
-  name: Get Journey v2
+  name: Get Patient Journey
   type: http
-  seq: 1
+  seq: 2
 }
 
 get {
-  url: {{baseUrl}}/v2/journey
+  url: {{baseUrl}}/v1/patients/me/journey
   auth: bearer
 }
 
@@ -18,12 +18,17 @@ assert {
   res.body.patient.id: isDefined
   res.body.treatment.id: isDefined
   res.body.summary.total_months: isDefined
+  res.body.summary.current_month: isDefined
   res.body.summary.total_consultations: isDefined
   res.body.summary.total_doses_registered: isDefined
+  res.body.months: isDefined
   res.body.months[0].month_number: isDefined
   res.body.months[0].is_current: isDefined
 }
 
 docs {
-  Alias v2 da jornada do paciente autenticado.
+  Retorna a jornada do paciente autenticado com meses em ordem decrescente.
+
+  Eventos persistidos suportam doses e futuras origens clinicas geradas por workers.
+  Rate limit: 100/minuto por paciente.
 }

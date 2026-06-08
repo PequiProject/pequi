@@ -10,6 +10,7 @@ from pequi.models.dose_log import DoseLog
 from pequi.models.treatment import TreatmentStatus
 from pequi.repositories.dose_repo import DoseRepository
 from pequi.repositories.health_professional_repo import HealthProfessionalRepository
+from pequi.repositories.journey_event_repo import JourneyEventRepository
 from pequi.repositories.patient_repo import PatientRepository
 from pequi.repositories.treatment_repo import TreatmentRepository
 from pequi.schemas.v1.dose_log import DoseLogCreateV1, DoseLogResponseV1
@@ -24,11 +25,13 @@ class RegisterDoseV1UseCase:
         dose_repo: DoseRepository,
         patient_repo: PatientRepository,
         professional_repo: HealthProfessionalRepository,
+        journey_event_repo: JourneyEventRepository,
     ) -> None:
         self._treatment_repo = treatment_repo
         self._dose_repo = dose_repo
         self._patient_repo = patient_repo
         self._professional_repo = professional_repo
+        self._journey_event_repo = journey_event_repo
 
     async def execute(
         self,
@@ -76,6 +79,7 @@ class RegisterDoseV1UseCase:
                 f"Dose duplicada: já existe registro para '{data.drug_name}' "
                 f"em {data.expected_at.isoformat()} neste tratamento."
             ) from None
+        await self._journey_event_repo.create_for_dose(treatment.patient_id, dose_log)
 
         return DoseLogResponseV1.model_validate(dose_log)
 
