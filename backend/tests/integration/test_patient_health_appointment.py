@@ -122,6 +122,7 @@ async def test_completed_appointment_survives_duplicate_supervised_dose(create_t
             performed=True,
             follow_up=AppointmentFollowUpDraftIn(
                 register_supervised_dose=True,
+                update_dose_from_consultation=True,
                 dose_scheme_rifampicina=True,
                 dose_scheme_dapsone=True,
             ),
@@ -136,10 +137,14 @@ async def test_completed_appointment_survives_duplicate_supervised_dose(create_t
     assert appointment_count == 1
 
     doses = (
-        await db_session.execute(
-            select(DoseLog.drug_name).where(DoseLog.treatment_id == treatment.id)
+        (
+            await db_session.execute(
+                select(DoseLog.drug_name).where(DoseLog.treatment_id == treatment.id)
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     assert sorted(doses) == ["Dapsona", "Rifampicina"]
 
     await db_session.refresh(patient)
