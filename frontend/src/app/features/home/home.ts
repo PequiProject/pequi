@@ -16,6 +16,7 @@ import {
   formatAppointmentDatePt,
   resolveNextAppointment,
 } from '../appointments/utils/next-appointment.utils';
+import { CheckinService } from '../checkin/services/checkin.service';
 
 interface QuickAction {
   title: string;
@@ -58,6 +59,7 @@ interface HomeHighlightCard {
 export class HomeComponent implements OnInit, AfterViewInit {
   private readonly router = inject(Router);
   private readonly appointmentService = inject(HealthAppointmentService);
+  private readonly checkinService = inject(CheckinService);
   readonly ImagePlus = ImagePlus;
   readonly CirclePlus = CirclePlus;
   readonly CalendarIcon = Calendar;
@@ -73,6 +75,10 @@ export class HomeComponent implements OnInit, AfterViewInit {
   calendarWeek: CalendarDay[] = [];
   calendarMonth: (CalendarDay | null)[] = [];
   selectedDate: Date = new Date();
+
+  monthDotsMap = signal<Record<string, string[]>>({});
+  allCheckins = signal<any[]>([]);
+  selectedDayEvents = signal<any[]>([]);
 
   readonly medicationSummaryCard: HomeHighlightCard = {
     value: '2/4',
@@ -175,6 +181,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
     this.generateCurrentWeek();
     this.generateCurrentMonth();
     this.updateMonthYearLabel();
+    this.fetchMonthData();
   }
 
   ngAfterViewInit(): void {
@@ -189,14 +196,58 @@ export class HomeComponent implements OnInit, AfterViewInit {
     }
   }
 
+  fetchMonthData() {
+    this.checkinService.getCheckinHistory().subscribe({
+      next: (response) => {
+        const checkinsList = Array.isArray(response) ? response : response.items || [];
+        const dotsMap: Record<string, string[]> = {};
+
+        this.allCheckins.set(checkinsList);
+
+        checkinsList.forEach((checkin: any) => {
+          const dateField = checkin.created_at || checkin.date;
+          
+          if (dateField) {
+            const dateKey = dateField.split('T')[0];
+            
+            if (!dotsMap[dateKey]) {
+              dotsMap[dateKey] = [];
+            }
+            dotsMap[dateKey].push('checkin');
+          }
+        });
+
+        this.monthDotsMap.set(dotsMap);
+        this.generateCurrentWeek(); 
+        this.generateCurrentMonth();
+        
+        this.filterEventsForSelectedDate();
+      },
+      error: (err) => {
+        console.error('Erro ao buscar o histórico de check-ins do banco:', err);
+      }
+    });
+  }
+
+  filterEventsForSelectedDate() {
+    const clickedDateStr = this.getLocalIsoDate(this.selectedDate);
+    
+    const eventsForDay = this.allCheckins().filter(checkin => {
+      const dateField = checkin.created_at || checkin.date;
+      if (!dateField) return false;
+      return dateField.split('T')[0] === clickedDateStr;
+    });
+
+    this.selectedDayEvents.set(eventsForDay);
+  }
+
   changeMonth(delta: number) {
     const newDate = new Date(this.selectedDate);
     newDate.setMonth(newDate.getMonth() + delta);
     this.selectedDate = newDate;
     
     this.updateMonthYearLabel();
-    this.generateCurrentWeek();
-    this.generateCurrentMonth();
+    this.fetchMonthData();
   }
 
   goToToday() {
@@ -224,10 +275,15 @@ export class HomeComponent implements OnInit, AfterViewInit {
     }, 100);
   }
 
+  private getLocalIsoDate(date: Date): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
   generateCurrentWeek() {
     this.calendarWeek = [];
-    const currentDay = this.selectedDate.getDay();
-
     const startOfScroll = new Date(this.selectedDate);
     startOfScroll.setDate(this.selectedDate.getDate() - 10);
 
@@ -237,11 +293,14 @@ export class HomeComponent implements OnInit, AfterViewInit {
       const dateObj = new Date(startOfScroll);
       dateObj.setDate(startOfScroll.getDate() + i);
 
+      const dateKey = this.getLocalIsoDate(dateObj);
+      const dotsForDay = this.monthDotsMap()[dateKey] || [];
+      
       this.calendarWeek.push({
         dateObj,
         dayName: daysPt[dateObj.getDay()],
         dayNumber: dateObj.getDate(),
-        dots: Array(Math.floor(Math.random() * 3)).fill(0), 
+        dots: Array(dotsForDay.length).fill(0),
       });
     }
   }
@@ -261,11 +320,15 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
     for (let i = 1; i <= lastDayOfMonth.getDate(); i++) {
       const dateObj = new Date(year, month, i);
+      
+      const dateKey = this.getLocalIsoDate(dateObj);
+      const dotsForDay = this.monthDotsMap()[dateKey] || [];
+      
       this.calendarMonth.push({
         dateObj,
         dayName: daysPt[dateObj.getDay()],
         dayNumber: i,
-        dots: Array(Math.floor(Math.random() * 3)).fill(0), 
+        dots: Array(dotsForDay.length).fill(0),
       });
     }
   }
@@ -291,6 +354,9 @@ export class HomeComponent implements OnInit, AfterViewInit {
   selectDate(date: Date) {
     this.selectedDate = date;
     this.updateMonthYearLabel();
+    this.generateCurrentWeek();
+    this.centerActiveDay();
+    this.filterEventsForSelectedDate();
   }
 
   isSameDate(date1: Date, date2: Date): boolean {
