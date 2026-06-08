@@ -141,7 +141,7 @@
       </article>
 
       <section class="space-y-4" data-testid="journey-timeline">
-        @for (month of months(); track month.monthIndex) {
+        @for (month of displayMonths(); track month.monthIndex) {
           <div
             class="relative pl-12"
             [attr.data-testid]="'journey-month-' + month.monthIndex"

@@ -221,6 +221,20 @@ readonly remainingText = computed(() => {
   }) para a estimativa final. Continue com o ótimo trabalho!`;
 });
 
+readonly displayMonths = computed<JourneyMonth[]>(() => {
+  const months = this.months();
+  const currentIndex = months.findIndex((month) => month.current);
+
+  if (currentIndex <= 0) {
+    return months;
+  }
+
+  const currentMonth = months[currentIndex];
+  const remainingMonths = months.filter((_, index) => index !== currentIndex);
+
+  return [currentMonth, ...remainingMonths];
+});
+
   toggleMonth(month: JourneyMonth): void {
     if (month.locked) {
       return;
