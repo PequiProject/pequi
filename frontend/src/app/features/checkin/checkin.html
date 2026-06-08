@@ -25,11 +25,12 @@
       [form]="feelingForm"
     ></app-checkin-step-feeling-component>
 
-     <app-checkin-step-symptoms-component
-        *ngIf="currentStep() === 2"
-        [form]="symptomsForm"
-      ></app-checkin-step-symptoms-component>
-
+    <app-checkin-step-symptoms-component
+      *ngIf="isStepActive(2)"
+      [form]="symptomsForm"
+      [symptoms]="symptomOptions()"
+      [loading]="symptomsLoading()"
+    />
       <app-checkin-step-intensity-component
         *ngIf="currentStep() === 3"
         [form]="intensityForm"
