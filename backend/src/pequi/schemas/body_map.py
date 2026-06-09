@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from pequi.models.body_map import BodyFindingType, BodySide, BodySystemPart
+from pequi.models.body_map import BodyFindingType, BodySide, BodySystemPart, BodyView
 
 
 class BodyAreaResponse(BaseModel):
@@ -12,6 +12,9 @@ class BodyAreaResponse(BaseModel):
     label: str
     side: BodySide
     system_part: BodySystemPart
+    x: int = Field(ge=0, le=100)
+    y: int = Field(ge=0, le=100)
+    view: BodyView
 
     model_config = ConfigDict(from_attributes=True)
 

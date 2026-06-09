@@ -23,6 +23,7 @@ export class AppShellComponent {
   readonly headerLayout = signal<AppHeaderLayout>('default');
   readonly headerPageTitle = signal('Perfil');
   readonly quietNotificationBell = signal(false);
+  readonly onHome = signal(false);
 
   constructor() {
     this.profileService.syncLoginEmailFromAuth();
@@ -47,6 +48,7 @@ export class AppShellComponent {
     const onNotifications =
       path.endsWith('/notifications') || path.includes('/notifications');
 
+    this.onHome.set(path.endsWith('/home') || path === '/home');
     this.quietNotificationBell.set(onNotifications);
 
     if (path.endsWith('/profile') || path.includes('/profile')) {
