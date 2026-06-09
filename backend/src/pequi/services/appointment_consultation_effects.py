@@ -1,11 +1,12 @@
-"""Efeitos colaterais ao concluir uma consulta (tratamento + doses supervisionadas)."""
+"""Efeitos colaterais ao concluir uma consulta (tratamento + doses)."""
 
 from datetime import UTC, date, datetime, time
 from uuid import UUID
 
+from pequi.core.exceptions import ConflictError
 from pequi.models.treatment import TreatmentStatus
 from pequi.repositories.dose_repo import DoseRepository
-from pequi.repositories.health_professional_repo import HealthProfessionalRepository
+from pequi.repositories.journey_event_repo import JourneyEventRepository
 from pequi.repositories.patient_repo import PatientRepository
 from pequi.repositories.treatment_repo import TreatmentRepository
 from pequi.schemas.dose_log import DoseLogCreate
@@ -24,21 +25,20 @@ class AppointmentConsultationEffects:
         self,
         patient_repo: PatientRepository,
         treatment_repo: TreatmentRepository,
-        professional_repo: HealthProfessionalRepository,
         dose_repo: DoseRepository,
+        journey_event_repo: JourneyEventRepository,
     ) -> None:
         self._patient_repo = patient_repo
         self._treatment_repo = treatment_repo
         self._save_treatment = SavePatientTreatmentRecordUseCase(
             patient_repo,
             treatment_repo,
-            professional_repo,
         )
         self._register_dose = RegisterDoseUseCase(
             treatment_repo,
             dose_repo,
             patient_repo,
-            professional_repo,
+            journey_event_repo,
         )
 
     async def apply_on_first_completion(
@@ -122,17 +122,14 @@ class AppointmentConsultationEffects:
         for drug_name in drug_names:
             try:
                 await self._register_dose.execute(
-                    actor_user_id=user_id,
-                    actor_role="patient",
+                    patient_user_id=user_id,
                     treatment_id=treatment.id,
                     data=DoseLogCreate(
                         drug_name=drug_name,
                         expected_at=expected_at,
                         taken_at=taken_at,
                         skipped=False,
-                        supervised=True,
-                        via_consultation=True,
                     ),
                 )
-            except Exception:
+            except ConflictError:
                 continue

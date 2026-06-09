@@ -3,6 +3,7 @@ import { HttpClientTestingModule, HttpTestingController } from '@angular/common/
 import { ActivatedRoute, provideRouter, Router, convertToParamMap } from '@angular/router';
 import { of } from 'rxjs';
 
+import { environment } from '../../../../environments/environment';
 import { EducationArticlePage } from './education-article-page';
 import { Education } from '../education';
 import type { Article } from '../models/article.models';
@@ -54,7 +55,7 @@ describe('EducationArticlePage', () => {
     fixture = TestBed.createComponent(EducationArticlePage);
     fixture.detectChanges();
 
-    const req = httpMock.expectOne('http://localhost:8000/v1/articles/cuidados-diarios');
+    const req = httpMock.expectOne(`${environment.apiUrl}/v1/articles/cuidados-diarios`);
     req.flush(mockArticle);
     fixture.detectChanges();
   });

@@ -1,0 +1,19 @@
+meta {
+  name: Get Journey
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{baseUrl}}/v1/patients/me/journey
+  auth: bearer
+}
+
+assert {
+  res.status: eq 200
+  res.body.summary: isDefined
+  res.body.summary.classification: isDefined
+  res.body.summary.treatment_duration_months: isDefined
+  res.body.summary.progress_percent: isDefined
+  res.body.months: isDefined
+}

@@ -5,11 +5,9 @@ from uuid import uuid4
 
 import pytest
 
-from pequi.models.health_professional import HealthProfessional
 from pequi.models.health_unit import HealthUnit
 from pequi.models.treatment import TreatmentRegimen, TreatmentStatus
 from pequi.models.user import User
-from pequi.repositories.health_professional_repo import HealthProfessionalRepository
 from pequi.repositories.patient_repo import PatientRepository
 from pequi.repositories.treatment_repo import TreatmentRepository
 from pequi.schemas.patient_treatment import PatientTreatmentRecordSave
@@ -20,7 +18,8 @@ from pequi.use_cases.patient_treatment_record import (
 )
 
 
-async def _seed_professional(db_session) -> HealthProfessional:
+@pytest.mark.asyncio
+async def test_save_and_load_treatment_record(create_tables, db_session):
     unit = HealthUnit(
         id=uuid4(),
         name="UBS Teste",
@@ -30,31 +29,6 @@ async def _seed_professional(db_session) -> HealthProfessional:
     )
     db_session.add(unit)
     await db_session.flush()
-
-    user = User(
-        id=uuid4(),
-        email=f"prof-{uuid4()}@test.com",
-        username=f"prof_{uuid4().hex[:8]}",
-        hashed_password="x",
-        full_name="Profissional Teste",
-        role="health_professional",
-    )
-    db_session.add(user)
-    await db_session.flush()
-
-    professional = HealthProfessional(
-        id=uuid4(),
-        user_id=user.id,
-        health_unit_id=unit.id,
-    )
-    db_session.add(professional)
-    await db_session.flush()
-    return professional
-
-
-@pytest.mark.asyncio
-async def test_save_and_load_treatment_record(create_tables, db_session):
-    await _seed_professional(db_session)
 
     user = User(
         id=uuid4(),
@@ -69,12 +43,10 @@ async def test_save_and_load_treatment_record(create_tables, db_session):
 
     patient_repo = PatientRepository(db_session)
     treatment_repo = TreatmentRepository(db_session)
-    professional_repo = HealthProfessionalRepository(db_session)
 
     save_uc = SavePatientTreatmentRecordUseCase(
         patient_repo,
         treatment_repo,
-        professional_repo,
     )
     payload = PatientTreatmentRecordSave(
         diagnosis_date=date(2025, 1, 10),
