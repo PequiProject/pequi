@@ -44,9 +44,14 @@
           >
             <span class="day-name">{{ day.dayName }}</span>
             <span class="day-number">{{ day.dayNumber }}</span>
-            <div class="dots-container">
-              @for (dot of day.dots; track $index) {
-                <div class="dot"></div>
+            <div class="dots-container flex gap-1 mt-1 justify-center min-h-[6px]">
+              @for (dotType of day.dots; track $index) {
+                <span 
+                  class="h-1.5 w-1.5 rounded-full"
+                  [class.bg-white]="isSameDate(day.dateObj, selectedDate)" 
+                  [class.bg-[#0EA5E9]]="dotType === 'checkin' && !isSameDate(day.dateObj, selectedDate)"
+                  [class.bg-[#9333EA]]="dotType === 'appointment' && !isSameDate(day.dateObj, selectedDate)">
+                </span>
               }
             </div>
           </div>
@@ -88,7 +93,7 @@
                   <span 
                     class="h-1.5 w-1.5 rounded-full"
                     [class.bg-white]="isSameDate(day.dateObj, selectedDate)" 
-                    [class.bg-[#4338CA]]="dotType === 'checkin' && !isSameDate(day.dateObj, selectedDate)"
+                    [class.bg-[#0EA5E9]]="dotType === 'checkin' && !isSameDate(day.dateObj, selectedDate)"
                     [class.bg-[#9333EA]]="dotType === 'appointment' && !isSameDate(day.dateObj, selectedDate)">
                   </span>
                 }

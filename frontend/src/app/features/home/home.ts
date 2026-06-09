@@ -259,7 +259,6 @@ export class HomeComponent implements OnInit, AfterViewInit {
     const clickedDateStr = this.getLocalIsoDate(this.selectedDate);
     const mergedEvents: any[] = [];
     
-    // Pega os check-ins do dia
     this.allCheckins().forEach(checkin => {
       const dateField = checkin.created_at || checkin.date;
       if (dateField && dateField.split('T')[0] === clickedDateStr) {
@@ -270,7 +269,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
           title: 'Check-in de Saúde',
           description: checkin.notes || 'Humor: ' + this.translateMood(checkin.mood),
           icon: this.CirclePlus,
-          colorClass: 'text-[#4338CA] bg-[#EEF2FF] border-[#4338CA]' 
+          colorClass: 'text-[#0EA5E9] bg-[#E0F2FE] border-[#0EA5E9]' 
         });
       }
     });
