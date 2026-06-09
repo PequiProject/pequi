@@ -8,6 +8,7 @@ from sqlalchemy.orm import selectinload
 from pequi.models.checkin import Checkin, CheckinMood, checkin_symptoms
 from pequi.schemas.checkin import CheckinCreate, CheckinResponse
 
+
 class CheckinRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
@@ -75,7 +76,7 @@ class CheckinRepository:
         )
         result = await self._session.execute(stmt)
         return list(result.scalars().all()), total
-    
+
     async def list_history_by_patient_id(
         self,
         patient_id: UUID,

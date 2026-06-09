@@ -34,9 +34,7 @@ class UpsertDailyMedicationProgressUseCase:
             raise NotFoundError("PatientProfile")
 
         if data.taken_count > data.expected_count:
-            raise ValidationFailedError(
-                "taken_count não pode ser maior que expected_count."
-            )
+            raise ValidationFailedError("taken_count não pode ser maior que expected_count.")
 
         try:
             progress = await self._progress_repo.upsert(

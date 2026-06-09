@@ -100,15 +100,11 @@ class GetPatientJourneyUseCase:
             month_end = month_start + timedelta(days=29)
 
             month_appointments = [
-                item
-                for item in appointments
-                if month_start <= item.appointment_date <= month_end
+                item for item in appointments if month_start <= item.appointment_date <= month_end
             ]
 
             month_checkins = [
-                item
-                for item in checkins
-                if month_start <= item.checked_in_at.date() <= month_end
+                item for item in checkins if month_start <= item.checked_in_at.date() <= month_end
             ]
 
             month_progress_logs = [

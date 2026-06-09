@@ -76,6 +76,7 @@ def _treatment_repos(
         TreatmentRepository(session),
     )
 
+
 def _daily_medication_progress_repos(
     session: AsyncSession,
 ) -> tuple[
@@ -86,6 +87,7 @@ def _daily_medication_progress_repos(
         DailyMedicationProgressRepository(session),
         PatientRepository(session),
     )
+
 
 @router.get("/me", response_model=PatientProfileRead)
 async def get_my_profile(
@@ -249,6 +251,7 @@ async def update_my_appointment(
     )
     return await use_case.execute(user_id, appointment_id, body)
 
+
 @router.get("/me/journey", response_model=PatientJourneyResponse)
 @limiter.limit("100/minute")
 async def get_my_journey(
@@ -265,6 +268,7 @@ async def get_my_journey(
     )
     return await use_case.execute(user_id)
 
+
 @router.get("/me/daily-medication-progress", response_model=DailyMedicationSummaryResponse)
 @limiter.limit("100/minute")
 async def get_my_daily_medication_progress(
@@ -276,6 +280,7 @@ async def get_my_daily_medication_progress(
     progress_repo, patient_repo = _daily_medication_progress_repos(session)
     use_case = GetDailyMedicationSummaryUseCase(progress_repo, patient_repo)
     return await use_case.execute(user_id, progress_date)
+
 
 @router.put("/me/daily-medication-progress", response_model=DailyMedicationProgressResponse)
 @limiter.limit("20/minute")

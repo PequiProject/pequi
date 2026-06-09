@@ -5,6 +5,7 @@ Revises: 108_patient_health_appointments
 Create Date: 2026-06-08 23:56:27.762692
 
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -12,8 +13,8 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = 'aeb509f804c0'
-down_revision: Union[str, None] = '108_patient_health_appointments'
+revision: str = "aeb509f804c0"
+down_revision: Union[str, None] = "108_patient_health_appointments"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
