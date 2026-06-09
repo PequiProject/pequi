@@ -2,6 +2,7 @@ import uuid
 from enum import StrEnum
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     Column,
     DateTime,
@@ -33,6 +34,11 @@ class BodySystemPart(StrEnum):
     lower_limb = "lower_limb"
 
 
+class BodyView(StrEnum):
+    front = "front"
+    back = "back"
+
+
 class BodyFindingType(StrEnum):
     lesion = "lesion"
     hypoesthesia = "hypoesthesia"
@@ -44,6 +50,8 @@ class BodyFindingType(StrEnum):
 class BodyArea(Base):
     __tablename__ = "body_areas"
     __table_args__ = (
+        CheckConstraint("x >= 0 AND x <= 100", name="body_areas_x_range"),
+        CheckConstraint("y >= 0 AND y <= 100", name="body_areas_y_range"),
         Index("ix_body_areas_system_part", "system_part"),
         Index("ix_body_areas_label", "label"),
     )
@@ -59,6 +67,10 @@ class BodyArea(Base):
         Enum(BodySystemPart, name="body_system_part_enum"),
         nullable=False,
     )
+    x = Column(SmallInteger, nullable=False, default=50)
+    y = Column(SmallInteger, nullable=False, default=50)
+    view = Column(Enum(BodyView, name="body_view_enum"), nullable=False, default=BodyView.front)
+    is_active = Column(Boolean, nullable=False, default=True, server_default=text("true"))
 
 
 class BodyMapEntry(Base):

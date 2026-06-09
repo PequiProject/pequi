@@ -11,7 +11,7 @@ from pequi.services.journey_service import JourneyService
 
 
 class GetPatientJourneyUseCase:
-    """Retorna a jornada de tratamento do paciente autenticado."""
+    """Retorna a jornada do tratamento ativo do paciente autenticado."""
 
     def __init__(
         self,
