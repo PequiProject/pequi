@@ -260,7 +260,7 @@ class GetPatientJourneyUseCase:
                     type="clinical-update",
                     date=month_end,
                     title="Melhora percebida neste mês",
-                    description="Os registros indicam melhora da intensidade dos sintomas neste período.",
+                    description="Os registros indicam melhora da intensidade dos sintomas neste período.",  # noqa: E501
                     status="positive",
                 )
             )
@@ -282,7 +282,7 @@ class GetPatientJourneyUseCase:
                     type="clinical-update",
                     date=month_end,
                     title="Atenção aos sintomas",
-                    description="Os registros indicam piora da intensidade dos sintomas neste período.",
+                    description="Os registros indicam piora da intensidade dos sintomas neste período.",  # noqa: E501
                     status="attention",
                 )
             )
@@ -292,7 +292,7 @@ class GetPatientJourneyUseCase:
                     type="motivational-message",
                     date=month_end,
                     title="Siga monitorando sua evolução",
-                    description="Continue registrando seus sintomas e compartilhe essas informações na próxima consulta.",
+                    description="Continue registrando seus sintomas e compartilhe essas informações na próxima consulta.",  # noqa: E501
                     status="attention",
                 )
             )
