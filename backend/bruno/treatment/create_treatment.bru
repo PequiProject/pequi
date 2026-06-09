@@ -1,5 +1,5 @@
 meta {
-  name: Create Treatment
+  name: Create Treatment (v1 professional)
   type: http
   seq: 1
 }
@@ -38,12 +38,6 @@ assert {
 }
 
 docs {
-  Cria um novo tratamento MDT para o paciente informado.
-
-  Apenas profissionais de saúde autenticados podem chamar este endpoint.
-  O campo `expected_end` é calculado automaticamente:
-    - PB → start_date + 6 meses
-    - MB → start_date + 12 meses
-
-  Rate limit: 10/minuto por profissional.
+  Contrato legado v1 — apenas profissionais autenticados.
+  Preferir v2 para fluxo patient-first.
 }

@@ -1,0 +1,31 @@
+meta {
+  name: Get Treatment (v2 patient)
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/v2/treatments/{{treatmentId}}
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.id: eq "{{treatmentId}}"
+  res.body.patient_id: isDefined
+  res.body.regimen: isDefined
+  res.body.status: isDefined
+  res.body.start_date: isDefined
+  res.body.expected_end: isDefined
+}
+
+docs {
+  Retorna os dados de um tratamento v2 pelo ID.
+
+  Acessível apenas pelo paciente dono do tratamento.
+  Rate limit: 100/minuto.
+}

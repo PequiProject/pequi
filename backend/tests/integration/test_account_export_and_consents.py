@@ -11,6 +11,7 @@ from pequi.models.checkin import Checkin, CheckinMood
 from pequi.models.community import CommunityAnonymousMap, CommunityPost
 from pequi.models.consent import Consent
 from pequi.models.health_unit import HealthUnit
+from pequi.models.journey_event import JourneyEvent
 from pequi.models.patient import PatientProfile
 from pequi.models.user import User
 from pequi.schemas.account import ConsentCreate
@@ -76,6 +77,15 @@ async def test_export_account_data_includes_profile_clinical_community_and_conse
         categories=["experience"],
     )
     db_session.add(post)
+    journey_event = JourneyEvent(
+        patient_id=patient.id,
+        event_type="clinical_improvement",
+        title="Melhora clinica",
+        description="Evento gerado para a jornada.",
+        occurred_at=datetime.now(UTC),
+        event_metadata={"source": "test"},
+    )
+    db_session.add(journey_event)
     await db_session.flush()
 
     exported = await ExportAccountDataUseCase(db_session).execute(
@@ -90,6 +100,7 @@ async def test_export_account_data_includes_profile_clinical_community_and_conse
     assert exported["body_map_entries"] == []
     assert exported["adherence_snapshots"] == []
     assert exported["weekly_symptom_summaries"] == []
+    assert exported["journey_events"][0]["event_type"] == "clinical_improvement"
     assert exported["community_posts"][0]["title"] == "Minha jornada"
     assert exported["community_posts"][0]["categories"] == ["experience"]
     assert "author_anonymous_id" not in exported["community_posts"][0]

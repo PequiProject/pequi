@@ -1,0 +1,37 @@
+meta {
+  name: Get Adherence Snapshot (v2 patient)
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/v2/treatments/{{treatmentId}}/adherence
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.id: isDefined
+  res.body.treatment_id: eq "{{treatmentId}}"
+  res.body.patient_id: isDefined
+  res.body.period_start: isDefined
+  res.body.period_end: isDefined
+  res.body.total_doses: isDefined
+  res.body.taken_doses: isDefined
+  res.body.adherence_pct: isDefined
+  res.body.calculated_at: isDefined
+}
+
+docs {
+  Retorna o snapshot de adesão mais recente para o tratamento v2.
+
+  IMPORTANTE: A adesão NUNCA é calculada em tempo real.
+  Este endpoint lê exclusivamente de `adherence_snapshots`.
+
+  Acessível apenas pelo paciente dono do tratamento.
+  Rate limit: 100/minuto.
+}

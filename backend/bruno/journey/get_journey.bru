@@ -1,0 +1,29 @@
+meta {
+  name: Get Journey v2
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/v2/journey
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.patient.id: isDefined
+  res.body.treatment.id: isDefined
+  res.body.summary.total_months: isDefined
+  res.body.summary.total_consultations: isDefined
+  res.body.summary.total_doses_registered: isDefined
+  res.body.months[0].month_number: isDefined
+  res.body.months[0].is_current: isDefined
+}
+
+docs {
+  Alias v2 da jornada do paciente autenticado.
+}
