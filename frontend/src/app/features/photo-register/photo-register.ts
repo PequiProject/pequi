@@ -290,9 +290,36 @@ export class PhotoRegister implements OnInit {
   toggleMenu(event: MouseEvent, id: string) { event.stopPropagation(); this.selectedMarkerId.set(this.selectedMarkerId() === id ? null : id); }
   
   markAsActive(id: string) {
-    this.markers.update(current => current.map(m => m.id === id ? { ...m, status: 'active' } : m));
-    this.selectedMarkerId.set(null);
-    this.updateForm();
+    const marker = this.markers().find(m => m.id === id);
+    
+    if (marker && marker.backendAreaId) {
+      const payload = {
+        entries: [
+          {
+            body_area_id: marker.backendAreaId,
+            finding_type: 'lesion',
+            intensity: 1 
+          }
+        ]
+      };
+
+      this.bodyMapService.updateBodyMap(payload).subscribe({
+        next: () => {
+          this.markers.update(current => 
+            current.map(m => m.id === id ? { ...m, status: 'active' } : m)
+          );
+          this.selectedMarkerId.set(null);
+          this.updateForm();
+        },
+        error: (err) => console.error('Erro ao reativar local no backend:', err)
+      });
+    } else {
+      this.markers.update(current => 
+        current.map(m => m.id === id ? { ...m, status: 'active' } : m)
+      );
+      this.selectedMarkerId.set(null);
+      this.updateForm();
+    }
   }
   
   markAsCured(id: string) {
