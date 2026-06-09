@@ -11,7 +11,7 @@ from pequi.repositories.journey_event_repo import JourneyEventRepository
 from pequi.repositories.patient_repo import PatientRepository
 from pequi.repositories.treatment_repo import TreatmentRepository
 from pequi.schemas.journey import JourneyResponse
-from pequi.use_cases.get_patient_journey import GetPatientJourneyUseCase
+from pequi.use_cases.get_treatment_journey import GetTreatmentJourneyUseCase
 
 router = APIRouter()
 
@@ -23,7 +23,7 @@ async def get_journey(
     patient_user_id: UUID = Depends(get_current_patient),
     session: AsyncSession = Depends(get_db),
 ) -> JourneyResponse:
-    use_case = GetPatientJourneyUseCase(
+    use_case = GetTreatmentJourneyUseCase(
         PatientRepository(session),
         TreatmentRepository(session),
         DoseRepository(session),

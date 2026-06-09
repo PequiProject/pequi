@@ -2,6 +2,16 @@
 
 @import 'tailwindcss';
 
+@layer components {
+  .shell-px {
+    @apply px-4 sm:px-6 lg:px-8;
+  }
+
+  .shell-px-home {
+    @apply px-6 sm:px-6 lg:px-8;
+  }
+}
+
 :root {
   /* =========================
    * Cores base do Figma

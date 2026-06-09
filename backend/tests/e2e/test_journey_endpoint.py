@@ -53,8 +53,10 @@ async def test_patient_journey_endpoint_matches_frontend_contract(
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["patient"]["id"] == str(patient.id)
-    assert payload["treatment"]["regimen"] == "PB"
-    assert payload["months"][0]["month_number"] == 6
-    assert "is_current" in payload["months"][0]
-    assert payload["summary"]["total_months"] == 6
+    assert payload["summary"]["patient_id"] == str(patient.id)
+    assert payload["summary"]["classification"] == "PB"
+    assert payload["summary"]["treatment_duration_months"] == 6
+    assert len(payload["months"]) == 6
+    assert payload["months"][0]["month_index"] == 1
+    assert payload["months"][-1]["month_index"] == 6
+    assert "medication_summary" in payload["months"][0]
