@@ -1,0 +1,35 @@
+meta {
+  name: Register Dose (v2 patient)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/v2/treatments/{{treatmentId}}/doses
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "drug_name": "Dapsona",
+    "expected_at": "2026-02-15T08:00:00Z",
+    "taken_at": "2026-02-15T08:30:00Z",
+    "skipped": false
+  }
+}
+
+assert {
+  res.status: eq 201
+  res.body.id: isDefined
+  res.body.treatment_id: eq "{{treatmentId}}"
+  res.body.drug_name: eq "Dapsona"
+}

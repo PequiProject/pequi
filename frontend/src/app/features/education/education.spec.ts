@@ -3,6 +3,7 @@ import { HttpClientTestingModule, HttpTestingController } from '@angular/common/
 import { provideRouter, Router } from '@angular/router';
 import { By } from '@angular/platform-browser';
 
+import { environment } from '../../../environments/environment';
 import { Education } from './education';
 import { EducationArticlePage } from './education-article-page/education-article-page';
 import type { Article, ArticleListResponse } from './models/article.models';
@@ -47,20 +48,21 @@ const mockArticles: Article[] = [
 ];
 
 describe('Education', () => {
+  const baseUrl = `${environment.apiUrl}/v1/articles`;
   let component: Education;
   let fixture: ComponentFixture<Education>;
   let httpMock: HttpTestingController;
   let router: Router;
 
   function flushInitialRequests(list: ArticleListResponse = { items: mockArticles, total: 2 }): void {
-    const tagsReq = httpMock.expectOne('http://localhost:8000/v1/articles/tags');
+    const tagsReq = httpMock.expectOne(`${baseUrl}/tags`);
     tagsReq.flush([
       { id: 't1', name: 'cuidados' },
       { id: 't2', name: 'tratamento' },
     ]);
 
     const listReq = httpMock.expectOne(
-      (r) => r.url === 'http://localhost:8000/v1/articles' && r.params.get('category') === 'education'
+      (r) => r.url === baseUrl && r.params.get('category') === 'education'
     );
     listReq.flush(list);
   }
@@ -117,7 +119,7 @@ describe('Education', () => {
 
     const req = httpMock.expectOne(
       (r) =>
-        r.url === 'http://localhost:8000/v1/articles' &&
+        r.url === baseUrl &&
         r.params.get('tag') === 'cuidados' &&
         r.params.get('category') === 'education'
     );
@@ -135,7 +137,7 @@ describe('Education', () => {
 
     const req = httpMock.expectOne(
       (r) =>
-        r.url === 'http://localhost:8000/v1/articles' &&
+        r.url === baseUrl &&
         r.params.get('search') === 'adesão'
     );
     req.flush({ items: [mockArticles[1]], total: 1 });

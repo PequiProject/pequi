@@ -1,0 +1,34 @@
+meta {
+  name: Get Patient Journey
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/v1/patients/me/journey
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.patient.id: isDefined
+  res.body.treatment.id: isDefined
+  res.body.summary.total_months: isDefined
+  res.body.summary.current_month: isDefined
+  res.body.summary.total_consultations: isDefined
+  res.body.summary.total_doses_registered: isDefined
+  res.body.months: isDefined
+  res.body.months[0].month_number: isDefined
+  res.body.months[0].is_current: isDefined
+}
+
+docs {
+  Retorna a jornada do paciente autenticado com meses em ordem decrescente.
+
+  Eventos persistidos suportam doses e futuras origens clinicas geradas por workers.
+  Rate limit: 100/minuto por paciente.
+}

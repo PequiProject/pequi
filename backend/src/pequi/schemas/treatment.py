@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class TreatmentCreate(BaseModel):
-    """Payload para criar um novo tratamento MDT.
+    """Payload para o paciente criar seu próprio tratamento MDT.
 
     ``expected_end`` é calculado automaticamente pelo use case:
     PB = start_date + 6 meses, MB = start_date + 12 meses.
@@ -14,7 +14,6 @@ class TreatmentCreate(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    patient_id: UUID
     regimen: str = Field(
         ...,
         pattern="^(PB|MB)$",
@@ -27,7 +26,6 @@ class TreatmentCreate(BaseModel):
 class TreatmentResponse(BaseModel):
     id: UUID
     patient_id: UUID
-    prescribed_by: UUID
     regimen: str
     start_date: date
     expected_end: date

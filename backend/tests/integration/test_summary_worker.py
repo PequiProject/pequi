@@ -88,7 +88,6 @@ async def test_summary_job_processes_active_patients(db_session: AsyncSession, m
     treatment = Treatment(
         id=treatment_id,
         patient_id=patient_id,
-        prescribed_by=professional_id,
         regimen="MB",
         start_date=datetime(2026, 1, 1).date(),
         expected_end=datetime(2026, 12, 31).date(),

@@ -96,7 +96,6 @@ class ExportAccountDataUseCase:
                     include=[
                         "id",
                         "patient_id",
-                        "prescribed_by",
                         "regimen",
                         "start_date",
                         "expected_end",
@@ -119,8 +118,6 @@ class ExportAccountDataUseCase:
                         "taken_at",
                         "skipped",
                         "skip_reason",
-                        "supervised",
-                        "registered_by",
                         "created_at",
                     ],
                 )
@@ -142,6 +139,25 @@ class ExportAccountDataUseCase:
                     ],
                 )
                 for row in await self._repo.list_adherence_snapshots(patient.id)
+            ],
+            "journey_events": [
+                self._dump(
+                    row,
+                    include=[
+                        "id",
+                        "patient_id",
+                        "treatment_id",
+                        "event_type",
+                        "title",
+                        "description",
+                        "occurred_at",
+                        "source_type",
+                        "source_id",
+                        "created_at",
+                    ],
+                    extra={"metadata": row.event_metadata},
+                )
+                for row in await self._repo.list_journey_events(patient.id)
             ],
             "alerts": [
                 self._dump(

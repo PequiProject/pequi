@@ -31,7 +31,7 @@ export class CheckinStepFeelingComponent {
       bars: 5,
     },
     {
-      value: 'muito-bem',
+      value: 'good',
       label: 'Muito Bem',
       emoji: '🙂',
       color: 'bg-[#5C9B7B]',

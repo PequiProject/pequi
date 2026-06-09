@@ -15,6 +15,7 @@ from pequi.models.dose_log import AdherenceSnapshot, DoseLog
 from pequi.models.health_appointment import PatientHealthAppointment
 from pequi.models.health_professional import HealthProfessional
 from pequi.models.health_unit import HealthUnit
+from pequi.models.journey_event import JourneyEvent
 from pequi.models.patient import PatientProfile
 from pequi.models.symptom import Symptom
 from pequi.models.treatment import DoseSchedule, Treatment
@@ -44,6 +45,7 @@ __all__ = [
     "HealthProfessional",
     "PatientHealthAppointment",
     "HealthUnit",
+    "JourneyEvent",
     "PatientProfile",
     "Symptom",
     "Treatment",

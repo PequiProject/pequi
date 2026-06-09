@@ -13,14 +13,18 @@ class BodyMapRepository:
         self._session = session
 
     async def list_body_areas(self) -> list[BodyArea]:
-        stmt = select(BodyArea).order_by(BodyArea.system_part, BodyArea.label)
+        stmt = (
+            select(BodyArea)
+            .where(BodyArea.is_active.is_(True))
+            .order_by(BodyArea.system_part, BodyArea.label)
+        )
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
 
     async def get_body_areas_by_ids(self, ids: Sequence[UUID]) -> list[BodyArea]:
         if not ids:
             return []
-        stmt = select(BodyArea).where(BodyArea.id.in_(ids))
+        stmt = select(BodyArea).where(BodyArea.id.in_(ids), BodyArea.is_active.is_(True))
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
 
