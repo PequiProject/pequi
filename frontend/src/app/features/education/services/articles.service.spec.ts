@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 
+import { environment } from '../../../../environments/environment';
 import { ArticlesService } from './articles.service';
 import type { Article, ArticleListResponse } from '../models/article.models';
 
@@ -24,6 +25,7 @@ const mockArticle: Article = {
 };
 
 describe('ArticlesService', () => {
+  const baseUrl = `${environment.apiUrl}/v1/articles`;
   let service: ArticlesService;
   let httpMock: HttpTestingController;
 
@@ -48,7 +50,7 @@ describe('ArticlesService', () => {
 
     const req = httpMock.expectOne(
       (r) =>
-        r.url === 'http://localhost:8000/v1/articles' &&
+        r.url === baseUrl &&
         r.params.get('category') === 'education' &&
         r.params.get('tag') === 'cuidados' &&
         r.params.get('search') === 'pele' &&
@@ -60,7 +62,7 @@ describe('ArticlesService', () => {
   it('should get article by slug', () => {
     service.getArticle('cuidados-com-a-pele').subscribe((data) => expect(data).toEqual(mockArticle));
 
-    const req = httpMock.expectOne('http://localhost:8000/v1/articles/cuidados-com-a-pele');
+    const req = httpMock.expectOne(`${baseUrl}/cuidados-com-a-pele`);
     req.flush(mockArticle);
   });
 
@@ -69,7 +71,7 @@ describe('ArticlesService', () => {
 
     service.listTags().subscribe((data) => expect(data).toEqual(tags));
 
-    const req = httpMock.expectOne('http://localhost:8000/v1/articles/tags');
+    const req = httpMock.expectOne(`${baseUrl}/tags`);
     req.flush(tags);
   });
 });

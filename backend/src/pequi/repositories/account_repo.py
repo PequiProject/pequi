@@ -12,6 +12,7 @@ from pequi.models.community import CommunityAnonymousMap, CommunityComment, Comm
 from pequi.models.consent import Consent
 from pequi.models.data_deletion import DataDeletionRequest, DataDeletionStatus
 from pequi.models.dose_log import AdherenceSnapshot, DoseLog
+from pequi.models.journey_event import JourneyEvent
 from pequi.models.patient import PatientProfile
 from pequi.models.treatment import Treatment, TreatmentStatus
 from pequi.models.user import User
@@ -96,6 +97,14 @@ class AccountRepository:
             select(AdherenceSnapshot)
             .where(AdherenceSnapshot.patient_id == patient_id)
             .order_by(AdherenceSnapshot.calculated_at.desc())
+        )
+        return list((await self._session.execute(stmt)).scalars().all())
+
+    async def list_journey_events(self, patient_id: UUID) -> list[JourneyEvent]:
+        stmt = (
+            select(JourneyEvent)
+            .where(JourneyEvent.patient_id == patient_id)
+            .order_by(JourneyEvent.occurred_at.desc())
         )
         return list((await self._session.execute(stmt)).scalars().all())
 

@@ -9,7 +9,12 @@ from uuid import uuid4
 
 import pytest
 
-from pequi.core.exceptions import ConflictError, ForbiddenError, NotFoundError
+from pequi.core.exceptions import (
+    ConflictError,
+    ForbiddenError,
+    NotFoundError,
+    ValidationFailedError,
+)
 from pequi.models.dose_log import AdherenceSnapshot
 from pequi.models.health_professional import HealthProfessional
 from pequi.models.health_unit import HealthUnit
@@ -17,16 +22,12 @@ from pequi.models.patient import PatientProfile
 from pequi.models.treatment import Treatment, TreatmentRegimen, TreatmentStatus
 from pequi.models.user import User
 from pequi.repositories.dose_repo import DoseRepository
-from pequi.repositories.health_professional_repo import HealthProfessionalRepository
+from pequi.repositories.journey_event_repo import JourneyEventRepository
 from pequi.repositories.patient_repo import PatientRepository
 from pequi.repositories.treatment_repo import TreatmentRepository
 from pequi.schemas.dose_log import DoseLogCreate
 from pequi.use_cases.get_adherence import GetAdherenceUseCase
 from pequi.use_cases.register_dose import RegisterDoseUseCase
-
-# ---------------------------------------------------------------------------
-# Helpers de fixtures
-# ---------------------------------------------------------------------------
 
 
 async def _create_health_unit(session, *, name: str = "UBS Central") -> HealthUnit:
@@ -80,13 +81,11 @@ async def _create_treatment(
     session,
     *,
     patient: PatientProfile,
-    professional: HealthProfessional,
     status: TreatmentStatus = TreatmentStatus.active,
 ) -> Treatment:
     treatment = Treatment(
         id=uuid4(),
         patient_id=patient.id,
-        prescribed_by=professional.id,
         regimen=TreatmentRegimen.PB,
         start_date=date(2026, 1, 1),
         expected_end=date(2026, 7, 1),
@@ -102,13 +101,8 @@ def _make_use_case(session) -> RegisterDoseUseCase:
         TreatmentRepository(session),
         DoseRepository(session),
         PatientRepository(session),
-        HealthProfessionalRepository(session),
+        JourneyEventRepository(session),
     )
-
-
-# ---------------------------------------------------------------------------
-# Testes
-# ---------------------------------------------------------------------------
 
 
 @pytest.mark.asyncio
@@ -116,10 +110,8 @@ async def test_patient_can_register_daily_dose(create_tables, db_session):
     """Paciente registra dose diária do próprio tratamento ativo com sucesso."""
     health_unit = await _create_health_unit(db_session)
     patient_user = await _create_user(db_session, email="patient1@test.com", role="patient")
-    prof_user = await _create_user(db_session, email="prof1@test.com", role="health_professional")
     patient = await _create_patient(db_session, user=patient_user, health_unit=health_unit)
-    professional = await _create_professional(db_session, user=prof_user, health_unit=health_unit)
-    treatment = await _create_treatment(db_session, patient=patient, professional=professional)
+    treatment = await _create_treatment(db_session, patient=patient)
 
     data = DoseLogCreate(
         drug_name="Dapsona",
@@ -128,13 +120,32 @@ async def test_patient_can_register_daily_dose(create_tables, db_session):
     )
 
     use_case = _make_use_case(db_session)
-    result = await use_case.execute(patient_user.id, "patient", treatment.id, data)
+    result = await use_case.execute(patient_user.id, treatment.id, data)
 
     assert result.id is not None
     assert result.treatment_id == treatment.id
     assert result.drug_name == "Dapsona"
-    assert result.supervised is False
-    assert result.registered_by is None
+
+
+@pytest.mark.asyncio
+async def test_patient_can_register_monthly_dose(create_tables, db_session):
+    """Paciente pode registrar dose mensal do próprio tratamento ativo."""
+    health_unit = await _create_health_unit(db_session)
+    patient_user = await _create_user(db_session, email="patient1b@test.com", role="patient")
+    patient = await _create_patient(db_session, user=patient_user, health_unit=health_unit)
+    treatment = await _create_treatment(db_session, patient=patient)
+
+    data = DoseLogCreate(
+        drug_name="Rifampicina",
+        expected_at=datetime(2026, 2, 1, 10, 0, tzinfo=UTC),
+        taken_at=datetime(2026, 2, 1, 10, 15, tzinfo=UTC),
+    )
+
+    use_case = _make_use_case(db_session)
+    result = await use_case.execute(patient_user.id, treatment.id, data)
+
+    assert result.drug_name == "Rifampicina"
+    assert result.taken_at is not None
 
 
 @pytest.mark.asyncio
@@ -142,40 +153,63 @@ async def test_duplicate_dose_returns_conflict(create_tables, db_session):
     """Dose duplicada (treatment_id + drug_name + expected_at) lança ConflictError."""
     health_unit = await _create_health_unit(db_session)
     patient_user = await _create_user(db_session, email="patient2@test.com", role="patient")
-    prof_user = await _create_user(db_session, email="prof2@test.com", role="health_professional")
     patient = await _create_patient(db_session, user=patient_user, health_unit=health_unit)
-    professional = await _create_professional(db_session, user=prof_user, health_unit=health_unit)
-    treatment = await _create_treatment(db_session, patient=patient, professional=professional)
+    treatment = await _create_treatment(db_session, patient=patient)
 
     expected_at = datetime(2026, 3, 1, 8, 0, tzinfo=UTC)
     data = DoseLogCreate(drug_name="Clofazimina", expected_at=expected_at)
 
     use_case = _make_use_case(db_session)
-    await use_case.execute(patient_user.id, "patient", treatment.id, data)
+    await use_case.execute(patient_user.id, treatment.id, data)
 
     with pytest.raises(ConflictError):
-        await use_case.execute(patient_user.id, "patient", treatment.id, data)
+        await use_case.execute(patient_user.id, treatment.id, data)
 
 
 @pytest.mark.asyncio
-async def test_professional_from_another_unit_cannot_access(create_tables, db_session):
-    """Profissional de outra unidade não pode registrar dose no tratamento."""
-    unit_a = await _create_health_unit(db_session, name="UBS Norte")
-    unit_b = await _create_health_unit(db_session, name="UBS Sul")
-
-    patient_user = await _create_user(db_session, email="patient3@test.com", role="patient")
-    prof_a_user = await _create_user(
-        db_session, email="prof_a@test.com", role="health_professional"
+async def test_active_treatment_unique_index_returns_conflict(create_tables, db_session):
+    health_unit = await _create_health_unit(db_session)
+    patient_user = await _create_user(
+        db_session,
+        email=f"active-conflict-{uuid4()}@test.com",
+        role="patient",
     )
-    prof_b_user = await _create_user(
-        db_session, email="prof_b@test.com", role="health_professional"
+    patient = await _create_patient(db_session, user=patient_user, health_unit=health_unit)
+    await _create_treatment(db_session, patient=patient)
+
+    second_active = Treatment(
+        id=uuid4(),
+        patient_id=patient.id,
+        regimen=TreatmentRegimen.PB,
+        start_date=date(2026, 2, 1),
+        expected_end=date(2026, 8, 1),
+        status=TreatmentStatus.active,
     )
 
-    patient = await _create_patient(db_session, user=patient_user, health_unit=unit_a)
-    prof_a = await _create_professional(db_session, user=prof_a_user, health_unit=unit_a)
-    await _create_professional(db_session, user=prof_b_user, health_unit=unit_b)
+    with pytest.raises(ConflictError):
+        await TreatmentRepository(db_session).create(second_active)
 
-    treatment = await _create_treatment(db_session, patient=patient, professional=prof_a)
+    inactive = Treatment(
+        id=uuid4(),
+        patient_id=patient.id,
+        regimen=TreatmentRegimen.PB,
+        start_date=date(2026, 2, 1),
+        expected_end=date(2026, 8, 1),
+        status=TreatmentStatus.suspended,
+    )
+    created = await TreatmentRepository(db_session).create(inactive)
+    assert created.id == inactive.id
+
+
+@pytest.mark.asyncio
+async def test_other_patient_cannot_register_dose(create_tables, db_session):
+    """Paciente não pode registrar dose em tratamento de outro paciente."""
+    health_unit = await _create_health_unit(db_session)
+    owner_user = await _create_user(db_session, email="owner@test.com", role="patient")
+    other_user = await _create_user(db_session, email="other@test.com", role="patient")
+    owner = await _create_patient(db_session, user=owner_user, health_unit=health_unit)
+    await _create_patient(db_session, user=other_user, health_unit=health_unit)
+    treatment = await _create_treatment(db_session, patient=owner)
 
     data = DoseLogCreate(
         drug_name="Rifampicina",
@@ -185,72 +219,18 @@ async def test_professional_from_another_unit_cannot_access(create_tables, db_se
     use_case = _make_use_case(db_session)
 
     with pytest.raises(ForbiddenError):
-        await use_case.execute(prof_b_user.id, "health_professional", treatment.id, data)
-
-
-@pytest.mark.asyncio
-async def test_patient_cannot_register_supervised_dose_without_consultation(
-    create_tables,
-    db_session,
-):
-    """Paciente não pode registrar dose supervisionada fora do fluxo de consulta."""
-    health_unit = await _create_health_unit(db_session)
-    patient_user = await _create_user(db_session, email="patient4@test.com", role="patient")
-    prof_user = await _create_user(db_session, email="prof4@test.com", role="health_professional")
-    patient = await _create_patient(db_session, user=patient_user, health_unit=health_unit)
-    professional = await _create_professional(db_session, user=prof_user, health_unit=health_unit)
-    treatment = await _create_treatment(db_session, patient=patient, professional=professional)
-
-    data = DoseLogCreate(
-        drug_name="Rifampicina",
-        expected_at=datetime(2026, 2, 1, 10, 0, tzinfo=UTC),
-        supervised=True,
-        via_consultation=False,
-    )
-
-    use_case = _make_use_case(db_session)
-
-    with pytest.raises(ForbiddenError):
-        await use_case.execute(patient_user.id, "patient", treatment.id, data)
-
-
-@pytest.mark.asyncio
-async def test_patient_registers_supervised_dose_via_consultation(create_tables, db_session):
-    """Paciente registra dose supervisionada ao informar consulta realizada."""
-    health_unit = await _create_health_unit(db_session)
-    patient_user = await _create_user(db_session, email="patient4b@test.com", role="patient")
-    prof_user = await _create_user(db_session, email="prof4b@test.com", role="health_professional")
-    patient = await _create_patient(db_session, user=patient_user, health_unit=health_unit)
-    professional = await _create_professional(db_session, user=prof_user, health_unit=health_unit)
-    treatment = await _create_treatment(db_session, patient=patient, professional=professional)
-
-    data = DoseLogCreate(
-        drug_name="Rifampicina",
-        expected_at=datetime(2026, 2, 1, 10, 0, tzinfo=UTC),
-        taken_at=datetime(2026, 2, 1, 10, 15, tzinfo=UTC),
-        supervised=True,
-        via_consultation=True,
-    )
-
-    use_case = _make_use_case(db_session)
-    result = await use_case.execute(patient_user.id, "patient", treatment.id, data)
-
-    assert result.supervised is True
-    assert result.registered_by is None
+        await use_case.execute(other_user.id, treatment.id, data)
 
 
 @pytest.mark.asyncio
 async def test_patient_cannot_register_dose_on_inactive_treatment(create_tables, db_session):
-    """Paciente não pode autoregistrar em tratamento não-ativo."""
+    """Paciente não pode registrar dose em tratamento não-ativo."""
     health_unit = await _create_health_unit(db_session)
     patient_user = await _create_user(db_session, email="patient5@test.com", role="patient")
-    prof_user = await _create_user(db_session, email="prof5@test.com", role="health_professional")
     patient = await _create_patient(db_session, user=patient_user, health_unit=health_unit)
-    professional = await _create_professional(db_session, user=prof_user, health_unit=health_unit)
     treatment = await _create_treatment(
         db_session,
         patient=patient,
-        professional=professional,
         status=TreatmentStatus.completed,
     )
 
@@ -261,10 +241,8 @@ async def test_patient_cannot_register_dose_on_inactive_treatment(create_tables,
 
     use_case = _make_use_case(db_session)
 
-    from pequi.core.exceptions import ValidationFailedError
-
     with pytest.raises(ValidationFailedError):
-        await use_case.execute(patient_user.id, "patient", treatment.id, data)
+        await use_case.execute(patient_user.id, treatment.id, data)
 
 
 @pytest.mark.asyncio
@@ -272,10 +250,8 @@ async def test_get_adherence_returns_latest_snapshot(create_tables, db_session):
     """get_adherence retorna o snapshot mais recente quando disponível."""
     health_unit = await _create_health_unit(db_session)
     patient_user = await _create_user(db_session, email="patient6@test.com", role="patient")
-    prof_user = await _create_user(db_session, email="prof6@test.com", role="health_professional")
     patient = await _create_patient(db_session, user=patient_user, health_unit=health_unit)
-    professional = await _create_professional(db_session, user=prof_user, health_unit=health_unit)
-    treatment = await _create_treatment(db_session, patient=patient, professional=professional)
+    treatment = await _create_treatment(db_session, patient=patient)
 
     snapshot = AdherenceSnapshot(
         id=uuid4(),
@@ -294,9 +270,8 @@ async def test_get_adherence_returns_latest_snapshot(create_tables, db_session):
     use_case = GetAdherenceUseCase(
         TreatmentRepository(db_session),
         PatientRepository(db_session),
-        HealthProfessionalRepository(db_session),
     )
-    result = await use_case.execute(patient_user.id, "patient", treatment.id)
+    result = await use_case.execute(patient_user.id, treatment.id)
 
     assert result.treatment_id == treatment.id
     assert result.total_doses == 30
@@ -308,40 +283,13 @@ async def test_get_adherence_raises_not_found_when_no_snapshot(create_tables, db
     """Sem snapshot calculado, get_adherence lança NotFoundError."""
     health_unit = await _create_health_unit(db_session)
     patient_user = await _create_user(db_session, email="patient7@test.com", role="patient")
-    prof_user = await _create_user(db_session, email="prof7@test.com", role="health_professional")
     patient = await _create_patient(db_session, user=patient_user, health_unit=health_unit)
-    professional = await _create_professional(db_session, user=prof_user, health_unit=health_unit)
-    treatment = await _create_treatment(db_session, patient=patient, professional=professional)
+    treatment = await _create_treatment(db_session, patient=patient)
 
     use_case = GetAdherenceUseCase(
         TreatmentRepository(db_session),
         PatientRepository(db_session),
-        HealthProfessionalRepository(db_session),
     )
 
     with pytest.raises(NotFoundError):
-        await use_case.execute(patient_user.id, "patient", treatment.id)
-
-
-@pytest.mark.asyncio
-async def test_professional_registers_supervised_dose(create_tables, db_session):
-    """Profissional registra dose supervisionada com registered_by preenchido."""
-    health_unit = await _create_health_unit(db_session)
-    patient_user = await _create_user(db_session, email="patient8@test.com", role="patient")
-    prof_user = await _create_user(db_session, email="prof8@test.com", role="health_professional")
-    patient = await _create_patient(db_session, user=patient_user, health_unit=health_unit)
-    professional = await _create_professional(db_session, user=prof_user, health_unit=health_unit)
-    treatment = await _create_treatment(db_session, patient=patient, professional=professional)
-
-    data = DoseLogCreate(
-        drug_name="Rifampicina",
-        expected_at=datetime(2026, 2, 1, 9, 0, tzinfo=UTC),
-        taken_at=datetime(2026, 2, 1, 9, 15, tzinfo=UTC),
-        supervised=True,
-    )
-
-    use_case = _make_use_case(db_session)
-    result = await use_case.execute(prof_user.id, "health_professional", treatment.id, data)
-
-    assert result.supervised is True
-    assert result.registered_by == prof_user.id
+        await use_case.execute(patient_user.id, treatment.id)

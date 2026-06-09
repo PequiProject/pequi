@@ -2,7 +2,18 @@ import uuid
 from decimal import Decimal
 from enum import StrEnum
 
-from sqlalchemy import Column, Date, DateTime, Enum, ForeignKey, Index, Numeric, SmallInteger, Text
+from sqlalchemy import (
+    Column,
+    Date,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Index,
+    Numeric,
+    SmallInteger,
+    Text,
+    text,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 
@@ -45,6 +56,12 @@ class Treatment(Base):
         Index("ix_treatments_prescribed_by", "prescribed_by"),
         Index("ix_treatments_status", "status"),
         Index("ix_treatments_deleted_at", "deleted_at"),
+        Index(
+            "uq_treatments_one_active_per_patient",
+            "patient_id",
+            unique=True,
+            postgresql_where=text("status = 'active' AND deleted_at IS NULL"),
+        ),
     )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -56,7 +73,7 @@ class Treatment(Base):
     prescribed_by = Column(
         UUID(as_uuid=True),
         ForeignKey("health_professionals.id", ondelete="RESTRICT"),
-        nullable=False,
+        nullable=True,
     )
     regimen = Column(
         Enum(TreatmentRegimen, name="treatment_regimen_enum"),
