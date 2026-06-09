@@ -54,8 +54,8 @@ async def test_missed_doses_alert_when_four_missed_in_week(create_tables, db_ses
     pu = await _create_user(db_session, email="al2@test.com", role="patient")
     prof = await _create_user(db_session, email="pr2@test.com", role="health_professional")
     patient = await _create_patient(db_session, user=pu, health_unit=hu)
-    professional = await _create_professional(db_session, user=prof, health_unit=hu)
-    treatment = await _create_treatment(db_session, patient=patient, professional=professional)
+    await _create_professional(db_session, user=prof, health_unit=hu)
+    treatment = await _create_treatment(db_session, patient=patient)
     symptom = await _symptom(db_session)
     now = datetime.now(UTC)
     for i in range(4):

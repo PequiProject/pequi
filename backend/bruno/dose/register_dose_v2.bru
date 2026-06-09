@@ -1,11 +1,11 @@
 meta {
-  name: Register Dose (v1)
+  name: Register Dose (v2 patient)
   type: http
-  seq: 1
+  seq: 2
 }
 
 post {
-  url: {{baseUrl}}/v1/treatments/{{treatmentId}}/doses
+  url: {{baseUrl}}/v2/treatments/{{treatmentId}}/doses
   body: json
   auth: bearer
 }
@@ -23,8 +23,7 @@ body:json {
     "drug_name": "Dapsona",
     "expected_at": "2026-02-15T08:00:00Z",
     "taken_at": "2026-02-15T08:30:00Z",
-    "skipped": false,
-    "supervised": false
+    "skipped": false
   }
 }
 
@@ -33,10 +32,4 @@ assert {
   res.body.id: isDefined
   res.body.treatment_id: eq "{{treatmentId}}"
   res.body.drug_name: eq "Dapsona"
-  res.body.supervised: eq false
-}
-
-docs {
-  Contrato legado v1 — paciente ou profissional.
-  Preferir v2 para fluxo patient-first.
 }
