@@ -6,7 +6,7 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pequi.core.auth import create_access_token
-from pequi.models.body_map import BodyArea, BodySide, BodySystemPart
+from pequi.models.body_map import BodyArea, BodySide, BodySystemPart, BodyView
 from pequi.models.symptom import Symptom, SymptomCategory
 from tests.integration.test_dose_flow import (
     _create_health_unit,
@@ -30,6 +30,9 @@ async def _create_body_area(
     label: str,
     side: BodySide,
     system_part: BodySystemPart,
+    x: int = 50,
+    y: int = 50,
+    view: BodyView = BodyView.front,
 ) -> BodyArea:
     area = BodyArea(
         id=uuid4(),
@@ -37,6 +40,9 @@ async def _create_body_area(
         label=label,
         side=side,
         system_part=system_part,
+        x=x,
+        y=y,
+        view=view,
     )
     session.add(area)
     await session.flush()
@@ -80,6 +86,9 @@ async def test_body_areas_and_body_map_flow(async_client: AsyncClient, db_sessio
     list_areas = await async_client.get("/v1/body-areas", headers=headers)
     assert list_areas.status_code == 200
     assert len(list_areas.json()) >= 2
+    assert list_areas.json()[0]["view"] in {"front", "back"}
+    assert 0 <= list_areas.json()[0]["x"] <= 100
+    assert 0 <= list_areas.json()[0]["y"] <= 100
 
     update = await async_client.put(
         "/v1/body-map",

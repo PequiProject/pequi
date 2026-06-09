@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from pequi.schemas.body_map import BodyMapUpdateRequest
+from pequi.schemas.body_map import BodyAreaResponse, BodyMapUpdateRequest
 
 
 def test_intensity_must_be_between_0_and_3():
@@ -50,3 +50,22 @@ def test_valid_payload_is_accepted():
 
     assert payload.entries[0].intensity == 3
     assert payload.entries[0].finding_type.value == "lesion"
+
+
+def test_body_area_response_includes_display_position_and_view():
+    area = BodyAreaResponse.model_validate(
+        {
+            "id": "5e5e2316-0fcc-4a3d-a2b4-51b856f6bf26",
+            "code": "face",
+            "label": "Face",
+            "side": "center",
+            "system_part": "head",
+            "x": 50,
+            "y": 10,
+            "view": "front",
+        }
+    )
+
+    assert area.x == 50
+    assert area.y == 10
+    assert area.view.value == "front"
