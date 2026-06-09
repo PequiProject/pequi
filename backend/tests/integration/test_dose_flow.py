@@ -16,6 +16,7 @@ from pequi.core.exceptions import (
     ValidationFailedError,
 )
 from pequi.models.dose_log import AdherenceSnapshot
+from pequi.models.health_professional import HealthProfessional
 from pequi.models.health_unit import HealthUnit
 from pequi.models.patient import PatientProfile
 from pequi.models.treatment import Treatment, TreatmentRegimen, TreatmentStatus
@@ -61,6 +62,19 @@ async def _create_patient(session, *, user: User, health_unit: HealthUnit) -> Pa
     session.add(patient)
     await session.flush()
     return patient
+
+
+async def _create_professional(
+    session, *, user: User, health_unit: HealthUnit
+) -> HealthProfessional:
+    professional = HealthProfessional(
+        id=uuid4(),
+        user_id=user.id,
+        health_unit_id=health_unit.id,
+    )
+    session.add(professional)
+    await session.flush()
+    return professional
 
 
 async def _create_treatment(

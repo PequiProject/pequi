@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
@@ -361,7 +361,7 @@ async def test_history_date_range_filter(async_client: AsyncClient, db_session: 
         },
     )
 
-    today = date.today()
+    today = datetime.now(UTC).date()
     filtered = await async_client.get(
         "/v1/body-map/history",
         headers=headers,
