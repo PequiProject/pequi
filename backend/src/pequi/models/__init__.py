@@ -10,6 +10,7 @@ from pequi.models.community import (
     CommunityPost,
 )
 from pequi.models.consent import Consent
+from pequi.models.daily_medication_progress import DailyMedicationProgress
 from pequi.models.data_deletion import DataDeletionRequest
 from pequi.models.dose_log import AdherenceSnapshot, DoseLog
 from pequi.models.health_appointment import PatientHealthAppointment
@@ -21,7 +22,6 @@ from pequi.models.symptom import Symptom
 from pequi.models.treatment import DoseSchedule, Treatment
 from pequi.models.user import User
 from pequi.models.weekly_summary import WeeklySymptomSummary
-from pequi.models.daily_medication_progress import DailyMedicationProgress
 
 __all__ = [
     "AdherenceSnapshot",
