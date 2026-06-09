@@ -11,7 +11,7 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects.postgresql import UUID
 
-revision: str = "112_align_body_areas_with_frontend"
+revision: str = "112_align_body_areas"
 down_revision: str | None = "111_create_journey_events"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
