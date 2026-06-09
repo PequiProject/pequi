@@ -84,7 +84,7 @@ def _daily_medication_progress_repos(
         DailyMedicationProgressRepository(session),
         PatientRepository(session),
         TreatmentRepository(session),
-        HealthProfessionalRepository(session),
+        HealthProfessionalRepository(session),  # noqa: F821
     )
 
 
