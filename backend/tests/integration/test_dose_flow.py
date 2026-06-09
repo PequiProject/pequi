@@ -223,6 +223,31 @@ async def test_other_patient_cannot_register_dose(create_tables, db_session):
 
 
 @pytest.mark.asyncio
+async def test_patient_registers_supervised_dose_via_consultation(create_tables, db_session):
+    """Paciente registra dose supervisionada ao informar consulta realizada."""
+    health_unit = await _create_health_unit(db_session)
+    patient_user = await _create_user(db_session, email="patient4b@test.com", role="patient")
+    prof_user = await _create_user(db_session, email="prof4b@test.com", role="health_professional")
+    patient = await _create_patient(db_session, user=patient_user, health_unit=health_unit)
+    professional = await _create_professional(db_session, user=prof_user, health_unit=health_unit)
+    treatment = await _create_treatment(db_session, patient=patient, professional=professional)
+
+    data = DoseLogCreate(
+        drug_name="Rifampicina",
+        expected_at=datetime(2026, 2, 1, 10, 0, tzinfo=UTC),
+        taken_at=datetime(2026, 2, 1, 10, 15, tzinfo=UTC),
+        supervised=True,
+        via_consultation=True,
+    )
+
+    use_case = _make_use_case(db_session)
+    result = await use_case.execute(patient_user.id, "patient", treatment.id, data)
+
+    assert result.supervised is True
+    assert result.registered_by is None
+
+
+@pytest.mark.asyncio
 async def test_patient_cannot_register_dose_on_inactive_treatment(create_tables, db_session):
     """Paciente não pode registrar dose em tratamento não-ativo."""
     health_unit = await _create_health_unit(db_session)
