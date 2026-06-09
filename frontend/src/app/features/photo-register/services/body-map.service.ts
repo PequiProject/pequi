@@ -27,7 +27,7 @@ export class BodyMapService {
     return this.http.get<BodyMapFinding[]>(`${this.apiUrl}/v1/body-map/history`);
   }
 
-  createUploadUrl(payload: { filename: string, contentType: string }): Observable<{ uploadUrl: string, fileUrl: string }> {
+  createUploadUrl(payload: { filename: string, content_type: string }): Observable<{ uploadUrl: string, fileUrl: string }> {
     return this.http.post<any>(`${this.apiUrl}/v1/body-map/upload`, payload);
   }
 }

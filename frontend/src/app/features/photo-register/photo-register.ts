@@ -229,16 +229,29 @@ export class PhotoRegister implements OnInit {
     const file = input.files[0];
     const markerId = this.uploadingMarkerId; 
 
+    // 6.1 Pede pro backend uma URL de upload
     this.bodyMapService.createUploadUrl({ 
-      filename: file.name, 
-      contentType: file.type 
+      filename: file.name,
+      content_type: file.type
     }).subscribe({
-      next: (response) => {
-        fetch(response.uploadUrl, {
+      next: (response: any) => {
+        
+        // Usando as chaves exatas que descobrimos!
+        const targetUploadUrl = response.upload_url;
+        const targetFileUrl = response.public_url;
+        const imageKey = response.file_key;
+
+        // 6.2 Faz o upload usando a URL
+        fetch(targetUploadUrl, {
           method: 'PUT',
           body: file,
           headers: { 'Content-Type': file.type }
-        }).then(() => {
+        }).then((res) => {
+          
+          if (!res.ok) {
+             throw new Error(`Upload falhou com status: ${res.status}`);
+          }
+
           const marker = this.markers().find(m => m.id === markerId);
           
           if (marker && marker.backendAreaId) {
@@ -248,7 +261,7 @@ export class PhotoRegister implements OnInit {
                   body_area_id: marker.backendAreaId,
                   finding_type: 'lesion',
                   intensity: 1,
-                  image_key: response.fileUrl.split('/').pop() 
+                  image_key: imageKey 
                 }
               ]
             };
@@ -256,7 +269,7 @@ export class PhotoRegister implements OnInit {
             this.bodyMapService.updateBodyMap(updatePayload).subscribe({
               next: () => {
                 this.markers.update(current => 
-                  current.map(m => m.id === markerId ? { ...m, imageUrl: response.fileUrl } : m)
+                  current.map(m => m.id === markerId ? { ...m, imageUrl: targetFileUrl } : m)
                 );
                 this.updateForm();
               },
@@ -265,8 +278,9 @@ export class PhotoRegister implements OnInit {
           }
           
           this.uploadingMarkerId = null;
-        }).catch(err => console.error('Falha no upload da imagem', err));
-      }
+        }).catch(err => console.error('Falha no upload da imagem no storage', err));
+      },
+      error: (err) => console.error('Erro ao pedir URL de upload', err)
     });
   }
 
