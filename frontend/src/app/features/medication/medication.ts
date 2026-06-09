@@ -8,7 +8,6 @@ import {
 } from './services/medication-data.service';
 import { MedicationIntakeService } from './services/medication-intake.service';
 import { HealthAppointmentService } from '../appointments/services/health-appointment.service';
-import { PatientTreatmentService } from '../profile/services/patient-treatment.service';
 import {
   buildMedicationSchedule,
   buildTodayDoseSlots,
@@ -17,6 +16,7 @@ import {
 } from './utils/medication-schedule.utils';
 import { formatSupervisedDoseScheduleLabel } from './utils/supervised-dose-schedule.utils';
 import { Hospital, Pill, LucideAngularModule } from 'lucide-angular';
+import { DailyMedicationProgressService } from './services/daily-medication-progress.service';
 
 type InstitutedMedicationItem = PatientTreatmentData['institutedMedications'][number];
 type MedicationSection = 'unsupervised' | 'supervised';
@@ -71,8 +71,8 @@ interface SupervisedMedicationCardItem {
 export class Medication implements OnInit, OnDestroy {
   private readonly medicationDataService = inject(MedicationDataService);
   private readonly intakeService = inject(MedicationIntakeService);
-  private readonly treatmentService = inject(PatientTreatmentService);
   private readonly appointmentService = inject(HealthAppointmentService);
+  private readonly dailyMedicationProgressService = inject(DailyMedicationProgressService);
 
   readonly Pill = Pill;
   readonly Hospital = Hospital;
@@ -124,6 +124,7 @@ export class Medication implements OnInit, OnDestroy {
         this.unsupervisedItems = this.mapUnsupervisedItems(this.institutedMedications);
         this.refreshSupervisedSchedule();
         this.emitChecklistPayload();
+        this.syncDailyMedicationProgress();
       },
       error: () => {
         this.loadError =
@@ -148,13 +149,14 @@ export class Medication implements OnInit, OnDestroy {
       this.intakeService.unmarkSlot(item.storageKey, item.slot.slotKey);
     } else {
       this.intakeService.markSlotTaken(item.storageKey, item.slot.slotKey);
-      this.registerDoseIfAllowed(item.medicationName);
     }
 
     this.unsupervisedItems = this.unsupervisedItems.map((entry) =>
       entry.id === id ? this.applySlotState(entry) : entry
     );
+
     this.emitChecklistPayload();
+    this.syncDailyMedicationProgress();
   }
 
   trackById(_: number, item: { id: string }): string {
@@ -220,8 +222,10 @@ export class Medication implements OnInit, OnDestroy {
 
   private refreshUnsupervisedSlots(): void {
     if (this.institutedMedications.length === 0) return;
+
     this.unsupervisedItems = this.mapUnsupervisedItems(this.institutedMedications);
     this.emitChecklistPayload();
+    this.syncDailyMedicationProgress();
   }
 
   private mapSupervisedItems(
@@ -260,9 +264,28 @@ export class Medication implements OnInit, OnDestroy {
     return parts.join(' ');
   }
 
-  private registerDoseIfAllowed(drugName: string): void {
-    if (!this.canRegisterDoses) return;
-    this.treatmentService.registerTakenDose(drugName).subscribe({ error: () => undefined });
+  private getTodayDate(): string {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+  }
+
+  private syncDailyMedicationProgress(): void {
+    const expectedCount = this.unsupervisedItems.length;
+    const takenCount = this.unsupervisedItems.filter((item) => item.checked).length;
+
+    this.dailyMedicationProgressService
+      .upsert({
+        progress_date: this.getTodayDate(),
+        expected_count: expectedCount,
+        taken_count: takenCount,
+      })
+      .subscribe({
+        error: () => undefined,
+      });
   }
 
   private emitChecklistPayload(): void {

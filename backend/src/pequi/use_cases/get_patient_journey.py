@@ -1,10 +1,8 @@
-from collections import defaultdict
 from datetime import UTC, date, datetime, timedelta
 from uuid import UUID
 
-from fastapi import logger
 from pequi.repositories.checkin_repo import CheckinRepository
-from pequi.repositories.dose_repo import DoseRepository
+from pequi.repositories.daily_medication_progress_repo import DailyMedicationProgressRepository
 from pequi.repositories.health_appointment_repo import HealthAppointmentRepository
 from pequi.repositories.patient_repo import PatientRepository
 from pequi.repositories.treatment_repo import TreatmentRepository
@@ -25,25 +23,28 @@ class GetPatientJourneyUseCase:
         treatment_repo: TreatmentRepository,
         appointment_repo: HealthAppointmentRepository,
         checkin_repo: CheckinRepository,
-        dose_repo: DoseRepository,
+        daily_progress_repo: DailyMedicationProgressRepository,
     ) -> None:
         self._patient_repo = patient_repo
         self._treatment_repo = treatment_repo
         self._appointment_repo = appointment_repo
         self._checkin_repo = checkin_repo
-        self._dose_repo = dose_repo
+        self._daily_progress_repo = daily_progress_repo
 
     async def execute(self, user_id: UUID) -> PatientJourneyResponse:
         patient = await self._patient_repo.get_or_create_by_user_id(user_id)
         treatment = await self._treatment_repo.get_active_by_patient_id(patient.id)
         appointments = await self._appointment_repo.list_by_patient_id(patient.id)
-        checkins = await self._checkin_repo.list_history_by_patient_id(patient.id, limit=500, offset=0)
+        checkins = await self._checkin_repo.list_history_by_patient_id(
+            patient.id,
+            limit=500,
+            offset=0,
+        )
 
         treatment_start = self._resolve_treatment_start(patient, treatment)
         classification = patient.classification
         total_months = self._resolve_total_months(classification)
         total_days = total_months * 30
-
         today = datetime.now(UTC).date()
 
         elapsed_days = 0
@@ -54,14 +55,22 @@ class GetPatientJourneyUseCase:
         treatment_status = None
 
         if treatment is not None:
-            treatment_status = treatment.status.value if hasattr(treatment.status, "value") else str(treatment.status)
+            treatment_status = (
+                treatment.status.value
+                if hasattr(treatment.status, "value")
+                else str(treatment.status)
+            )
 
         if treatment_start and total_days > 0:
             elapsed_days = max(0, (today - treatment_start).days)
             remaining_days = max(0, total_days - elapsed_days)
             progress_percent = min(100, int((elapsed_days / total_days) * 100))
             current_month = min(total_months, max(1, (elapsed_days // 30) + 1))
-            estimated_end_date = treatment.expected_end if treatment else (treatment_start + timedelta(days=total_days))
+            estimated_end_date = (
+                treatment.expected_end
+                if treatment and treatment.expected_end is not None
+                else treatment_start + timedelta(days=total_days)
+            )
 
         summary = JourneySummary(
             patient_id=patient.id,
@@ -83,7 +92,7 @@ class GetPatientJourneyUseCase:
         if not treatment_start or total_months == 0:
             return PatientJourneyResponse(summary=summary, months=[])
 
-        dose_logs = await self._dose_repo.list_by_treatment(treatment.id) if treatment else []
+        daily_progress_logs = await self._daily_progress_repo.list_by_patient_id(patient.id)
 
         months: list[JourneyMonth] = []
         for month_index in range(1, total_months + 1):
@@ -91,18 +100,21 @@ class GetPatientJourneyUseCase:
             month_end = month_start + timedelta(days=29)
 
             month_appointments = [
-                item for item in appointments
+                item
+                for item in appointments
                 if month_start <= item.appointment_date <= month_end
             ]
 
             month_checkins = [
-                item for item in checkins
+                item
+                for item in checkins
                 if month_start <= item.checked_in_at.date() <= month_end
             ]
 
-            month_doses = [
-                item for item in dose_logs
-                if month_start <= item.expected_at.date() <= month_end
+            month_progress_logs = [
+                item
+                for item in daily_progress_logs
+                if month_start <= item.progress_date <= month_end
             ]
 
             if month_index < current_month:
@@ -112,11 +124,11 @@ class GetPatientJourneyUseCase:
             else:
                 month_status = "upcoming"
 
-            medication_summary = self._build_medication_summary(month_doses)
+            medication_summary = self._build_medication_summary(month_progress_logs)
+
             events = self._build_month_events(
                 month_index=month_index,
                 treatment_start=treatment_start,
-                month_start=month_start,
                 month_end=month_end,
                 month_appointments=month_appointments,
                 month_checkins=month_checkins,
@@ -159,35 +171,19 @@ class GetPatientJourneyUseCase:
         personal = patient.personal_record if isinstance(patient.personal_record, dict) else {}
         return personal.get("social_name") or None
 
-    def _build_medication_summary(self, month_doses) -> JourneyMedicationSummary:
-        non_supervised_doses = [dose for dose in month_doses if not dose.supervised]
-
-        doses_by_day: dict = defaultdict(list)
-        for dose in non_supervised_doses:
-            doses_by_day[dose.expected_at.date()].append(dose)
-
-        expected_days = 0
+    def _build_medication_summary(self, month_progress_logs) -> JourneyMedicationSummary:
+        total_days_in_month_window = 30
         completed_days = 0
 
-        for _, day_doses in doses_by_day.items():
-            if not day_doses:
-                continue
-
-            expected_days += 1
-
-            all_taken = all(
-                dose.taken_at is not None and dose.skipped is False
-                for dose in day_doses
-            )
-
-            if all_taken:
+        for progress in month_progress_logs:
+            if progress.expected_count > 0 and progress.taken_count == progress.expected_count:
                 completed_days += 1
 
-        adherence_percent = int((completed_days / expected_days) * 100) if expected_days else 0
+        adherence_percent = int((completed_days / total_days_in_month_window) * 100)
 
         return JourneyMedicationSummary(
             doses_taken=completed_days,
-            doses_expected=expected_days,
+            doses_expected=total_days_in_month_window,
             adherence_percent=adherence_percent,
         )
 
@@ -195,7 +191,6 @@ class GetPatientJourneyUseCase:
         self,
         month_index: int,
         treatment_start: date,
-        month_start: date,
         month_end: date,
         month_appointments: list,
         month_checkins: list[CheckinResponse],
@@ -241,25 +236,24 @@ class GetPatientJourneyUseCase:
                 )
             )
 
-        if medication_summary.doses_expected > 0:
-            events.append(
-                JourneyEvent(
-                    id=f"medication-summary-{month_index}",
-                    type="medication-summary",
-                    date=month_end,
-                    title=f"Resumo de medicação do mês {month_index}",
-                    description=(
-                        f"Foram registradas {medication_summary.doses_taken} de "
-                        f"{medication_summary.doses_expected} doses esperadas neste mês."
-                    ),
-                    status="positive" if medication_summary.adherence_percent >= 80 else "neutral",
-                    metadata={
-                        "dosesTaken": medication_summary.doses_taken,
-                        "dosesExpected": medication_summary.doses_expected,
-                        "adherencePercent": medication_summary.adherence_percent,
-                    },
-                )
+        events.append(
+            JourneyEvent(
+                id=f"medication-summary-{month_index}",
+                type="medication-summary",
+                date=month_end,
+                title=f"Resumo de medicação do mês {month_index}",
+                description=(
+                    f"Você completou {medication_summary.doses_taken} de 30 dias do mês "
+                    f"tomando todas as medicações esperadas."
+                ),
+                status="positive" if medication_summary.adherence_percent >= 80 else "neutral",
+                metadata={
+                    "dosesTaken": medication_summary.doses_taken,
+                    "dosesExpected": medication_summary.doses_expected,
+                    "adherencePercent": medication_summary.adherence_percent,
+                },
             )
+        )
 
         trend = self._infer_checkin_trend(month_checkins)
 
@@ -307,9 +301,13 @@ class GetPatientJourneyUseCase:
                 )
             )
 
-        events.sort(key=lambda item: (
-            item.date if isinstance(item.date, datetime) else datetime.combine(item.date, datetime.min.time())
-        ))
+        events.sort(
+            key=lambda item: (
+                item.date
+                if isinstance(item.date, datetime)
+                else datetime.combine(item.date, datetime.min.time())
+            )
+        )
         return events
 
     def _infer_checkin_trend(self, month_checkins: list[CheckinResponse]) -> str | None:

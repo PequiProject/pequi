@@ -33,6 +33,7 @@ export class MedicationDataService {
 
   getMedicationChecklist(): Observable<MedicationChecklistResponse> {
     const local = this.profileService.profile().treatment;
+
     if (!this.authService.isAuthenticated()) {
       return of(this.fromLocalTreatment(local));
     }

@@ -48,6 +48,23 @@ from pequi.repositories.checkin_repo import CheckinRepository
 from pequi.schemas.patient_journey import PatientJourneyResponse
 from pequi.use_cases.get_patient_journey import GetPatientJourneyUseCase
 
+from datetime import date
+
+from pequi.repositories.daily_medication_progress_repo import (
+    DailyMedicationProgressRepository,
+)
+from pequi.schemas.daily_medication_progress import (
+    DailyMedicationProgressResponse,
+    DailyMedicationProgressUpsert,
+    DailyMedicationSummaryResponse,
+)
+from pequi.use_cases.get_daily_medication_summary import (
+    GetDailyMedicationSummaryUseCase,
+)
+from pequi.use_cases.upsert_daily_medication_progress import (
+    UpsertDailyMedicationProgressUseCase,
+)
+
 router = APIRouter()
 
 
@@ -64,6 +81,16 @@ def _treatment_repos(
         HealthProfessionalRepository(session),
     )
 
+def _daily_medication_progress_repos(
+    session: AsyncSession,
+) -> tuple[
+    DailyMedicationProgressRepository,
+    PatientRepository,
+]:
+    return (
+        DailyMedicationProgressRepository(session),
+        PatientRepository(session),
+    )
 
 @router.get("/me", response_model=PatientProfileRead)
 async def get_my_profile(
@@ -240,6 +267,30 @@ async def get_my_journey(
         TreatmentRepository(session),
         HealthAppointmentRepository(session),
         CheckinRepository(session),
-        DoseRepository(session),
+        DailyMedicationProgressRepository(session),
     )
     return await use_case.execute(user_id)
+
+@router.get("/me/daily-medication-progress", response_model=DailyMedicationSummaryResponse)
+@limiter.limit("100/minute")
+async def get_my_daily_medication_progress(
+    request: Request,
+    progress_date: date,
+    user_id: UUID = Depends(get_current_patient),
+    session: AsyncSession = Depends(get_db),
+) -> DailyMedicationSummaryResponse:
+    progress_repo, patient_repo = _daily_medication_progress_repos(session)
+    use_case = GetDailyMedicationSummaryUseCase(progress_repo, patient_repo)
+    return await use_case.execute(user_id, progress_date)
+
+@router.put("/me/daily-medication-progress", response_model=DailyMedicationProgressResponse)
+@limiter.limit("20/minute")
+async def save_my_daily_medication_progress(
+    request: Request,
+    body: DailyMedicationProgressUpsert,
+    user_id: UUID = Depends(get_current_patient),
+    session: AsyncSession = Depends(get_db),
+) -> DailyMedicationProgressResponse:
+    progress_repo, patient_repo = _daily_medication_progress_repos(session)
+    use_case = UpsertDailyMedicationProgressUseCase(progress_repo, patient_repo)
+    return await use_case.execute(user_id, body)

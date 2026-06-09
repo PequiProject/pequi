@@ -20,6 +20,7 @@ from pequi.models.symptom import Symptom
 from pequi.models.treatment import DoseSchedule, Treatment
 from pequi.models.user import User
 from pequi.models.weekly_summary import WeeklySymptomSummary
+from pequi.models.daily_medication_progress import DailyMedicationProgress
 
 __all__ = [
     "AdherenceSnapshot",
@@ -48,4 +49,5 @@ __all__ = [
     "Treatment",
     "User",
     "WeeklySymptomSummary",
+    "DailyMedicationProgress",
 ]

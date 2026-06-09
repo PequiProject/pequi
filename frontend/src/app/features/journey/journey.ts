@@ -45,8 +45,8 @@ export interface JourneyMonth {
   current: boolean;
   locked: boolean;
   events: JourneyEvent[];
-  medicationTaken: number;
-  medicationExpected: number;
+  completedMedicationDays: number;
+  expectedMedicationDays: number;
 }
 
 @Component({
@@ -142,32 +142,32 @@ export class Journey implements OnInit {
           },
         }))
         .sort((a, b) => +new Date(b.date) - +new Date(a.date)),
-      medicationTaken: month.medication_summary.doses_taken,
-      medicationExpected: month.medication_summary.doses_expected,
+      completedMedicationDays: month.medication_summary.doses_taken,
+      expectedMedicationDays: month.medication_summary.doses_expected,
     }));
   });
 
   readonly hasTreatmentStartDate = computed(() => {
-  const value = this.treatmentStartDate();
-  return !!value?.trim();
-});
+    const value = this.treatmentStartDate();
+    return !!value?.trim();
+  });
 
-readonly shouldShowJourneySetupState = computed(() => !this.hasTreatmentStartDate());
+  readonly shouldShowJourneySetupState = computed(() => !this.hasTreatmentStartDate());
 
-readonly emptyJourneyTitle = computed(() =>
-  'Sua jornada de tratamento ainda não começou'
-);
+  readonly emptyJourneyTitle = computed(() =>
+    'Sua jornada de tratamento ainda não começou'
+  );
 
-readonly emptyJourneyMessage = computed(
-  () => 'Para acompanhar sua evolução, adicione a data de início do tratamento na tela de '
-);
+  readonly emptyJourneyMessage = computed(
+    () => 'Para acompanhar sua evolução, adicione a data de início do tratamento na tela de '
+  );
 
-readonly emptyJourneyLinkLabel = computed(() => 'Perfil > Meu tratamento');
+  readonly emptyJourneyLinkLabel = computed(() => 'Perfil > Meu tratamento');
 
-readonly emptyJourneySupportMessage = computed(
-  () =>
-    'Depois de informar essa data, a linha do tempo será organizada automaticamente.'
-);
+  readonly emptyJourneySupportMessage = computed(
+    () =>
+      'Depois de informar essa data, a linha do tempo será organizada automaticamente.'
+  );
 
   readonly leprosyTypeLabel = computed(() =>
     this.leprosyType() === 'PB'
@@ -181,59 +181,51 @@ readonly emptyJourneySupportMessage = computed(
       : 'Estimativa de tratamento: 12 meses'
   );
 
-readonly progressHeadline = computed(() => {
-  if (!this.hasTreatmentStartDate()) {
-    return 'Adicione a data de início do tratamento';
-  }
+  readonly progressHeadline = computed(() => {
+    if (!this.hasTreatmentStartDate()) {
+      return 'Adicione a data de início do tratamento';
+    }
 
-  if (this.progressPercent() >= 80) {
-    return 'Você está avançando bem no tratamento';
-  }
+    if (this.progressPercent() >= 80) {
+      return 'Você está avançando bem no tratamento';
+    }
 
-  if (this.progressPercent() >= 40) {
-    return 'Seu tratamento segue em andamento';
-  }
+    if (this.progressPercent() >= 40) {
+      return 'Seu tratamento segue em andamento';
+    }
 
-  return 'Cada etapa cumprida fortalece sua jornada';
-});
+    return 'Cada etapa cumprida fortalece sua jornada';
+  });
 
-readonly progressSupportText = computed(() => {
-  if (!this.hasTreatmentStartDate()) {
-    return 'Assim que essa data for informada, mostraremos seu progresso e os marcos da jornada.';
-  }
+  readonly progressSupportText = computed(() => {
+    if (!this.hasTreatmentStartDate()) {
+      return 'Assim que essa data for informada, mostraremos seu progresso e os marcos da jornada.';
+    }
 
-  return `Você já percorreu ${this.elapsedDays()} de ${this.totalDays()} dias previstos do tratamento.`;
-});
+    return `Você já percorreu ${this.elapsedDays()} de ${this.totalDays()} dias previstos do tratamento.`;
+  });
 
-readonly remainingText = computed(() => {
-  if (!this.hasTreatmentStartDate()) {
-    return 'Acesse Perfil > Meu tratamento para informar a data e iniciar sua jornada visual.';
-  }
+  readonly remainingText = computed(() => {
+    if (!this.hasTreatmentStartDate()) {
+      return 'Acesse Perfil > Meu tratamento para informar a data e iniciar sua jornada visual.';
+    }
 
-  if (this.remainingDays() <= 0) {
-    return 'Tratamento previsto concluído.';
-  }
+    if (this.remainingDays() <= 0) {
+      return 'Tratamento previsto concluído.';
+    }
 
-  const remainingMonths = Math.ceil(this.remainingDays() / 30);
+    const remainingMonths = Math.ceil(this.remainingDays() / 30);
 
-  return `Faltam aproximadamente ${this.remainingDays()} dias (${remainingMonths} ${
-    remainingMonths === 1 ? 'mês' : 'meses'
-  }) para a estimativa final. Continue com o ótimo trabalho!`;
-});
+    return `Faltam aproximadamente ${this.remainingDays()} dias (${remainingMonths} ${
+      remainingMonths === 1 ? 'mês' : 'meses'
+    }) para a estimativa final. Continue com o ótimo trabalho!`;
+  });
 
-readonly displayMonths = computed<JourneyMonth[]>(() => {
-  const months = this.months();
-  const currentIndex = months.findIndex((month) => month.current);
-
-  if (currentIndex <= 0) {
-    return months;
-  }
-
-  const currentMonth = months[currentIndex];
-  const remainingMonths = months.filter((_, index) => index !== currentIndex);
-
-  return [currentMonth, ...remainingMonths];
-});
+  readonly displayMonths = computed<JourneyMonth[]>(() => {
+    return this.months()
+      .filter((month) => month.current || month.completed)
+      .sort((a, b) => b.monthIndex - a.monthIndex);
+  });
 
   toggleMonth(month: JourneyMonth): void {
     if (month.locked) {
@@ -267,11 +259,19 @@ readonly displayMonths = computed<JourneyMonth[]>(() => {
       return 'Nenhum registro neste mês até agora.';
     }
 
-    if (month.medicationExpected > 0) {
-      return `${month.events.length} registro(s) e ${month.medicationTaken}/${month.medicationExpected} doses registradas.`;
+    return `${month.events.length} registro(s) e ${month.completedMedicationDays}/${month.expectedMedicationDays} dia(s) completos no ciclo de 30 dias.`;
+  }
+
+  getMedicationAdherenceText(month: JourneyMonth): string | null {
+    if (!month.expectedMedicationDays) {
+      return null;
     }
 
-    return `${month.events.length} registro(s) neste mês.`;
+    const percentage = Math.floor(
+      (month.completedMedicationDays / month.expectedMedicationDays) * 100
+    );
+
+    return `Adesão registrada no mês: ${percentage}% (${month.completedMedicationDays}/${month.expectedMedicationDays} dias completos).`;
   }
 
   getMonthButtonLabel(month: JourneyMonth): string {
@@ -280,18 +280,6 @@ readonly displayMonths = computed<JourneyMonth[]>(() => {
     }
 
     return month.expanded ? 'Ocultar' : 'Ver detalhes';
-  }
-
-  getMedicationAdherenceText(month: JourneyMonth): string | null {
-    if (!month.medicationExpected) {
-      return null;
-    }
-
-    const percentage = Math.floor(
-      (month.medicationTaken / month.medicationExpected) * 100
-    );
-
-    return `Adesão registrada no mês: ${percentage}% (${month.medicationTaken}/${month.medicationExpected} doses).`;
   }
 
   getEventContainerClass(status?: JourneyEventStatus): string {
