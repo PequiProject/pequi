@@ -83,11 +83,6 @@ def _register_routers(app: FastAPI) -> None:
     from pequi.routers import treatment_v2 as treatment_v2_router
 
     app.include_router(patient_router.router, prefix="/v1/patients", tags=["patients"])
-    app.include_router(
-        journey_router.router,
-        prefix="/v1/patients/me/journey",
-        tags=["journey"],
-    )
     app.include_router(journey_router.router, prefix="/v2/journey", tags=["journey"])
     app.include_router(account_router.router, prefix="/v1/account", tags=["account"])
     app.include_router(auth_router.router, prefix="/v1/auth", tags=["auth"])

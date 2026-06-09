@@ -9,15 +9,33 @@ import {
   AfterViewInit,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule, ImagePlus, CirclePlus, Calendar, Stethoscope, Pill, ChevronLeft, ChevronRight } from 'lucide-angular';
+import {
+  LucideAngularModule,
+  ImagePlus,
+  CirclePlus,
+  Calendar,
+  Stethoscope,
+  Pill,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-angular';
 import { Router } from '@angular/router';
 import { HealthAppointmentService } from '../appointments/services/health-appointment.service';
 import {
   formatAppointmentDatePt,
   resolveNextAppointment,
 } from '../appointments/utils/next-appointment.utils';
+import type { Article } from '../education/models/article.models';
+import { ArticlesService } from '../education/services/articles.service';
 import { CheckinService } from '../checkin/services/checkin.service';
 import { HealthAppointment } from '../appointments/models/health-appointment.models';
+import {
+  DailyMedicationProgressService,
+  type DailyMedicationSummaryResponse,
+} from '../medication/services/daily-medication-progress.service';
+import { MedicationDataService } from '../medication/services/medication-data.service';
+import { MedicationIntakeService } from '../medication/services/medication-intake.service';
+import { computeTodayMedicationProgress } from '../medication/utils/daily-medication-progress.utils';
 
 interface QuickAction {
   title: string;
@@ -32,15 +50,6 @@ interface CalendarDay {
   dayName: string;
   dayNumber: number;
   dots: string[];
-}
-
-interface Article {
-  tag: string;
-  title: string;
-  description: string;
-  imageUrl: string;
-  actionText: string;
-  actionUrl: string;
 }
 
 interface HomeHighlightCard {
@@ -60,7 +69,11 @@ interface HomeHighlightCard {
 export class HomeComponent implements OnInit, AfterViewInit {
   private readonly router = inject(Router);
   private readonly appointmentService = inject(HealthAppointmentService);
+  private readonly articlesService = inject(ArticlesService);
   private readonly checkinService = inject(CheckinService);
+  private readonly dailyMedicationProgressService = inject(DailyMedicationProgressService);
+  private readonly medicationDataService = inject(MedicationDataService);
+  private readonly medicationIntakeService = inject(MedicationIntakeService);
   readonly ImagePlus = ImagePlus;
   readonly CirclePlus = CirclePlus;
   readonly CalendarIcon = Calendar;
@@ -94,11 +107,27 @@ export class HomeComponent implements OnInit, AfterViewInit {
   allAppointments = signal<HealthAppointment[]>([]);
   selectedDayEvents = signal<any[]>([]);
 
-  readonly medicationSummaryCard: HomeHighlightCard = {
-    value: '2/4',
-    title: 'Medicações tomadas',
-    backgroundClass: 'summary-card--purple',
-  };
+  readonly medicationSummary = signal<DailyMedicationSummaryResponse | null>(null);
+
+  readonly medicationSummaryCard = computed<HomeHighlightCard>(() => {
+    const summary = this.medicationSummary();
+
+    if (!summary || summary.expected_count === 0) {
+      return {
+        value: '0/0',
+        title: 'Medicações tomadas',
+        subtitle: 'Nenhuma dose esperada para hoje',
+        backgroundClass: 'summary-card--purple',
+      };
+    }
+
+    return {
+      value: `${summary.taken_count}/${summary.expected_count}`,
+      title: 'Medicações tomadas',
+      subtitle: summary.completed ? 'Todas as doses do dia foram marcadas' : 'Progresso de hoje',
+      backgroundClass: 'summary-card--purple',
+    };
+  });
 
   readonly nextAppointmentCard = computed(() => {
     const next = resolveNextAppointment(this.appointmentService.appointments());
@@ -131,7 +160,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
       colorClass: 'blue-icon',
       path: '/checkin',
     },
-        {
+    {
       title: 'Registrar medicamentos',
       description: 'Veja quais remédios tomar hoje',
       icon: this.Pill,
@@ -154,15 +183,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
     },
   ];
 
-  weeklyArticle: Article = {
-    tag: 'ANÁLISE SEMANAL',
-    title: 'O Poder da Hidratação na Resiliência da Pele',
-    description:
-      'Estudos recentes sugerem que rotinas de hidratação consistentes podem melhorar a função de barreira da pele em até 30% ao longo de 4 semanas.',
-    imageUrl: 'assets/abstract-blue.png',
-    actionText: 'Ler Artigo',
-    actionUrl: '#',
-  };
+  readonly featuredArticle = signal<Article | null>(null);
 
   executeAction(path: string) {
     if (!path) return;
@@ -195,13 +216,32 @@ export class HomeComponent implements OnInit, AfterViewInit {
     this.generateCurrentWeek();
     this.generateCurrentMonth();
     this.updateMonthYearLabel();
+    this.loadFeaturedArticle();
+    this.loadDailyMedicationSummary();
     this.appointmentService.syncFromApi().subscribe({
       next: (appointments) => {
         this.allAppointments.set(appointments);
-        this.rebuildDotsMap(); 
-      }
+        this.rebuildDotsMap();
+      },
     });
     this.fetchMonthData();
+  }
+
+  openFeaturedArticle(): void {
+    const article = this.featuredArticle();
+    if (!article) return;
+    void this.router.navigate(['/education', article.slug]);
+  }
+
+  private loadFeaturedArticle(): void {
+    this.articlesService.listArticles({ category: 'education', limit: 1 }).subscribe({
+      next: (response) => {
+        this.featuredArticle.set(response.items[0] ?? null);
+      },
+      error: () => {
+        this.featuredArticle.set(null);
+      },
+    });
   }
 
   ngAfterViewInit(): void {
@@ -209,7 +249,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
   }
 
   toggleCalendar() {
-    this.isExpanded.update(val => !val);
+    this.isExpanded.update((val) => !val);
 
     if (!this.isExpanded()) {
       this.centerActiveDay();
@@ -297,7 +337,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
     const newDate = new Date(this.selectedDate);
     newDate.setMonth(newDate.getMonth() + delta);
     this.selectedDate = newDate;
-    
+
     this.updateMonthYearLabel();
     this.fetchMonthData();
   }
@@ -308,6 +348,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
     this.generateCurrentWeek();
     this.generateCurrentMonth();
     this.centerActiveDay();
+    this.loadDailyMedicationSummary();
   }
 
   centerActiveDay() {
@@ -318,10 +359,10 @@ export class HomeComponent implements OnInit, AfterViewInit {
       const activeCard = container.querySelector('.day-card.active') as HTMLElement;
 
       if (activeCard) {
-        activeCard.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'nearest', 
-          inline: 'center' 
+        activeCard.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'center',
         });
       }
     }, 100);
@@ -417,5 +458,56 @@ export class HomeComponent implements OnInit, AfterViewInit {
       date1.getMonth() === date2.getMonth() &&
       date1.getFullYear() === date2.getFullYear()
     );
+  }
+
+  private loadDailyMedicationSummary(): void {
+    const progressDate = this.getTodayDate();
+
+    this.medicationDataService.getMedicationChecklist().subscribe({
+      next: (response) => {
+        const progress = computeTodayMedicationProgress(
+          response.institutedMedications,
+          (medicationKey, slotKey) =>
+            this.medicationIntakeService.isSlotTaken(medicationKey, slotKey),
+          (name) => this.medicationIntakeService.medicationKey(name),
+        );
+
+        const summary: DailyMedicationSummaryResponse = {
+          progress_date: progressDate,
+          expected_count: progress.expectedCount,
+          taken_count: progress.takenCount,
+          remaining_count: Math.max(progress.expectedCount - progress.takenCount, 0),
+          completed: progress.completed,
+        };
+
+        this.medicationSummary.set(summary);
+        this.syncDailyMedicationProgress(summary);
+      },
+      error: () => {
+        this.dailyMedicationProgressService.getSummary(progressDate).subscribe({
+          next: (summary) => this.medicationSummary.set(summary),
+          error: () => this.medicationSummary.set(null),
+        });
+      },
+    });
+  }
+
+  private syncDailyMedicationProgress(summary: DailyMedicationSummaryResponse): void {
+    this.dailyMedicationProgressService
+      .upsert({
+        progress_date: summary.progress_date,
+        expected_count: summary.expected_count,
+        taken_count: summary.taken_count,
+      })
+      .subscribe({ error: () => undefined });
+  }
+
+  private getTodayDate(): string {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
   }
 }

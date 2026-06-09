@@ -36,6 +36,7 @@ describe('Medication', () => {
 
     medicationDataServiceSpy = {
       getMedicationChecklist: vi.fn().mockReturnValue(of(mockResponse)),
+      saveMedicationAlarm: vi.fn().mockReturnValue(of(void 0)),
     } as Mocked<MedicationDataService>;
 
     await TestBed.configureTestingModule({

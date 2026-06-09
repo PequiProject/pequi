@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { of, throwError } from 'rxjs';
-import { vi, describe, beforeEach, it, expect } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Login } from './login';
 import { AuthService } from '../auth/services/auth-service';
@@ -25,6 +25,12 @@ describe('Login', () => {
     navigateByUrl: vi.fn(),
   };
 
+  const toastServiceMock = {
+    success: vi.fn(),
+    warning: vi.fn(),
+    error: vi.fn(),
+  };
+
   const activatedRouteMock = {
     snapshot: {
       queryParamMap: convertToParamMap({}),
@@ -33,8 +39,14 @@ describe('Login', () => {
 
   beforeEach(async () => {
     authServiceMock.login.mockReset();
+
     routerMock.navigateByUrl.mockReset();
     routerMock.navigateByUrl.mockResolvedValue(true);
+
+    toastServiceMock.success.mockReset();
+    toastServiceMock.warning.mockReset();
+    toastServiceMock.error.mockReset();
+
     activatedRouteMock.snapshot.queryParamMap = convertToParamMap({});
 
     await TestBed.configureTestingModule({
@@ -56,6 +68,22 @@ describe('Login', () => {
     expect(component).toBeTruthy();
   });
 
+  it('should show success toast when registered=true', () => {
+    activatedRouteMock.snapshot.queryParamMap = convertToParamMap({
+      registered: 'true',
+    });
+
+    fixture = TestBed.createComponent(Login);
+    component = fixture.componentInstance;
+
+    fixture.detectChanges();
+
+    expect(toastServiceMock.success).toHaveBeenCalledWith(
+      'Cadastro realizado com sucesso.',
+      'Agora faça login para continuar.'
+    );
+  });
+
   it('should not submit when form is invalid', () => {
     component.form.setValue({
       identifier: '',
@@ -65,7 +93,12 @@ describe('Login', () => {
     component.submit();
 
     expect(authServiceMock.login).not.toHaveBeenCalled();
-    expect(component.form.touched).toBe(true);
+
+    expect(toastServiceMock.warning).toHaveBeenCalledWith(
+      'Formulário inválido',
+      'Preencha e-mail e senha corretamente.'
+    );
+
     expect(component.isSubmitting).toBe(false);
   });
 
@@ -132,6 +165,10 @@ describe('Login', () => {
     });
 
     component.submit();
+
+    expect(toastServiceMock.success).toHaveBeenCalledWith(
+      'Login realizado com sucesso.'
+    );
 
     expect(routerMock.navigateByUrl).toHaveBeenCalledWith('/checkin');
     expect(component.isSubmitting).toBe(false);
@@ -215,12 +252,15 @@ describe('Login', () => {
 
     expect(toastServiceMock.error).toHaveBeenCalledWith('Falha no login', 'Credenciais inválidas.');
     expect(component.isSubmitting).toBe(false);
+
     expect(routerMock.navigateByUrl).not.toHaveBeenCalled();
   });
 
   it('should show default error message when API does not return message', () => {
     authServiceMock.login.mockReturnValue(
-      throwError(() => ({ error: {} }))
+      throwError(() => ({
+        error: {},
+      }))
     );
 
     component.form.setValue({

@@ -18,7 +18,7 @@ from pequi.repositories.journey_event_repo import JourneyEventRepository
 from pequi.repositories.patient_repo import PatientRepository
 from pequi.repositories.treatment_repo import TreatmentRepository
 from pequi.schemas.dose_log import DoseLogCreate
-from pequi.use_cases.get_patient_journey import GetPatientJourneyUseCase
+from pequi.use_cases.get_treatment_journey import GetTreatmentJourneyUseCase
 from pequi.use_cases.register_dose import RegisterDoseUseCase
 
 
@@ -71,8 +71,8 @@ async def _create_treatment(session, *, patient: PatientProfile) -> Treatment:
     return treatment
 
 
-def _journey_use_case(session) -> GetPatientJourneyUseCase:
-    return GetPatientJourneyUseCase(
+def _journey_use_case(session) -> GetTreatmentJourneyUseCase:
+    return GetTreatmentJourneyUseCase(
         PatientRepository(session),
         TreatmentRepository(session),
         DoseRepository(session),
