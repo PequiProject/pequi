@@ -1,6 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { environment } from '../../../../environments/environment';
 import type {
   Article,
   ArticleListResponse,
@@ -11,7 +12,7 @@ import type {
 @Injectable({ providedIn: 'root' })
 export class ArticlesService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = 'http://localhost:8000/v1/articles';
+  private readonly baseUrl = `${environment.apiUrl}/v1/articles`;
 
   listArticles(params: ListArticlesParams = {}): Observable<ArticleListResponse> {
     let httpParams = new HttpParams();
