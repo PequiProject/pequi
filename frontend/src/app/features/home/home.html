@@ -144,9 +144,9 @@
 
   <section class="summary-section">
     <div class="summary-grid">
-      <article class="summary-card" [ngClass]="medicationSummaryCard.backgroundClass">
-        <span class="summary-card__value">{{ medicationSummaryCard.value }}</span>
-        <span class="summary-card__title">{{ medicationSummaryCard.title }}</span>
+      <article class="summary-card" [ngClass]="medicationSummaryCard().backgroundClass">
+        <span class="summary-card__value">{{ medicationSummaryCard().value }}</span>
+        <span class="summary-card__title">{{ medicationSummaryCard().title }}</span>
       </article>
 
       <article

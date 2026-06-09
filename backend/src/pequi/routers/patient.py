@@ -1,3 +1,4 @@
+from datetime import date
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -5,17 +6,27 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from pequi.core.dependencies import get_current_patient, get_db
 from pequi.core.rate_limit import limiter
+from pequi.repositories.checkin_repo import CheckinRepository
+from pequi.repositories.daily_medication_progress_repo import (
+    DailyMedicationProgressRepository,
+)
 from pequi.repositories.dose_repo import DoseRepository
 from pequi.repositories.health_appointment_repo import HealthAppointmentRepository
 from pequi.repositories.journey_event_repo import JourneyEventRepository
 from pequi.repositories.patient_repo import PatientRepository
 from pequi.repositories.treatment_repo import TreatmentRepository
+from pequi.schemas.daily_medication_progress import (
+    DailyMedicationProgressResponse,
+    DailyMedicationProgressUpsert,
+    DailyMedicationSummaryResponse,
+)
 from pequi.schemas.health_appointment import (
     HealthAppointmentCreate,
     HealthAppointmentResponse,
     HealthAppointmentUpdate,
 )
 from pequi.schemas.patient import PatientProfileRead, PatientProfileUpdate
+from pequi.schemas.patient_journey import PatientJourneyResponse
 from pequi.schemas.patient_personal import (
     PatientPersonalRecordRead,
     PatientPersonalRecordSave,
@@ -26,6 +37,10 @@ from pequi.schemas.patient_treatment import (
     PatientTreatmentRecordSave,
 )
 from pequi.schemas.treatment import TreatmentResponse
+from pequi.use_cases.get_daily_medication_summary import (
+    GetDailyMedicationSummaryUseCase,
+)
+from pequi.use_cases.get_patient_journey import GetPatientJourneyUseCase
 from pequi.use_cases.get_patient_profile import GetPatientProfileUseCase
 from pequi.use_cases.patient_health_appointment import (
     CreatePatientHealthAppointmentUseCase,
@@ -43,6 +58,9 @@ from pequi.use_cases.patient_treatment_record import (
     SavePatientTreatmentRecordUseCase,
 )
 from pequi.use_cases.update_patient_profile import UpdatePatientProfileUseCase
+from pequi.use_cases.upsert_daily_medication_progress import (
+    UpsertDailyMedicationProgressUseCase,
+)
 
 router = APIRouter()
 
@@ -53,6 +71,18 @@ def _treatment_repos(
     return (
         PatientRepository(session),
         TreatmentRepository(session),
+    )
+
+
+def _daily_medication_progress_repos(
+    session: AsyncSession,
+) -> tuple[
+    DailyMedicationProgressRepository,
+    PatientRepository,
+]:
+    return (
+        DailyMedicationProgressRepository(session),
+        PatientRepository(session),
     )
 
 
@@ -217,3 +247,46 @@ async def update_my_appointment(
         JourneyEventRepository(session),
     )
     return await use_case.execute(user_id, appointment_id, body)
+
+
+@router.get("/me/journey", response_model=PatientJourneyResponse)
+@limiter.limit("100/minute")
+async def get_my_journey(
+    request: Request,
+    user_id: UUID = Depends(get_current_patient),
+    session: AsyncSession = Depends(get_db),
+) -> PatientJourneyResponse:
+    use_case = GetPatientJourneyUseCase(
+        PatientRepository(session),
+        TreatmentRepository(session),
+        HealthAppointmentRepository(session),
+        CheckinRepository(session),
+        DailyMedicationProgressRepository(session),
+    )
+    return await use_case.execute(user_id)
+
+
+@router.get("/me/daily-medication-progress", response_model=DailyMedicationSummaryResponse)
+@limiter.limit("100/minute")
+async def get_my_daily_medication_progress(
+    request: Request,
+    progress_date: date,
+    user_id: UUID = Depends(get_current_patient),
+    session: AsyncSession = Depends(get_db),
+) -> DailyMedicationSummaryResponse:
+    progress_repo, patient_repo = _daily_medication_progress_repos(session)
+    use_case = GetDailyMedicationSummaryUseCase(progress_repo, patient_repo)
+    return await use_case.execute(user_id, progress_date)
+
+
+@router.put("/me/daily-medication-progress", response_model=DailyMedicationProgressResponse)
+@limiter.limit("20/minute")
+async def save_my_daily_medication_progress(
+    request: Request,
+    body: DailyMedicationProgressUpsert,
+    user_id: UUID = Depends(get_current_patient),
+    session: AsyncSession = Depends(get_db),
+) -> DailyMedicationProgressResponse:
+    progress_repo, patient_repo = _daily_medication_progress_repos(session)
+    use_case = UpsertDailyMedicationProgressUseCase(progress_repo, patient_repo)
+    return await use_case.execute(user_id, body)

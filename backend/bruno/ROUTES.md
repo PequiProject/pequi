@@ -52,6 +52,7 @@ Contrato HTTP da API v1. Fonte: `docs/milestones/M*.md`.
 | `PATCH` | `/v1/patients/me` | 20/min | patient | `patient/update_profile.bru` ✅ |
 | `GET` | `/v1/patients` | 100/min | professional, admin | `patient/list_patients.bru` |
 | `GET` | `/v1/patients/{id}` | 100/min | professional, admin | `patient/get_patient.bru` |
+| `GET` | `/v1/patients/me/journey` | 100/min | patient | `patient/get_journey.bru` |
 
 ---
 
