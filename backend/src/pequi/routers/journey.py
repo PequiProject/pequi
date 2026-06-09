@@ -24,10 +24,10 @@ async def get_journey(
     session: AsyncSession = Depends(get_db),
 ) -> JourneyResponse:
     use_case = GetPatientJourneyUseCase(
-        PatientRepository(session),
-        TreatmentRepository(session),
-        DoseRepository(session),
-        HealthAppointmentRepository(session),
-        JourneyEventRepository(session),
+        patient_repo=PatientRepository(session),
+        treatment_repo=TreatmentRepository(session),
+        dose_repo=DoseRepository(session),
+        appointment_repo=HealthAppointmentRepository(session),
+        journey_event_repo=JourneyEventRepository(session),
     )
     return await use_case.execute(patient_user_id)

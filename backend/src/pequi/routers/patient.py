@@ -6,7 +6,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from pequi.core.dependencies import get_current_patient, get_db
 from pequi.core.rate_limit import limiter
-from pequi.repositories.checkin_repo import CheckinRepository
 from pequi.repositories.daily_medication_progress_repo import (
     DailyMedicationProgressRepository,
 )
@@ -25,8 +24,8 @@ from pequi.schemas.health_appointment import (
     HealthAppointmentResponse,
     HealthAppointmentUpdate,
 )
+from pequi.schemas.journey import JourneyResponse
 from pequi.schemas.patient import PatientProfileRead, PatientProfileUpdate
-from pequi.schemas.patient_journey import PatientJourneyResponse
 from pequi.schemas.patient_personal import (
     PatientPersonalRecordRead,
     PatientPersonalRecordSave,
@@ -249,19 +248,19 @@ async def update_my_appointment(
     return await use_case.execute(user_id, appointment_id, body)
 
 
-@router.get("/me/journey", response_model=PatientJourneyResponse)
+@router.get("/me/journey", response_model=JourneyResponse)
 @limiter.limit("100/minute")
 async def get_my_journey(
     request: Request,
     user_id: UUID = Depends(get_current_patient),
     session: AsyncSession = Depends(get_db),
-) -> PatientJourneyResponse:
+) -> JourneyResponse:
     use_case = GetPatientJourneyUseCase(
-        PatientRepository(session),
-        TreatmentRepository(session),
-        HealthAppointmentRepository(session),
-        CheckinRepository(session),
-        DailyMedicationProgressRepository(session),
+        patient_repo=PatientRepository(session),
+        treatment_repo=TreatmentRepository(session),
+        dose_repo=DoseRepository(session),
+        appointment_repo=HealthAppointmentRepository(session),
+        journey_event_repo=JourneyEventRepository(session),
     )
     return await use_case.execute(user_id)
 
