@@ -83,6 +83,8 @@ def _daily_medication_progress_repos(
     return (
         DailyMedicationProgressRepository(session),
         PatientRepository(session),
+        TreatmentRepository(session),
+        HealthProfessionalRepository(session),
     )
 
 
