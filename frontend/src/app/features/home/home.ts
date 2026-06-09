@@ -17,6 +17,7 @@ import {
   resolveNextAppointment,
 } from '../appointments/utils/next-appointment.utils';
 import { CheckinService } from '../checkin/services/checkin.service';
+import { HealthAppointment } from '../appointments/models/health-appointment.models';
 
 interface QuickAction {
   title: string;
@@ -30,7 +31,7 @@ interface CalendarDay {
   dateObj: Date;
   dayName: string;
   dayNumber: number;
-  dots: number[];
+  dots: string[];
 }
 
 interface Article {
@@ -90,6 +91,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
   monthDotsMap = signal<Record<string, string[]>>({});
   allCheckins = signal<any[]>([]);
+  allAppointments = signal<HealthAppointment[]>([]);
   selectedDayEvents = signal<any[]>([]);
 
   readonly medicationSummaryCard: HomeHighlightCard = {
@@ -193,6 +195,12 @@ export class HomeComponent implements OnInit, AfterViewInit {
     this.generateCurrentWeek();
     this.generateCurrentMonth();
     this.updateMonthYearLabel();
+    this.appointmentService.syncFromApi().subscribe({
+      next: (appointments) => {
+        this.allAppointments.set(appointments);
+        this.rebuildDotsMap(); 
+      }
+    });
     this.fetchMonthData();
   }
 
@@ -212,45 +220,78 @@ export class HomeComponent implements OnInit, AfterViewInit {
     this.checkinService.getCheckinHistory().subscribe({
       next: (response) => {
         const checkinsList = Array.isArray(response) ? response : response.items || [];
-        const dotsMap: Record<string, string[]> = {};
-
         this.allCheckins.set(checkinsList);
 
-        checkinsList.forEach((checkin: any) => {
-          const dateField = checkin.created_at || checkin.date;
-          
-          if (dateField) {
-            const dateKey = dateField.split('T')[0];
-            
-            if (!dotsMap[dateKey]) {
-              dotsMap[dateKey] = [];
-            }
-            dotsMap[dateKey].push('checkin');
-          }
-        });
-
-        this.monthDotsMap.set(dotsMap);
-        this.generateCurrentWeek(); 
-        this.generateCurrentMonth();
-        
-        this.filterEventsForSelectedDate();
+        this.rebuildDotsMap();
       },
-      error: (err) => {
-        console.error('Erro ao buscar o histórico de check-ins do banco:', err);
+      error: (err) => console.error('Erro ao buscar check-ins:', err)
+    });
+  }
+
+  rebuildDotsMap() {
+    const dotsMap: Record<string, string[]> = {};
+
+    this.allCheckins().forEach((checkin: any) => {
+      const dateField = checkin.created_at || checkin.date;
+      if (dateField) {
+        const dateKey = dateField.split('T')[0];
+        if (!dotsMap[dateKey]) dotsMap[dateKey] = [];
+        dotsMap[dateKey].push('checkin');
       }
     });
+
+    this.allAppointments().forEach((apt: HealthAppointment) => {
+      const dateField = apt.appointmentDate;
+      if (dateField) {
+        const dateKey = dateField.split('T')[0];
+        if (!dotsMap[dateKey]) dotsMap[dateKey] = [];
+        dotsMap[dateKey].push('appointment');
+      }
+    });
+
+    this.monthDotsMap.set(dotsMap);
+    this.generateCurrentWeek(); 
+    this.generateCurrentMonth();
+    this.filterEventsForSelectedDate();
   }
 
   filterEventsForSelectedDate() {
     const clickedDateStr = this.getLocalIsoDate(this.selectedDate);
+    const mergedEvents: any[] = [];
     
-    const eventsForDay = this.allCheckins().filter(checkin => {
+    // Pega os check-ins do dia
+    this.allCheckins().forEach(checkin => {
       const dateField = checkin.created_at || checkin.date;
-      if (!dateField) return false;
-      return dateField.split('T')[0] === clickedDateStr;
+      if (dateField && dateField.split('T')[0] === clickedDateStr) {
+        mergedEvents.push({
+          type: 'checkin',
+          id: checkin.id,
+          time: dateField, 
+          title: 'Check-in de Saúde',
+          description: checkin.notes || 'Humor: ' + this.translateMood(checkin.mood),
+          icon: this.CirclePlus,
+          colorClass: 'text-[#4338CA] bg-[#EEF2FF] border-[#4338CA]' 
+        });
+      }
     });
 
-    this.selectedDayEvents.set(eventsForDay);
+    this.allAppointments().forEach(apt => {
+      const dateField = apt.appointmentDate;
+      if (dateField && dateField.split('T')[0] === clickedDateStr) {
+        mergedEvents.push({
+          type: 'appointment',
+          id: apt.id,
+          time: apt.appointmentTime ? `${dateField}T${apt.appointmentTime}` : dateField,
+          title: apt.type === 'exame' ? 'Exame' : apt.type === 'retorno' ? 'Retorno' : 'Consulta',
+          description: `Local: ${apt.location || 'Não informado'} ${apt.professional ? '- ' + apt.professional : ''}`,
+          icon: this.Stethoscope,
+          colorClass: 'text-[#9333EA] bg-[#F3E8FF] border-[#9333EA]'
+        });
+      }
+    });
+    mergedEvents.sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
+
+    this.selectedDayEvents.set(mergedEvents);
   }
 
   changeMonth(delta: number) {
@@ -312,7 +353,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
         dateObj,
         dayName: daysPt[dateObj.getDay()],
         dayNumber: dateObj.getDate(),
-        dots: Array(dotsForDay.length).fill(0),
+        dots: dotsForDay,
       });
     }
   }
@@ -340,7 +381,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
         dateObj,
         dayName: daysPt[dateObj.getDay()],
         dayNumber: i,
-        dots: Array(dotsForDay.length).fill(0),
+        dots: dotsForDay,
       });
     }
   }
