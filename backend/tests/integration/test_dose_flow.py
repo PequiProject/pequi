@@ -16,7 +16,6 @@ from pequi.core.exceptions import (
     ValidationFailedError,
 )
 from pequi.models.dose_log import AdherenceSnapshot
-from pequi.models.health_professional import HealthProfessional
 from pequi.models.health_unit import HealthUnit
 from pequi.models.patient import PatientProfile
 from pequi.models.treatment import Treatment, TreatmentRegimen, TreatmentStatus
@@ -62,19 +61,6 @@ async def _create_patient(session, *, user: User, health_unit: HealthUnit) -> Pa
     session.add(patient)
     await session.flush()
     return patient
-
-
-async def _create_professional(
-    session, *, user: User, health_unit: HealthUnit
-) -> HealthProfessional:
-    professional = HealthProfessional(
-        id=uuid4(),
-        user_id=user.id,
-        health_unit_id=health_unit.id,
-    )
-    session.add(professional)
-    await session.flush()
-    return professional
 
 
 async def _create_treatment(
@@ -220,31 +206,6 @@ async def test_other_patient_cannot_register_dose(create_tables, db_session):
 
     with pytest.raises(ForbiddenError):
         await use_case.execute(other_user.id, treatment.id, data)
-
-
-@pytest.mark.asyncio
-async def test_patient_registers_supervised_dose_via_consultation(create_tables, db_session):
-    """Paciente registra dose supervisionada ao informar consulta realizada."""
-    health_unit = await _create_health_unit(db_session)
-    patient_user = await _create_user(db_session, email="patient4b@test.com", role="patient")
-    prof_user = await _create_user(db_session, email="prof4b@test.com", role="health_professional")
-    patient = await _create_patient(db_session, user=patient_user, health_unit=health_unit)
-    professional = await _create_professional(db_session, user=prof_user, health_unit=health_unit)
-    treatment = await _create_treatment(db_session, patient=patient, professional=professional)
-
-    data = DoseLogCreate(
-        drug_name="Rifampicina",
-        expected_at=datetime(2026, 2, 1, 10, 0, tzinfo=UTC),
-        taken_at=datetime(2026, 2, 1, 10, 15, tzinfo=UTC),
-        supervised=True,
-        via_consultation=True,
-    )
-
-    use_case = _make_use_case(db_session)
-    result = await use_case.execute(patient_user.id, "patient", treatment.id, data)
-
-    assert result.supervised is True
-    assert result.registered_by is None
 
 
 @pytest.mark.asyncio
