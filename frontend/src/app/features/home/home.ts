@@ -16,6 +16,8 @@ import {
   formatAppointmentDatePt,
   resolveNextAppointment,
 } from '../appointments/utils/next-appointment.utils';
+import { CheckinService } from '../checkin/services/checkin.service';
+import { HealthAppointment } from '../appointments/models/health-appointment.models';
 
 interface QuickAction {
   title: string;
@@ -29,7 +31,7 @@ interface CalendarDay {
   dateObj: Date;
   dayName: string;
   dayNumber: number;
-  dots: number[];
+  dots: string[];
 }
 
 interface Article {
@@ -58,6 +60,7 @@ interface HomeHighlightCard {
 export class HomeComponent implements OnInit, AfterViewInit {
   private readonly router = inject(Router);
   private readonly appointmentService = inject(HealthAppointmentService);
+  private readonly checkinService = inject(CheckinService);
   readonly ImagePlus = ImagePlus;
   readonly CirclePlus = CirclePlus;
   readonly CalendarIcon = Calendar;
@@ -65,6 +68,18 @@ export class HomeComponent implements OnInit, AfterViewInit {
   readonly Pill = Pill;
   readonly ChevronLeft = ChevronLeft;
   readonly ChevronRight = ChevronRight;
+  readonly moodMap: Record<string, string> = {
+    'great': 'Ótimo',
+    'good': 'Muito Bem',
+    'ok': 'Normal',
+    'bad': 'Ruim',
+    'terrible': 'Péssimo'
+  };
+
+  translateMood(mood: string): string {
+    if (!mood) return 'Não registrado';
+    return this.moodMap[mood.toLowerCase()] || mood;
+  }
 
   @ViewChild('daysRow') daysRow!: ElementRef<HTMLDivElement>;
 
@@ -73,6 +88,11 @@ export class HomeComponent implements OnInit, AfterViewInit {
   calendarWeek: CalendarDay[] = [];
   calendarMonth: (CalendarDay | null)[] = [];
   selectedDate: Date = new Date();
+
+  monthDotsMap = signal<Record<string, string[]>>({});
+  allCheckins = signal<any[]>([]);
+  allAppointments = signal<HealthAppointment[]>([]);
+  selectedDayEvents = signal<any[]>([]);
 
   readonly medicationSummaryCard: HomeHighlightCard = {
     value: '2/4',
@@ -175,6 +195,13 @@ export class HomeComponent implements OnInit, AfterViewInit {
     this.generateCurrentWeek();
     this.generateCurrentMonth();
     this.updateMonthYearLabel();
+    this.appointmentService.syncFromApi().subscribe({
+      next: (appointments) => {
+        this.allAppointments.set(appointments);
+        this.rebuildDotsMap(); 
+      }
+    });
+    this.fetchMonthData();
   }
 
   ngAfterViewInit(): void {
@@ -189,14 +216,90 @@ export class HomeComponent implements OnInit, AfterViewInit {
     }
   }
 
+  fetchMonthData() {
+    this.checkinService.getCheckinHistory().subscribe({
+      next: (response) => {
+        const checkinsList = Array.isArray(response) ? response : response.items || [];
+        this.allCheckins.set(checkinsList);
+
+        this.rebuildDotsMap();
+      },
+      error: (err) => console.error('Erro ao buscar check-ins:', err)
+    });
+  }
+
+  rebuildDotsMap() {
+    const dotsMap: Record<string, string[]> = {};
+
+    this.allCheckins().forEach((checkin: any) => {
+      const dateField = checkin.created_at || checkin.date;
+      if (dateField) {
+        const dateKey = dateField.split('T')[0];
+        if (!dotsMap[dateKey]) dotsMap[dateKey] = [];
+        dotsMap[dateKey].push('checkin');
+      }
+    });
+
+    this.allAppointments().forEach((apt: HealthAppointment) => {
+      const dateField = apt.appointmentDate;
+      if (dateField) {
+        const dateKey = dateField.split('T')[0];
+        if (!dotsMap[dateKey]) dotsMap[dateKey] = [];
+        dotsMap[dateKey].push('appointment');
+      }
+    });
+
+    this.monthDotsMap.set(dotsMap);
+    this.generateCurrentWeek(); 
+    this.generateCurrentMonth();
+    this.filterEventsForSelectedDate();
+  }
+
+  filterEventsForSelectedDate() {
+    const clickedDateStr = this.getLocalIsoDate(this.selectedDate);
+    const mergedEvents: any[] = [];
+    
+    this.allCheckins().forEach(checkin => {
+      const dateField = checkin.created_at || checkin.date;
+      if (dateField && dateField.split('T')[0] === clickedDateStr) {
+        mergedEvents.push({
+          type: 'checkin',
+          id: checkin.id,
+          time: dateField, 
+          title: 'Check-in de Saúde',
+          description: checkin.notes || 'Humor: ' + this.translateMood(checkin.mood),
+          icon: this.CirclePlus,
+          colorClass: 'text-[#0EA5E9] bg-[#E0F2FE] border-[#0EA5E9]' 
+        });
+      }
+    });
+
+    this.allAppointments().forEach(apt => {
+      const dateField = apt.appointmentDate;
+      if (dateField && dateField.split('T')[0] === clickedDateStr) {
+        mergedEvents.push({
+          type: 'appointment',
+          id: apt.id,
+          time: apt.appointmentTime ? `${dateField}T${apt.appointmentTime}` : dateField,
+          title: apt.type === 'exame' ? 'Exame' : apt.type === 'retorno' ? 'Retorno' : 'Consulta',
+          description: `Local: ${apt.location || 'Não informado'} ${apt.professional ? '- ' + apt.professional : ''}`,
+          icon: this.Stethoscope,
+          colorClass: 'text-[#9333EA] bg-[#F3E8FF] border-[#9333EA]'
+        });
+      }
+    });
+    mergedEvents.sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
+
+    this.selectedDayEvents.set(mergedEvents);
+  }
+
   changeMonth(delta: number) {
     const newDate = new Date(this.selectedDate);
     newDate.setMonth(newDate.getMonth() + delta);
     this.selectedDate = newDate;
     
     this.updateMonthYearLabel();
-    this.generateCurrentWeek();
-    this.generateCurrentMonth();
+    this.fetchMonthData();
   }
 
   goToToday() {
@@ -224,10 +327,15 @@ export class HomeComponent implements OnInit, AfterViewInit {
     }, 100);
   }
 
+  private getLocalIsoDate(date: Date): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
   generateCurrentWeek() {
     this.calendarWeek = [];
-    const currentDay = this.selectedDate.getDay();
-
     const startOfScroll = new Date(this.selectedDate);
     startOfScroll.setDate(this.selectedDate.getDate() - 10);
 
@@ -237,11 +345,14 @@ export class HomeComponent implements OnInit, AfterViewInit {
       const dateObj = new Date(startOfScroll);
       dateObj.setDate(startOfScroll.getDate() + i);
 
+      const dateKey = this.getLocalIsoDate(dateObj);
+      const dotsForDay = this.monthDotsMap()[dateKey] || [];
+      
       this.calendarWeek.push({
         dateObj,
         dayName: daysPt[dateObj.getDay()],
         dayNumber: dateObj.getDate(),
-        dots: Array(Math.floor(Math.random() * 3)).fill(0), 
+        dots: dotsForDay,
       });
     }
   }
@@ -261,11 +372,15 @@ export class HomeComponent implements OnInit, AfterViewInit {
 
     for (let i = 1; i <= lastDayOfMonth.getDate(); i++) {
       const dateObj = new Date(year, month, i);
+      
+      const dateKey = this.getLocalIsoDate(dateObj);
+      const dotsForDay = this.monthDotsMap()[dateKey] || [];
+      
       this.calendarMonth.push({
         dateObj,
         dayName: daysPt[dateObj.getDay()],
         dayNumber: i,
-        dots: Array(Math.floor(Math.random() * 3)).fill(0), 
+        dots: dotsForDay,
       });
     }
   }
@@ -291,6 +406,9 @@ export class HomeComponent implements OnInit, AfterViewInit {
   selectDate(date: Date) {
     this.selectedDate = date;
     this.updateMonthYearLabel();
+    this.generateCurrentWeek();
+    this.centerActiveDay();
+    this.filterEventsForSelectedDate();
   }
 
   isSameDate(date1: Date, date2: Date): boolean {

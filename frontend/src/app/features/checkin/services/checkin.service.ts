@@ -95,6 +95,10 @@ export class CheckinService {
     return this.http.post<CheckinResponse>(`${this.apiUrl}/v1/checkins`, payload);
   }
 
+  getCheckinHistory(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/v1/checkins`);
+  }
+
   resolveSymptomIds(selectedNames: string[], catalog: SymptomResponse[]): string[] {
     if (!catalog.length) {
       return [];
